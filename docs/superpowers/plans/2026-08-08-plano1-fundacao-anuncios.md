@@ -1256,9 +1256,11 @@ export default async function Home() {
 }
 ```
 
-> Nota: o join `subscriptions!inner` assume relação FK. Se o PostgREST não inferir,
-> ajustar para consulta em duas etapas (buscar ids de profiles com assinatura ativa e
-> filtrar `ads`). Validar após config do Supabase (Plano 5).
+> Nota (implementado): NÃO existe FK direta `ads↔subscriptions` (só via `profiles`),
+> então o embed `subscriptions!inner` não funciona. A home usa consulta em **duas etapas**:
+> (1) buscar `profile_id`s com assinatura ativa (`status='active' AND current_period_end>now()`);
+> (2) buscar `ads` com `status='active' AND profile_id IN (...)`, mesma ordenação
+> (`bumped_at desc nulls last, created_at desc`), com short-circuit para lista vazia.
 
 - [ ] **Step 4: Build check**
 
