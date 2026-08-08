@@ -919,3 +919,8 @@ git commit -m "chore(preview): avaliacoes mock no detalhe + painel admin mock"
 
 ## Placeholders
 Nenhum. As seções de detalhe reaproveitam blocos existentes; todo passo mostra o código.
+
+## Dívida técnica registrada (aceita no review final, adiada)
+- **CSRF:** rotas POST usam `<form>` nativo sem token CSRF; proteção depende do cookie `SameSite=Lax` padrão do `@supabase/ssr` (bloqueia POST cross-site com cookie de auth). Padrão do codebase inteiro. Reavaliar se um dia precisar de POST cross-site.
+- **Índices:** `reviews.user_id` / `reports.user_id` sem índice próprio — adicionar quando existir listagem "minhas avaliações/denúncias" por usuário.
+- **Admin:** gate exige `email_confirmed_at` (corrigido); manter confirmação de e-mail LIGADA no Supabase (config Plano 5).
