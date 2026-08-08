@@ -1,26 +1,166 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ *
+ *  Design tokens — "minimalismo caloroso / editorial-amigável"
+ *  Fundo creme, tinta quente quase-preta, accent coral. Verde só WhatsApp.
+ * ------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --canvas: #fbf6ee;
+  --surface: #ffffff;
+  --surface-2: #fffaf2;
+  --ink: #211c16;
+  --muted: #6e6456;
+  --line: #ebe1d3;
+  --coral: #fb5533;
+  --coral-strong: #e23f1f;
+  --coral-soft: #ffe7df;
+  --wa: #25d366;
+  --wa-strong: #1ea855;
+  --available: #12a150;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --shadow-card: 0 1px 2px rgba(33, 28, 22, 0.04), 0 10px 26px -14px rgba(33, 28, 22, 0.22);
+  --shadow-lift: 0 2px 6px rgba(33, 28, 22, 0.06), 0 22px 44px -18px rgba(251, 85, 51, 0.3);
+  --shadow-pop: 0 8px 30px -10px rgba(33, 28, 22, 0.28);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --canvas: #14100b;
+    --surface: #1e1811;
+    --surface-2: #241d15;
+    --ink: #f4ece0;
+    --muted: #a99c89;
+    --line: #2e251b;
+    --coral: #ff6a47;
+    --coral-strong: #ff835f;
+    --coral-soft: #3a2018;
+    --wa: #25d366;
+    --wa-strong: #34d27b;
+    --available: #34d27b;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -14px rgba(0, 0, 0, 0.6);
+    --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 26px 50px -18px rgba(251, 85, 51, 0.35);
+    --shadow-pop: 0 10px 34px -10px rgba(0, 0, 0, 0.65);
   }
 }
 
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-coral: var(--coral);
+  --color-coral-strong: var(--coral-strong);
+  --color-coral-soft: var(--coral-soft);
+  --color-wa: var(--wa);
+  --color-wa-strong: var(--wa-strong);
+  --color-available: var(--available);
+
+  --color-background: var(--canvas);
+  --color-foreground: var(--ink);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+
+  --radius-input: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
+  --shadow-pop: var(--shadow-pop);
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Atmosfera: brilhos quentes suaves fixos ao fundo */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 42% at 88% -8%, color-mix(in oklab, var(--coral) 20%, transparent), transparent 72%),
+    radial-gradient(48% 38% at 2% -4%, color-mix(in oklab, #ffc98a 26%, transparent), transparent 70%);
+}
+
+/* Grão sutil para textura editorial */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Tipografia display */
+.font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Foco acessível consistente */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Entrada escalonada dos cards */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--available) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.dot-live {
+  animation: live-pulse 1.8s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .dot-live {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }

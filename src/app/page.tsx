@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/server";
 import AdCard, { type AdCardData } from "@/components/AdCard";
+import SiteHeader from "@/components/SiteHeader";
+import HomeFilters from "@/components/HomeFilters";
 
 export const dynamic = "force-dynamic";
 
@@ -20,16 +23,8 @@ export default async function Home() {
   const admin = createAdminClient();
   const nowIso = new Date().toISOString();
 
-  // anúncios visíveis: status active + assinatura ativa
-  //
-  // Não existe FK direta entre `ads` e `subscriptions` (a relação passa por
-  // `profiles`: ads.profile_id -> profiles.id <- subscriptions.profile_id),
-  // então o PostgREST não consegue embutir `subscriptions` como irmão de
-  // `cities`/`profiles` num único `.from("ads").select(...)` — não há
-  // relacionamento a inferir entre `ads` e `subscriptions`. Usamos a
-  // consulta em duas etapas descrita na nota do brief.
-
-  // 1) profile_ids com assinatura ativa (status active + dentro do período)
+  // anúncios visíveis: status active + assinatura ativa.
+  // Não há FK direta ads <-> subscriptions (só via profiles), então consulta em 2 etapas.
   const { data: activeSubs, error: activeSubsError } = await admin
     .from("subscriptions")
     .select("profile_id")
@@ -75,18 +70,77 @@ export default async function Home() {
   });
 
   return (
-    <main className="mx-auto max-w-6xl p-4">
-      <header className="flex items-center justify-between py-4">
-        <h1 className="text-2xl font-bold">Serviços</h1>
-        <a href="/perfil" className="text-sm underline">Anunciar</a>
-      </header>
-      {ads.length === 0 ? (
-        <p className="text-gray-500">Nenhum anúncio ainda.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ads.map((ad) => <AdCard key={ad.id} ad={ad} now={now} />)}
-        </div>
-      )}
-    </main>
+    <>
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16">
+        <section className="py-7 sm:py-10">
+          <h1 className="font-display text-3xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl">
+            Serviços perto
+            <br className="hidden sm:block" /> de você
+          </h1>
+          <p className="mt-3 max-w-md text-sm text-muted sm:text-base">
+            Encontre quem resolve — ou anuncie o seu. Contato direto, sem intermediário.
+          </p>
+          <div className="mt-5 sm:mt-6">
+            <HomeFilters />
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="font-display text-lg font-bold text-ink">Anúncios recentes</h2>
+            {ads.length > 0 && (
+              <span className="text-xs text-muted">{ads.length} resultado{ads.length > 1 ? "s" : ""}</span>
+            )}
+          </div>
+
+          {ads.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {ads.map((ad, i) => (
+                <AdCard key={ad.id} ad={ad} now={now} index={i} />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center rounded-card border border-dashed border-line bg-surface/60 px-6 py-16 text-center">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-coral-soft text-coral">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3v18M3 12h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      <p className="font-display text-lg font-bold text-ink">Nenhum anúncio por aqui ainda</p>
+      <p className="mt-1 max-w-xs text-sm text-muted">
+        Seja o primeiro a divulgar seu serviço nesta cidade.
+      </p>
+      <Link
+        href="/perfil"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-pill bg-coral px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-coral-strong active:scale-95"
+      >
+        Criar meu anúncio
+      </Link>
+    </div>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="border-t border-line/70">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted sm:flex-row">
+        <span className="font-display font-bold text-ink">
+          serviços<span className="text-coral">.</span>
+        </span>
+        <span>Contato direto via WhatsApp · anúncios locais</span>
+      </div>
+    </footer>
   );
 }
