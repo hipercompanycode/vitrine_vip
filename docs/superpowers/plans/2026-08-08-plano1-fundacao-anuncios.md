@@ -528,6 +528,28 @@ alter table public.stories      enable row level security;
 alter table public.plans        enable row level security;
 alter table public.cities       enable row level security;
 
+-- Helpers SECURITY DEFINER: bypassam RLS para checagem de visibilidade pública.
+-- (Necessário: consultar subscriptions/ads dentro de uma policy re-aplica a RLS
+--  dessas tabelas ao papel chamador, zerando o EXISTS para visitante anônimo.)
+create or replace function public.has_active_subscription(p_profile_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.subscriptions s
+    where s.profile_id = p_profile_id
+      and s.status = 'active'
+      and s.current_period_end > now()
+  );
+$$;
+
+create or replace function public.is_ad_visible(p_ad_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.ads a
+    where a.id = p_ad_id and a.status = 'active'
+      and public.has_active_subscription(a.profile_id)
+  );
+$$;
+
 -- Leitura pública de plans e cities
 create policy "plans_public_read" on public.plans for select using (true);
 create policy "cities_public_read" on public.cities for select using (true);
@@ -539,13 +561,7 @@ create policy "profiles_owner_all" on public.profiles
 -- ads: leitura pública apenas de anúncios visíveis; dono gerencia o seu
 create policy "ads_public_read_visible" on public.ads
   for select using (
-    status = 'active'
-    and exists (
-      select 1 from public.subscriptions s
-      where s.profile_id = ads.profile_id
-        and s.status = 'active'
-        and s.current_period_end > now()
-    )
+    status = 'active' and public.has_active_subscription(profile_id)
   );
 create policy "ads_owner_read" on public.ads
   for select using (auth.uid() = profile_id);
@@ -554,23 +570,13 @@ create policy "ads_owner_write" on public.ads
 
 -- ad_media/stories: leitura pública se o anúncio pai é visível; dono gerencia
 create policy "ad_media_public_read" on public.ad_media
-  for select using (
-    exists (select 1 from public.ads a
-      where a.id = ad_media.ad_id and a.status = 'active'
-      and exists (select 1 from public.subscriptions s
-        where s.profile_id = a.profile_id and s.status='active' and s.current_period_end > now()))
-  );
+  for select using ( public.is_ad_visible(ad_id) );
 create policy "ad_media_owner_write" on public.ad_media
   for all using (exists (select 1 from public.ads a where a.id = ad_media.ad_id and a.profile_id = auth.uid()))
   with check (exists (select 1 from public.ads a where a.id = ad_media.ad_id and a.profile_id = auth.uid()));
 
 create policy "stories_public_read" on public.stories
-  for select using (
-    expires_at > now() and exists (select 1 from public.ads a
-      where a.id = stories.ad_id and a.status='active'
-      and exists (select 1 from public.subscriptions s
-        where s.profile_id = a.profile_id and s.status='active' and s.current_period_end > now()))
-  );
+  for select using ( expires_at > now() and public.is_ad_visible(ad_id) );
 create policy "stories_owner_write" on public.stories
   for all using (exists (select 1 from public.ads a where a.id = stories.ad_id and a.profile_id = auth.uid()))
   with check (exists (select 1 from public.ads a where a.id = stories.ad_id and a.profile_id = auth.uid()));
