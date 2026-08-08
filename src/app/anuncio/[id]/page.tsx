@@ -4,6 +4,8 @@ import SiteHeader from "@/components/SiteHeader";
 import AdDetail from "@/components/AdDetail";
 import type { AdCardData } from "@/components/AdCard";
 import { canInteract, type Role } from "@/lib/roles";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 
 export const dynamic = "force-dynamic";
 
@@ -79,10 +81,34 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     loggedIn: !!user,
   };
 
+  const { data: reviewRows } = await admin
+    .from("reviews")
+    .select("id, user_id, comment, tags, created_at, profiles ( name )")
+    .eq("ad_id", data.id)
+    .order("created_at", { ascending: false });
+  const reviews: ReviewItem[] = (reviewRows ?? []).map((r: any) => ({
+    id: r.id, user_id: r.user_id, comment: r.comment, tags: r.tags ?? [],
+    created_at: r.created_at,
+    authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
+  }));
+
   return (
     <>
       <SiteHeader />
       <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} />
+      <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
+        <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações</h2>
+        {interactions.canInteract ? (
+          <div className="mb-4"><ReviewForm adId={data.id} /></div>
+        ) : (
+          !interactions.loggedIn && (
+            <p className="mb-4 text-sm text-muted">
+              <a href="/login" className="text-accent underline">Entre como usuário</a> para avaliar.
+            </p>
+          )
+        )}
+        <ReviewList reviews={reviews} now={new Date()} currentUserId={user?.id ?? null} adId={data.id} />
+      </section>
     </>
   );
 }
