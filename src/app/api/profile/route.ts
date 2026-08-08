@@ -11,6 +11,7 @@ export async function POST(request: Request) {
   const whatsapp = String(form.get("whatsapp") ?? "").trim();
 
   const admin = createAdminClient();
-  await admin.from("profiles").update({ name, whatsapp }).eq("id", user.id);
+  const { error } = await admin.from("profiles").update({ name, whatsapp }).eq("id", user.id);
+  if (error) console.error("profile update:", error.message);
   return NextResponse.redirect(new URL("/perfil", request.url), { status: 303 });
 }

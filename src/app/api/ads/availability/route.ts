@@ -10,6 +10,7 @@ export async function POST(request: Request) {
   const value = String(form.get("is_available")) === "true";
 
   const admin = createAdminClient();
-  await admin.from("ads").update({ is_available: value }).eq("profile_id", user.id);
+  const { error } = await admin.from("ads").update({ is_available: value }).eq("profile_id", user.id);
+  if (error) console.error("availability update:", error.message);
   return NextResponse.redirect(new URL("/perfil", request.url), { status: 303 });
 }

@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "aguarde o cooldown para subir de novo" }, { status: 429 });
   }
 
-  await admin.from("ads").update({ bumped_at: new Date().toISOString() }).eq("id", ad.id);
+  const { error } = await admin.from("ads").update({ bumped_at: new Date().toISOString() }).eq("id", ad.id);
+  if (error) console.error("bump update:", error.message);
   return NextResponse.redirect(new URL("/perfil", request.url), { status: 303 });
 }

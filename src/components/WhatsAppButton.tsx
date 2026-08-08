@@ -1,5 +1,6 @@
 export default function WhatsAppButton({ phone, adTitle }: { phone: string; adTitle: string }) {
   const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
   const text = encodeURIComponent(`Olá! Vi seu anúncio "${adTitle}" e tenho interesse.`);
   const href = `https://wa.me/${digits}?text=${text}`;
   return (

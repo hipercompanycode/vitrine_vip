@@ -30,11 +30,12 @@ export default async function Home() {
   // consulta em duas etapas descrita na nota do brief.
 
   // 1) profile_ids com assinatura ativa (status active + dentro do período)
-  const { data: activeSubs } = await admin
+  const { data: activeSubs, error: activeSubsError } = await admin
     .from("subscriptions")
     .select("profile_id")
     .eq("status", "active")
     .gt("current_period_end", nowIso);
+  if (activeSubsError) console.error("home subscriptions query:", activeSubsError.message);
 
   const activeProfileIds = Array.from(
     new Set(((activeSubs ?? []) as { profile_id: string }[]).map((s) => s.profile_id))
@@ -53,6 +54,7 @@ export default async function Home() {
       .in("profile_id", activeProfileIds)
       .order("bumped_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
+    if (res.error) console.error("home ads query:", res.error.message);
     data = (res.data ?? []) as unknown as AdRow[];
   }
 
