@@ -61,8 +61,9 @@ alter table public.profiles
   add column if not exists role text not null default 'comum'
   check (role in ('anunciante','comum'));
 
--- Helper: papel do usuário atual (SECURITY DEFINER evita recursão de RLS em profiles)
-create or replace function public.current_role()
+-- Helper: papel do usuário atual (SECURITY DEFINER evita recursão de RLS em profiles).
+-- NOME: não usar `current_role` (palavra reservada no Postgres) — usar current_user_role.
+create or replace function public.current_user_role()
 returns text language sql stable security definer set search_path = public as $$
   select role from public.profiles where id = auth.uid();
 $$;
@@ -93,7 +94,7 @@ alter table public.favorites enable row level security;
 -- LIKES: leitura pública (para contagem); escrita só do dono E papel comum
 create policy "likes_public_read" on public.likes for select using (true);
 create policy "likes_owner_insert" on public.likes for insert
-  with check (auth.uid() = user_id and public.current_role() = 'comum');
+  with check (auth.uid() = user_id and public.current_user_role() = 'comum');
 create policy "likes_owner_delete" on public.likes for delete
   using (auth.uid() = user_id);
 
@@ -101,16 +102,18 @@ create policy "likes_owner_delete" on public.likes for delete
 create policy "favorites_owner_read" on public.favorites for select
   using (auth.uid() = user_id);
 create policy "favorites_owner_insert" on public.favorites for insert
-  with check (auth.uid() = user_id and public.current_role() = 'comum');
+  with check (auth.uid() = user_id and public.current_user_role() = 'comum');
 create policy "favorites_owner_delete" on public.favorites for delete
   using (auth.uid() = user_id);
 
 -- Trigger de novo usuário: copia role do metadata (default 'comum')
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  wanted text := new.raw_user_meta_data->>'role';
 begin
   insert into public.profiles (id, role)
-  values (new.id, coalesce(new.raw_user_meta_data->>'role', 'comum'))
+  values (new.id, case when wanted in ('anunciante','comum') then wanted else 'comum' end)
   on conflict (id) do nothing;
   return new;
 end; $$;
