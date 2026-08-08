@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
+import { parsePriceToCents } from "@/lib/price";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -9,11 +10,15 @@ export async function POST(request: Request) {
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
-  const priceReais = Number(String(form.get("price") ?? "0").replace(",", "."));
-  const cityId = form.get("city_id") ? Number(form.get("city_id")) : null;
 
   if (!title) return NextResponse.json({ error: "título obrigatório" }, { status: 400 });
-  const price_cents = Math.max(0, Math.round(priceReais * 100));
+
+  const price_cents = parsePriceToCents(String(form.get("price") ?? ""));
+  if (price_cents === null) return NextResponse.json({ error: "preço inválido" }, { status: 400 });
+
+  const cityRaw = form.get("city_id");
+  const cityIdNum = cityRaw ? Number(cityRaw) : null;
+  const cityId = cityIdNum !== null && Number.isNaN(cityIdNum) ? null : cityIdNum;
 
   const admin = createAdminClient();
   // upsert do anúncio único (profile_id unique)
