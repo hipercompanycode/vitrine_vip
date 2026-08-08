@@ -2,16 +2,26 @@ import Link from "next/link";
 import { formatBRL, timeAgo } from "@/lib/format";
 import CardMediaPlaceholder from "./CardMediaPlaceholder";
 import AvailableBadge from "./AvailableBadge";
+import LikeButton from "./LikeButton";
+import FavoriteButton from "./FavoriteButton";
 import type { AdCardData } from "./AdCard";
 
 export default function AdDetail({
   ad,
   now,
   backHref = "/",
+  interactions,
 }: {
   ad: AdCardData;
   now: Date;
   backHref?: string;
+  interactions?: {
+    likeCount: number;
+    liked: boolean;
+    favorited: boolean;
+    canInteract: boolean;
+    loggedIn: boolean;
+  };
 }) {
   const digits = ad.whatsapp.replace(/\D/g, "");
   const waText = encodeURIComponent(`Olá! Vi seu anúncio "${ad.title}" e tenho interesse.`);
@@ -59,6 +69,15 @@ export default function AdDetail({
             </span>
           )}
         </div>
+
+        {interactions && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <LikeButton adId={ad.id} initialActive={interactions.liked} initialCount={interactions.likeCount}
+              canInteract={interactions.canInteract} loggedIn={interactions.loggedIn} />
+            <FavoriteButton adId={ad.id} initialActive={interactions.favorited}
+              canInteract={interactions.canInteract} loggedIn={interactions.loggedIn} />
+          </div>
+        )}
 
         <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-ink/90">
           {ad.description || "Sem descrição."}

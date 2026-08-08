@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/SiteHeader";
 import AdDetail from "@/components/AdDetail";
 import type { AdCardData } from "@/components/AdCard";
@@ -50,10 +50,38 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     whatsapp: profile?.whatsapp ?? "",
   };
 
+  // interações: contagem de curtidas + estado do usuário logado
+  const ssr = await createServerClient();
+  const { data: { user } } = await ssr.auth.getUser();
+  const { count: likeCount } = await admin
+    .from("likes").select("*", { count: "exact", head: true }).eq("ad_id", data.id);
+
+  let liked = false;
+  let favorited = false;
+  let role: string | null = null;
+  if (user) {
+    const [{ data: l }, { data: f }, { data: p }] = await Promise.all([
+      admin.from("likes").select("id").eq("ad_id", data.id).eq("user_id", user.id).maybeSingle(),
+      admin.from("favorites").select("id").eq("ad_id", data.id).eq("user_id", user.id).maybeSingle(),
+      admin.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+    ]);
+    liked = !!l;
+    favorited = !!f;
+    role = (p?.role as string | undefined) ?? null;
+  }
+
+  const interactions = {
+    likeCount: likeCount ?? 0,
+    liked,
+    favorited,
+    canInteract: role === "comum",
+    loggedIn: !!user,
+  };
+
   return (
     <>
       <SiteHeader />
-      <AdDetail ad={data} now={new Date()} backHref="/" />
+      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} />
     </>
   );
 }
