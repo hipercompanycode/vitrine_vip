@@ -6,6 +6,7 @@ import type { AdCardData } from "@/components/AdCard";
 import { canInteract, type Role } from "@/lib/roles";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList, { type ReviewItem } from "@/components/ReviewList";
+import ReportButton from "@/components/ReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,9 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
       <SiteHeader />
       <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
+        {interactions.canInteract && (
+          <div className="mb-6"><ReportButton adId={data.id} /></div>
+        )}
         <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações</h2>
         {interactions.canInteract ? (
           <div className="mb-4"><ReviewForm adId={data.id} /></div>
