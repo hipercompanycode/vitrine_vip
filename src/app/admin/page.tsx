@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/admin";
+import { isAdminUser } from "@/lib/admin";
 import { reasonLabel } from "@/lib/interactions";
 import { timeAgo } from "@/lib/format";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!isAdmin(user?.email, process.env.ADMIN_EMAIL)) notFound();
+  if (!isAdminUser(user, process.env.ADMIN_EMAIL)) notFound();
 
   const admin = createAdminClient();
   const { data: reports } = await admin

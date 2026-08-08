@@ -11,6 +11,7 @@ export async function POST(request: Request) {
   const adId = String(form.get("ad_id") ?? "");
   if (!reviewId) return NextResponse.json({ error: "review_id obrigatório" }, { status: 400 });
 
-  await supabase.from("reviews").delete().eq("id", reviewId).eq("user_id", user.id);
+  const { error } = await supabase.from("reviews").delete().eq("id", reviewId).eq("user_id", user.id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.redirect(new URL(`/anuncio/${adId}`, request.url), { status: 303 });
 }

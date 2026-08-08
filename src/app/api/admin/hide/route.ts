@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/admin";
+import { isAdminUser } from "@/lib/admin";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!isAdmin(user?.email, process.env.ADMIN_EMAIL)) {
+  if (!isAdminUser(user, process.env.ADMIN_EMAIL)) {
     return NextResponse.json({ error: "acesso negado" }, { status: 403 });
   }
 
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  await admin.from("ads").update({ status }).eq("id", adId);
+  const { error } = await admin.from("ads").update({ status }).eq("id", adId);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.redirect(new URL("/admin", request.url), { status: 303 });
 }
