@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatBRL, timeAgo } from "@/lib/format";
 import WhatsAppButton from "./WhatsAppButton";
 import CardMediaPlaceholder from "./CardMediaPlaceholder";
@@ -18,16 +19,25 @@ export default function AdCard({
   ad,
   now,
   index = 0,
+  hrefBase = "/anuncio",
 }: {
   ad: AdCardData;
   now: Date;
   index?: number;
+  hrefBase?: string;
 }) {
   return (
     <article
-      className="animate-rise group flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
+      className="animate-rise group relative flex cursor-pointer flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
+      {/* link esticado: cobre o card inteiro; WhatsApp fica acima (z maior) */}
+      <Link
+        href={`${hrefBase}/${ad.id}`}
+        aria-label={`Ver anúncio: ${ad.title}`}
+        className="absolute inset-0 z-[1]"
+      />
+
       <div className="relative">
         <CardMediaPlaceholder title={ad.title} className="aspect-[4/3] w-full" />
         {ad.is_available && (
@@ -41,7 +51,7 @@ export default function AdCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-4">
-        <h3 className="font-display text-[15px] font-bold leading-tight text-ink">
+        <h3 className="font-display text-[15px] font-bold leading-tight text-ink transition-colors group-hover:text-accent">
           {ad.title}
         </h3>
         <p className="line-clamp-2 min-h-[2.5rem] text-sm leading-snug text-muted">
@@ -69,7 +79,10 @@ export default function AdCard({
               </div>
             )}
           </div>
-          <WhatsAppButton phone={ad.whatsapp} adTitle={ad.title} />
+          {/* acima do link esticado para permanecer clicável */}
+          <span className="relative z-10">
+            <WhatsAppButton phone={ad.whatsapp} adTitle={ad.title} />
+          </span>
         </div>
       </div>
     </article>
