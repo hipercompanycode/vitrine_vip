@@ -849,15 +849,15 @@ export async function GET(request: Request) {
 
 - [ ] **Step 4: Logout**
 
-Create `src/app/logout/route.ts`:
+Create `src/app/logout/route.ts` (POST only — evita CSRF de logout forçado via GET):
 ```ts
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   const supabase = await createServerClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(`${new URL(request.url).origin}/`);
+  return NextResponse.redirect(`${new URL(request.url).origin}/`, { status: 303 });
 }
 ```
 
@@ -990,7 +990,9 @@ export default async function PerfilPage() {
     <div className="mx-auto max-w-lg p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Meu anúncio</h1>
-        <a href="/logout" className="text-sm underline">Sair</a>
+        <form action="/logout" method="post">
+          <button className="text-sm underline">Sair</button>
+        </form>
       </div>
       <AdForm ad={ad ?? null} cities={cities ?? []} />
       {ad && <AdActions ad={ad} />}
