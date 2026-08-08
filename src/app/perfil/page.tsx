@@ -9,9 +9,10 @@ export default async function PerfilPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const [{ data: ad }, { data: cities }] = await Promise.all([
+  const [{ data: ad }, { data: cities }, { data: profile }] = await Promise.all([
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
     admin.from("cities").select("id,name,uf").order("name"),
+    admin.from("profiles").select("name,whatsapp").eq("id", user.id).maybeSingle(),
   ]);
 
   return (
@@ -22,6 +23,13 @@ export default async function PerfilPage() {
           <button className="text-sm underline">Sair</button>
         </form>
       </div>
+      <form action="/api/profile" method="post" className="space-y-2 border-b pb-4">
+        <input name="name" defaultValue={profile?.name ?? ""} placeholder="Seu nome"
+          className="w-full border rounded p-2" />
+        <input name="whatsapp" defaultValue={profile?.whatsapp ?? ""} placeholder="WhatsApp (ex: 5511999999999)"
+          className="w-full border rounded p-2" />
+        <button className="border rounded p-2 w-full">Salvar contato</button>
+      </form>
       <AdForm ad={ad ?? null} cities={cities ?? []} />
       {ad && <AdActions ad={ad} />}
     </div>
