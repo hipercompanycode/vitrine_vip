@@ -3,6 +3,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/SiteHeader";
 import AdDetail from "@/components/AdDetail";
 import type { AdCardData } from "@/components/AdCard";
+import { canInteract, type Role } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -74,7 +75,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     likeCount: likeCount ?? 0,
     liked,
     favorited,
-    canInteract: role === "comum",
+    canInteract: canInteract(role as Role | null),
     loggedIn: !!user,
   };
 

@@ -17,17 +17,50 @@ export default async function ContaPage() {
 
   let ads: AdCardData[] = [];
   if (favIds.length > 0) {
-    const { data } = await admin
+    const nowIso = new Date().toISOString();
+    const { data: rows } = await admin
       .from("ads")
-      .select("id, title, description, price_cents, is_available, created_at, cities ( name, uf ), profiles ( whatsapp )")
+      .select("id, title, description, price_cents, is_available, created_at, profile_id, cities ( name, uf ), profiles ( whatsapp )")
       .in("id", favIds)
       .eq("status", "active");
-    ads = (data ?? []).map((r: any) => ({
-      id: r.id, title: r.title, description: r.description, price_cents: r.price_cents,
-      is_available: r.is_available, created_at: r.created_at,
-      city: r.cities ? { name: (Array.isArray(r.cities) ? r.cities[0] : r.cities).name, uf: (Array.isArray(r.cities) ? r.cities[0] : r.cities).uf } : null,
-      whatsapp: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.whatsapp ?? "",
-    }));
+
+    const candidates = (rows ?? []) as any[];
+
+    // só anúncios publicamente visíveis: dono com assinatura ativa
+    const profileIds = Array.from(new Set(candidates.map((r) => r.profile_id)));
+    let activeProfiles = new Set<string>();
+    if (profileIds.length > 0) {
+      const { data: subs } = await admin
+        .from("subscriptions").select("profile_id")
+        .eq("status", "active").gt("current_period_end", nowIso)
+        .in("profile_id", profileIds);
+      activeProfiles = new Set(((subs ?? []) as { profile_id: string }[]).map((s) => s.profile_id));
+    }
+    const visible = candidates.filter((r) => activeProfiles.has(r.profile_id));
+
+    // preserva a ordem dos favoritos (mais recentes primeiro)
+    const order = new Map(favIds.map((id, i) => [id, i] as const));
+    visible.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+
+    // contagem de curtidas
+    const ids = visible.map((r) => r.id);
+    const counts = new Map<string, number>();
+    if (ids.length > 0) {
+      const { data: likeRows } = await admin.from("likes").select("ad_id").in("ad_id", ids);
+      ((likeRows ?? []) as { ad_id: string }[]).forEach((r) => counts.set(r.ad_id, (counts.get(r.ad_id) ?? 0) + 1));
+    }
+
+    ads = visible.map((r) => {
+      const city = (Array.isArray(r.cities) ? r.cities[0] : r.cities) ?? null;
+      const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+      return {
+        id: r.id, title: r.title, description: r.description, price_cents: r.price_cents,
+        is_available: r.is_available, created_at: r.created_at,
+        city: city ? { name: city.name, uf: city.uf } : null,
+        whatsapp: profile?.whatsapp ?? "",
+        like_count: counts.get(r.id) ?? 0,
+      };
+    });
   }
 
   const now = new Date();
