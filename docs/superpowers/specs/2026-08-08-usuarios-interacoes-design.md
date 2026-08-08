@@ -12,15 +12,19 @@ anunciante (que paga e publica), entra o **usuário comum** (só interage) e o
 
 ## 2. Papéis
 
-Três papéis, escolha **no cadastro** (fixa, não muda depois):
+Dois papéis de **cadastro** (escolha fixa, não muda depois):
 
 - **Anunciante** — paga assinatura, gerencia **1 anúncio**. **Não** curte/avalia/favorita/denuncia.
 - **Usuário comum** — **não** anuncia. Curte, favorita, avalia e denuncia anúncios.
-- **Admin** — flag `is_admin` no perfil, setada **manualmente** no banco. Modera denúncias.
+
+E um acesso especial, fora do cadastro:
+
+- **Admin** — **apenas você**, **um único admin**. Determinado por **e-mail configurado**
+  (env `ADMIN_EMAIL`), não é opção de cadastro nem flag no banco. Modera denúncias.
 
 Regras:
 - Papel guardado em `profiles.role` ('anunciante' | 'comum').
-- `is_admin` é ortogonal ao papel (normalmente um admin é uma conta à parte).
+- Admin = o usuário logado cujo e-mail == `ADMIN_EMAIL` (checado no servidor). Só existe um.
 - Visitante **sem login** navega e vê tudo; para **interagir** precisa logar como `comum`.
 
 ## 3. Autenticação (mudança)
@@ -54,7 +58,8 @@ Regras:
 
 ## 5. Admin / moderação
 
-- Rota **/admin**, acessível só se `is_admin`.
+- Rota **/admin**, acessível só se o e-mail do usuário logado == `ADMIN_EMAIL` (senão 404).
+- Dados via **service role** em rota de servidor (não depende de RLS por flag).
 - Lista de **denúncias** (mais recentes), com link para o anúncio.
 - Ações: **ocultar** (`ads.status = 'hidden'`) e **reexibir** (`'active'`).
 - Marcar denúncia como `reviewed`.
@@ -63,8 +68,8 @@ Regras:
 
 Alterações e novas tabelas:
 
-- **profiles** (alterar): + `role text not null default 'comum'` ('anunciante'|'comum'),
-  + `is_admin boolean not null default false`.
+- **profiles** (alterar): + `role text not null default 'comum'` ('anunciante'|'comum').
+  (Sem `is_admin` — admin é via `ADMIN_EMAIL`, um único.)
 - **likes**: `id`, `ad_id → ads`, `user_id → profiles`, `created_at`. UNIQUE(ad_id, user_id).
 - **favorites**: `id`, `ad_id`, `user_id`, `created_at`. UNIQUE(ad_id, user_id).
 - **reviews**: `id`, `ad_id`, `user_id`, `comment text null`, `tags text[] not null default '{}'`,
@@ -84,8 +89,10 @@ para a listagem; simples para o detalhe). Sem coluna denormalizada agora.
 - **likes**: leitura pública (para contar/exibir).
 - **reviews**: leitura pública (aparecem no anúncio).
 - **favorites**: leitura só do dono (`user_id = auth.uid()`).
-- **reports**: leitura só do **dono** ou de **admin** (`is_admin`); escrita: dono cria.
-- **admin**: `is_admin` pode `select` reports e `update ads.status`.
+- **reports**: leitura só do **dono** (`user_id = auth.uid()`); escrita: dono cria.
+  O admin lê as denúncias via **service role** na rota `/admin` (não por RLS).
+- **admin**: ações (ler todas as denúncias, `update ads.status`) rodam em **rota de servidor**
+  com service role, gated por `email == ADMIN_EMAIL`.
 - Papel `anunciante` **não** consegue inserir like/favorite/review/report (checado por RLS
   via `profiles.role`).
 - Reforço no servidor (rotas) além da RLS para mutações sensíveis.
@@ -116,7 +123,8 @@ para a listagem; simples para o detalhe). Sem coluna denormalizada agora.
 
 ## 11. Decisões registradas
 
-- 3 papéis; escolha fixa no cadastro; login só e-mail/senha (sem Google).
+- 2 papéis de cadastro (Anunciante/Comum), escolha fixa; login só e-mail/senha (sem Google).
+- Admin único = você, via env `ADMIN_EMAIL` (não é cadastro nem flag no banco).
 - Curtir (contador) **e** favoritar (lista privada) são ações distintas.
 - Avaliar = comentário opcional + selos (`Igual à foto`, `Não é fake`, `Recomendo`), várias por usuário.
 - Denúncia: `Fake/enganoso`, `Golpe`, `Outro`; opção **B** (registra + painel admin).
