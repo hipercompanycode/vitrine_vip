@@ -69,6 +69,14 @@ export default async function Home() {
     };
   });
 
+  if (ads.length > 0) {
+    const ids = ads.map((a) => a.id);
+    const { data: likeRows } = await admin.from("likes").select("ad_id").in("ad_id", ids);
+    const counts = new Map<string, number>();
+    (likeRows ?? []).forEach((r: { ad_id: string }) => counts.set(r.ad_id, (counts.get(r.ad_id) ?? 0) + 1));
+    ads.forEach((a) => { a.like_count = counts.get(a.id) ?? 0; });
+  }
+
   return (
     <>
       <SiteHeader />

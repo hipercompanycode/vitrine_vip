@@ -13,6 +13,7 @@ export type AdCardData = {
   created_at: string;
   city: { name: string; uf: string } | null;
   whatsapp: string;
+  like_count?: number;
 };
 
 export default function AdCard({
@@ -48,6 +49,14 @@ export default function AdCard({
         <span className="absolute right-3 top-3 rounded-pill bg-ink/55 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
           {timeAgo(new Date(ad.created_at), now)}
         </span>
+        {typeof ad.like_count === "number" && ad.like_count > 0 && (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-pill bg-ink/55 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z" />
+            </svg>
+            {ad.like_count}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-4">
