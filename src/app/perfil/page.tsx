@@ -25,10 +25,10 @@ export default async function PerfilPage() {
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <Link href="/" className="inline-flex items-baseline gap-0.5">
             <span className="font-display text-xl font-extrabold tracking-tight text-ink">serviços</span>
-            <span className="h-2 w-2 rounded-full bg-coral" />
+            <span className="h-2 w-2 rounded-full bg-accent" />
           </Link>
           <form action="/logout" method="post">
-            <button className="rounded-pill px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-coral-soft hover:text-coral">
+            <button className="rounded-pill px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-accent-soft hover:text-accent">
               Sair
             </button>
           </form>

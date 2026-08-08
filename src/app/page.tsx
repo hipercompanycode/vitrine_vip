@@ -113,7 +113,7 @@ export default async function Home() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center rounded-card border border-dashed border-line bg-surface/60 px-6 py-16 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-coral-soft text-coral">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 3v18M3 12h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
@@ -124,7 +124,7 @@ function EmptyState() {
       </p>
       <Link
         href="/perfil"
-        className="mt-5 inline-flex items-center gap-1.5 rounded-pill bg-coral px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-coral-strong active:scale-95"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-pill bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-strong active:scale-95"
       >
         Criar meu anúncio
       </Link>
@@ -137,7 +137,7 @@ function SiteFooter() {
     <footer className="border-t border-line/70">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted sm:flex-row">
         <span className="font-display font-bold text-ink">
-          serviços<span className="text-coral">.</span>
+          serviços<span className="text-accent">.</span>
         </span>
         <span>Contato direto via WhatsApp · anúncios locais</span>
       </div>

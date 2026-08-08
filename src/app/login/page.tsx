@@ -56,7 +56,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 inline-flex items-baseline gap-0.5">
           <span className="font-display text-2xl font-extrabold tracking-tight text-ink">serviços</span>
-          <span className="h-2 w-2 rounded-full bg-coral" />
+          <span className="h-2 w-2 rounded-full bg-accent" />
         </Link>
 
         <div className="rounded-card border border-line bg-surface p-6 shadow-card sm:p-8">
@@ -90,7 +90,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-input bg-coral py-2.5 text-sm font-semibold text-white transition-all hover:bg-coral-strong active:scale-[0.98] disabled:opacity-60"
+              className="w-full rounded-input bg-accent py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
             >
               {loading === "entrar" ? "Entrando…" : "Entrar"}
             </button>
@@ -98,7 +98,7 @@ export default function LoginPage() {
               type="button"
               onClick={cadastrar}
               disabled={busy}
-              className="w-full rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-coral-soft disabled:opacity-60"
+              className="w-full rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-soft disabled:opacity-60"
             >
               {loading === "cadastrar" ? "Criando…" : "Criar conta"}
             </button>
@@ -130,7 +130,7 @@ export default function LoginPage() {
               className={`mt-4 rounded-input px-3 py-2 text-sm ${
                 msgType === "error"
                   ? "bg-red-50 text-red-700"
-                  : "bg-coral-soft text-coral-strong"
+                  : "bg-accent-soft text-accent-strong"
               }`}
             >
               {msg}
@@ -170,7 +170,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-coral focus:outline-none"
+        className="w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none"
       />
     </label>
   );

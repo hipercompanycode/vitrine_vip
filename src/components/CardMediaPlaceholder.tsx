@@ -2,14 +2,14 @@
 // Usado enquanto fotos/vídeos (Plano 2) não existem — parece intencional, não "faltando".
 
 const GRADIENTS = [
-  ["#FB5533", "#FF9E3D"], // coral → âmbar
-  ["#2CA6A4", "#7BD6C6"], // teal
-  ["#7C5CFC", "#B79BFF"], // violeta suave
-  ["#F0705A", "#F7B267"], // terracota
-  ["#2D9CDB", "#7FD1FF"], // azul
-  ["#E0538A", "#FF9EC4"], // rosa
-  ["#3FA34D", "#9BE08A"], // verde folha
-  ["#E6A400", "#FFD86B"], // mostarda
+  ["#FF2E88", "#FF7AB8"], // rosa forte
+  ["#7C2BFF", "#B57BFF"], // violeta
+  ["#2CA6A4", "#59E0D0"], // teal
+  ["#FF5D8F", "#FFA36C"], // rosa → coral
+  ["#2D7FFF", "#7FB2FF"], // azul
+  ["#E0538A", "#FF9EC4"], // rosa suave
+  ["#00B894", "#55EFC4"], // verde menta
+  ["#F5A623", "#FFD86B"], // âmbar
 ];
 
 function pick(seed: string): [string, string] {

@@ -5,7 +5,7 @@ export default function HomeFilters({ city = "São Paulo, SP" }: { city?: string
     <div className="flex flex-col gap-2 rounded-card border border-line bg-surface/70 p-2 shadow-card backdrop-blur sm:flex-row sm:items-center">
       <button
         type="button"
-        className="inline-flex shrink-0 items-center gap-2 rounded-input px-3 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-coral-soft"
+        className="inline-flex shrink-0 items-center gap-2 rounded-input px-3 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-soft"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
