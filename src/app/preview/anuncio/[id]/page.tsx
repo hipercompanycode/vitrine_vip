@@ -14,7 +14,8 @@ export default async function PreviewAnuncioPage({ params }: { params: Promise<{
   return (
     <>
       <PreviewNav active="home" />
-      <AdDetail ad={ad} now={new Date()} backHref="/preview" />
+      <AdDetail ad={ad} now={new Date()} backHref="/preview"
+        interactions={{ likeCount: ad.like_count ?? 0, liked: false, favorited: false, canInteract: true, loggedIn: true }} />
     </>
   );
 }

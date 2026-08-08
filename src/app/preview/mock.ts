@@ -17,6 +17,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(6),
       city: { name: "São Paulo", uf: "SP" },
       whatsapp: "5511999990001",
+      like_count: 12,
     },
     {
       id: "2",
@@ -28,6 +29,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(28),
       city: { name: "Guarulhos", uf: "SP" },
       whatsapp: "5511999990002",
+      like_count: 5,
     },
     {
       id: "3",
@@ -39,6 +41,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(52),
       city: { name: "Osasco", uf: "SP" },
       whatsapp: "5511999990003",
+      like_count: 30,
     },
     {
       id: "4",
@@ -50,6 +53,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(120),
       city: { name: "Campinas", uf: "SP" },
       whatsapp: "5519999990004",
+      like_count: 0,
     },
     {
       id: "5",
@@ -61,6 +65,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(180),
       city: { name: "Santo André", uf: "SP" },
       whatsapp: "5511999990005",
+      like_count: 8,
     },
     {
       id: "6",
@@ -72,6 +77,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(60 * 6),
       city: { name: "São Paulo", uf: "SP" },
       whatsapp: "5511999990006",
+      like_count: 3,
     },
     {
       id: "7",
@@ -83,6 +89,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(60 * 20),
       city: { name: "Niterói", uf: "RJ" },
       whatsapp: "5521999990007",
+      like_count: 21,
     },
     {
       id: "8",
@@ -94,6 +101,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(60 * 30),
       city: { name: "Rio de Janeiro", uf: "RJ" },
       whatsapp: "5521999990008",
+      like_count: 1,
     },
     {
       id: "9",
@@ -105,6 +113,7 @@ export function getPreviewAds(): AdCardData[] {
       created_at: isoMinutesAgo(60 * 46),
       city: { name: "Curitiba", uf: "PR" },
       whatsapp: "5541999990009",
+      like_count: 14,
     },
   ];
 }
