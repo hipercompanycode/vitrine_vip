@@ -6,6 +6,7 @@ import AdForm from "./ad-form";
 import AdActions from "./ad-actions";
 import MediaManager from "@/components/MediaManager";
 import StoryManager from "@/components/StoryManager";
+import BillingButton from "@/components/BillingButton";
 import { inputCls, labelCls, cardCls, btnSecondary } from "@/components/ui";
 
 export default async function PerfilPage() {
@@ -20,11 +21,15 @@ export default async function PerfilPage() {
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
     admin.from("cities").select("id,name,uf").order("name"),
     admin.from("profiles").select("name,whatsapp").eq("id", user.id).maybeSingle(),
-    admin.from("subscriptions").select("status, current_period_end, plans ( allows_story )").eq("profile_id", user.id).maybeSingle(),
+    admin
+      .from("subscriptions")
+      .select("status, method, current_period_end, stripe_customer_id, plans ( allows_story )")
+      .eq("profile_id", user.id)
+      .maybeSingle(),
   ]);
 
-  // Assinatura já buscada acima (única por profile_id) — reutilizada tanto para o
-  // CTA "ver planos" quanto para liberar o Story 24h.
+  // Assinatura já buscada acima (única por profile_id) — reutilizada para o CTA
+  // "ver planos", para liberar o Story 24h e para a seção "Assinatura" abaixo.
   const active = isActive(sub as { status: string; current_period_end: string | null } | null, new Date());
   const allowsStory = active && ((sub?.plans as unknown as { allows_story: boolean } | null)?.allows_story ?? false);
 
@@ -67,6 +72,24 @@ export default async function PerfilPage() {
             Seu anúncio fica visível com um plano ativo — ver planos
           </Link>
         )}
+
+        <section className={cardCls}>
+          <h2 className="font-display text-base font-bold text-ink">Assinatura</h2>
+          {active ? (
+            <p className="mt-1 text-sm text-muted">
+              Ativa ({sub?.method === "pix" ? "Pix" : "Cartão"}) até {new Date(sub!.current_period_end!).toLocaleDateString("pt-BR")}.
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-muted">
+              Sem assinatura ativa. <a href="/planos" className="text-accent underline">Ver planos</a>.
+            </p>
+          )}
+          {sub?.method === "card" && sub?.stripe_customer_id && (
+            <div className="mt-3">
+              <BillingButton />
+            </div>
+          )}
+        </section>
 
         <section className={cardCls}>
           <h2 className="font-display text-base font-bold text-ink">Seu contato</h2>
