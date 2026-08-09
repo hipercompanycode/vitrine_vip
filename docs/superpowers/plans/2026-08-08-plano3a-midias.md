@@ -281,6 +281,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "parâmetros inválidos" }, { status: 400 });
   }
 
+  // Segurança: o caminho DEVE estar sob o prefixo do próprio usuário/anúncio.
+  // Evita registrar (e depois apagar via service role) mídia de outro usuário.
+  if (!storagePath.startsWith(`${user.id}/${adId}/`)) {
+    return NextResponse.json({ error: "caminho inválido" }, { status: 400 });
+  }
+
   const admin = createAdminClient();
   // dono do anúncio?
   const { data: ad } = await admin.from("ads").select("id, profile_id").eq("id", adId).maybeSingle();
