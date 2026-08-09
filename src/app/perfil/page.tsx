@@ -4,6 +4,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import AdForm from "./ad-form";
 import AdActions from "./ad-actions";
 import MediaManager from "@/components/MediaManager";
+import StoryManager from "@/components/StoryManager";
 import { inputCls, labelCls, cardCls, btnSecondary } from "@/components/ui";
 
 export default async function PerfilPage() {
@@ -23,6 +24,17 @@ export default async function PerfilPage() {
   const media = ad
     ? (await admin.from("ad_media").select("id, type, storage_path, is_cover").eq("ad_id", ad.id).order("position")).data ?? []
     : [];
+
+  let allowsStory = false;
+  let hasStory = false;
+  if (ad) {
+    const [{ data: sub }, { data: st }] = await Promise.all([
+      admin.from("subscriptions").select("plans ( allows_story )").eq("profile_id", user.id).eq("status", "active").gt("current_period_end", new Date().toISOString()).maybeSingle(),
+      admin.from("stories").select("id").eq("ad_id", ad.id).gt("expires_at", new Date().toISOString()).maybeSingle(),
+    ]);
+    allowsStory = (sub?.plans as unknown as { allows_story: boolean } | null)?.allows_story ?? false;
+    hasStory = !!st;
+  }
 
   return (
     <>
@@ -92,6 +104,13 @@ export default async function PerfilPage() {
           <section className={cardCls}>
             <h2 className="mb-4 font-display text-base font-bold text-ink">Fotos e vídeos</h2>
             <MediaManager adId={ad.id} userId={user.id} initial={media} />
+          </section>
+        )}
+
+        {ad && allowsStory && (
+          <section className={cardCls}>
+            <h2 className="mb-2 font-display text-base font-bold text-ink">Story 24h</h2>
+            <StoryManager adId={ad.id} userId={user.id} hasStory={hasStory} />
           </section>
         )}
       </main>
