@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import AdForm from "./ad-form";
 import AdActions from "./ad-actions";
+import MediaManager from "@/components/MediaManager";
 import { inputCls, labelCls, cardCls, btnSecondary } from "@/components/ui";
 
 export default async function PerfilPage() {
@@ -18,6 +19,10 @@ export default async function PerfilPage() {
     admin.from("cities").select("id,name,uf").order("name"),
     admin.from("profiles").select("name,whatsapp").eq("id", user.id).maybeSingle(),
   ]);
+
+  const media = ad
+    ? (await admin.from("ad_media").select("id, type, storage_path, is_cover").eq("ad_id", ad.id).order("position")).data ?? []
+    : [];
 
   return (
     <>
@@ -81,6 +86,13 @@ export default async function PerfilPage() {
           <p className="px-1 text-center text-xs text-muted">
             Publique seu anúncio acima para liberar as ações de destaque e disponibilidade.
           </p>
+        )}
+
+        {ad && (
+          <section className={cardCls}>
+            <h2 className="mb-4 font-display text-base font-bold text-ink">Fotos e vídeos</h2>
+            <MediaManager adId={ad.id} userId={user.id} initial={media} />
+          </section>
         )}
       </main>
     </>
