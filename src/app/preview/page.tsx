@@ -25,7 +25,7 @@ export default function PreviewPage() {
             Encontre quem resolve — ou anuncie o seu. Contato direto, sem intermediário.
           </p>
           <div className="mt-5 sm:mt-6">
-            <HomeFilters />
+            <HomeFilters cityLabel="São Paulo - SP" nearby={true} />
           </div>
         </section>
 
