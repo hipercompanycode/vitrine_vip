@@ -1,5 +1,6 @@
--- Unique para permitir re-seed idempotente sem quebrar FK
-alter table public.cities add constraint if not exists cities_name_uf_uniq unique (name, uf);
+-- Unique para permitir re-seed idempotente (on conflict (name,uf)) sem quebrar FK.
+-- Índice único (não constraint) para suportar "if not exists"; ON CONFLICT infere pelo índice.
+create unique index if not exists cities_name_uf_uniq on public.cities (name, uf);
 create index if not exists cities_latlng_idx on public.cities (lat, lng);
 
 -- Cidade mais próxima de um ponto (ordena pelo termo haversine, monotônico com a distância)
