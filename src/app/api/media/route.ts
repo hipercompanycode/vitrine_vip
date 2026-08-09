@@ -15,6 +15,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "parâmetros inválidos" }, { status: 400 });
   }
 
+  if (!storagePath.startsWith(`${user.id}/${adId}/`)) {
+    return NextResponse.json({ error: "caminho inválido" }, { status: 400 });
+  }
+
   const admin = createAdminClient();
   // dono do anúncio?
   const { data: ad } = await admin.from("ads").select("id, profile_id").eq("id", adId).maybeSingle();
