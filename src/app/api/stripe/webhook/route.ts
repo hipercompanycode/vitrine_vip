@@ -23,9 +23,13 @@ export async function POST(request: Request) {
   try {
     switch (event.type) {
       case "invoice.paid": {
-        const inv = event.data.object as unknown as { subscription: string | null };
-        if (!inv.subscription) break;
-        const sub = (await stripe.subscriptions.retrieve(inv.subscription)) as unknown as {
+        const inv = event.data.object as unknown as {
+          parent?: { subscription_details?: { subscription?: string | { id: string } } | null } | null;
+        };
+        const rawSub = inv.parent?.subscription_details?.subscription;
+        const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id;
+        if (!subscriptionId) break;
+        const sub = (await stripe.subscriptions.retrieve(subscriptionId)) as unknown as {
           id: string;
           customer: string;
           status: string;
@@ -57,6 +61,9 @@ export async function POST(request: Request) {
         };
         const profileId = sub.metadata?.profile_id;
         if (!profileId) break;
+        const { data: row } = await admin
+          .from("subscriptions").select("stripe_subscription_id").eq("profile_id", profileId).maybeSingle();
+        if (row?.stripe_subscription_id && row.stripe_subscription_id !== sub.id) break;
         const subPeriodEndUnix = sub.items?.data?.[0]?.current_period_end;
         if (subPeriodEndUnix == null) break;
         const status = event.type === "customer.subscription.deleted" ? "canceled" : mapStripeStatus(sub.status);
