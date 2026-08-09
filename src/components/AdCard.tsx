@@ -14,6 +14,7 @@ export type AdCardData = {
   city: { name: string; uf: string } | null;
   whatsapp: string;
   like_count?: number;
+  cover_url?: string | null;
 };
 
 export default function AdCard({
@@ -40,7 +41,9 @@ export default function AdCard({
       />
 
       <div className="relative">
-        <CardMediaPlaceholder title={ad.title} className="aspect-[4/3] w-full" />
+        {ad.cover_url
+          ? <img src={ad.cover_url} alt={ad.title} className="aspect-[4/3] w-full object-cover" />
+          : <CardMediaPlaceholder title={ad.title} className="aspect-[4/3] w-full" />}
         {ad.is_available && (
           <div className="absolute left-3 top-3">
             <AvailableBadge />

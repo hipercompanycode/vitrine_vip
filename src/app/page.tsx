@@ -75,6 +75,14 @@ export default async function Home() {
     const counts = new Map<string, number>();
     (likeRows ?? []).forEach((r: { ad_id: string }) => counts.set(r.ad_id, (counts.get(r.ad_id) ?? 0) + 1));
     ads.forEach((a) => { a.like_count = counts.get(a.id) ?? 0; });
+
+    const { data: covers } = await admin
+      .from("ad_media").select("ad_id, storage_path").eq("type", "photo").eq("is_cover", true).in("ad_id", ids);
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const { publicUrl } = await import("@/lib/storage");
+    const byAd = new Map<string, string>();
+    (covers ?? []).forEach((c: { ad_id: string; storage_path: string }) => byAd.set(c.ad_id, publicUrl(base, "ad-media", c.storage_path)));
+    ads.forEach((a) => { a.cover_url = byAd.get(a.id) ?? null; });
   }
 
   return (
