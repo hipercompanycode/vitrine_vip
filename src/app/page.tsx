@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import AdCard, { type AdCardData } from "@/components/AdCard";
 import SiteHeader from "@/components/SiteHeader";
@@ -37,9 +38,33 @@ export default async function Home() {
     new Set(((activeSubs ?? []) as { profile_id: string }[]).map((s) => s.profile_id))
   );
 
+  // Filtro geo: cookies city_id/nearby (setados via HomeFilters -> /api/geo/select).
+  // Sem cookie city_id -> sem filtro (comportamento atual, mostra tudo).
+  const jar = await cookies();
+  const cityIdRaw = jar.get("city_id")?.value;
+  const cityId = cityIdRaw && Number.isFinite(Number(cityIdRaw)) ? Number(cityIdRaw) : null;
+  const nearby = (jar.get("nearby")?.value ?? "1") !== "0";
+
+  let cityFilter: number[] | null = null;
+  let cityLabel: string | undefined;
+  if (cityId) {
+    const { data: cityRow } = await admin
+      .from("cities")
+      .select("name, uf")
+      .eq("id", cityId)
+      .maybeSingle();
+    if (cityRow) cityLabel = `${cityRow.name} - ${cityRow.uf}`;
+    if (nearby) {
+      const { data: ids } = await admin.rpc("nearby_city_ids", { p_city_id: cityId, p_km: 100 });
+      cityFilter = (ids ?? []).map((r: any) => (typeof r === "number" ? r : r.nearby_city_ids ?? r.id));
+    } else {
+      cityFilter = [cityId];
+    }
+  }
+
   let data: AdRow[] = [];
   if (activeProfileIds.length > 0) {
-    const res = await admin
+    let query = admin
       .from("ads")
       .select(`
         id, title, description, price_cents, is_available, created_at,
@@ -47,7 +72,9 @@ export default async function Home() {
         profiles ( whatsapp )
       `)
       .eq("status", "active")
-      .in("profile_id", activeProfileIds)
+      .in("profile_id", activeProfileIds);
+    if (cityFilter) query = query.in("city_id", cityFilter);
+    const res = await query
       .order("bumped_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
     if (res.error) console.error("home ads query:", res.error.message);
@@ -108,7 +135,7 @@ export default async function Home() {
             Encontre quem resolve — ou anuncie o seu. Contato direto, sem intermediário.
           </p>
           <div className="mt-5 sm:mt-6">
-            <HomeFilters />
+            <HomeFilters cityLabel={cityLabel} nearby={nearby} />
           </div>
         </section>
 
