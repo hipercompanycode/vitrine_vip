@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe-browser";
 import { btnPrimary } from "@/components/ui";
@@ -47,8 +47,10 @@ export default function SubscribeForm({ slug }: { slug: string }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const reqId = useRef(0);
 
   async function start(m: Method) {
+    const id = ++reqId.current;
     setMethod(m);
     setClientSecret(null);
     setErr(null);
@@ -59,7 +61,9 @@ export default function SubscribeForm({ slug }: { slug: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug }),
     });
+    if (id !== reqId.current) return;
     const data = await res.json();
+    if (id !== reqId.current) return;
     setLoading(false);
     if (!res.ok || !data.clientSecret) {
       setErr(data.error ?? "Falha ao iniciar pagamento.");
@@ -74,6 +78,7 @@ export default function SubscribeForm({ slug }: { slug: string }) {
         <button
           type="button"
           onClick={() => start("card")}
+          aria-pressed={method === "card"}
           className={`flex-1 rounded-input border py-2 text-sm font-semibold transition-colors ${method === "card" ? "border-accent bg-accent-soft text-accent" : "border-line text-muted"}`}
         >
           Cartão (mensal)
@@ -81,6 +86,7 @@ export default function SubscribeForm({ slug }: { slug: string }) {
         <button
           type="button"
           onClick={() => start("pix")}
+          aria-pressed={method === "pix"}
           className={`flex-1 rounded-input border py-2 text-sm font-semibold transition-colors ${method === "pix" ? "border-accent bg-accent-soft text-accent" : "border-line text-muted"}`}
         >
           Pix (30 dias)

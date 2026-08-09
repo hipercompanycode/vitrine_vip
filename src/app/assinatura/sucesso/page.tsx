@@ -9,10 +9,14 @@ export default function SucessoPage() {
     let tries = 0;
     const id = setInterval(async () => {
       tries++;
-      const res = await fetch("/api/subscription/status");
-      const data = await res.json();
-      if (data.active) { setState("active"); clearInterval(id); }
-      else if (tries >= 10) { setState("pending"); clearInterval(id); }
+      try {
+        const res = await fetch("/api/subscription/status");
+        const data = await res.json();
+        if (data.active) { setState("active"); clearInterval(id); }
+        else if (tries >= 10) { setState("pending"); clearInterval(id); }
+      } catch {
+        if (tries >= 10) { setState("pending"); clearInterval(id); }
+      }
     }, 2000);
     return () => clearInterval(id);
   }, []);
