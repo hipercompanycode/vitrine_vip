@@ -29,17 +29,19 @@ export async function POST(request: Request) {
           id: string;
           customer: string;
           status: string;
-          current_period_end: number;
+          items: { data: Array<{ current_period_end: number }> };
           metadata?: { profile_id?: string; plan_id?: string };
         };
         const profileId = sub.metadata?.profile_id;
         if (!profileId) break;
+        const invPeriodEndUnix = sub.items?.data?.[0]?.current_period_end;
+        if (invPeriodEndUnix == null) break;
         await admin.from("subscriptions").upsert({
           profile_id: profileId,
           plan_id: sub.metadata?.plan_id ? Number(sub.metadata.plan_id) : undefined,
           method: "card",
           status: mapStripeStatus(sub.status),
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          current_period_end: new Date(invPeriodEndUnix * 1000).toISOString(),
           stripe_customer_id: sub.customer as string,
           stripe_subscription_id: sub.id,
         }, { onConflict: "profile_id" });
@@ -48,16 +50,21 @@ export async function POST(request: Request) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as unknown as {
-          metadata?: { profile_id?: string }; status: string; current_period_end: number; id: string;
+          metadata?: { profile_id?: string };
+          status: string;
+          items: { data: Array<{ current_period_end: number }> };
+          id: string;
         };
         const profileId = sub.metadata?.profile_id;
         if (!profileId) break;
+        const subPeriodEndUnix = sub.items?.data?.[0]?.current_period_end;
+        if (subPeriodEndUnix == null) break;
         const status = event.type === "customer.subscription.deleted" ? "canceled" : mapStripeStatus(sub.status);
         await admin.from("subscriptions").upsert({
           profile_id: profileId,
           method: "card",
           status,
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          current_period_end: new Date(subPeriodEndUnix * 1000).toISOString(),
           stripe_subscription_id: sub.id,
         }, { onConflict: "profile_id" });
         break;
