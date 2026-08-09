@@ -7,6 +7,8 @@ import { canInteract, type Role } from "@/lib/roles";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 import ReportButton from "@/components/ReportButton";
+import { publicUrl } from "@/lib/storage";
+import type { GalleryItem } from "@/components/Gallery";
 
 export const dynamic = "force-dynamic";
 
@@ -93,10 +95,20 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
   }));
 
+  const { data: mediaRows } = await admin
+    .from("ad_media").select("type, storage_path, is_cover").eq("ad_id", data.id).order("position");
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const media: GalleryItem[] = (mediaRows ?? []).map((m: any) => ({
+    url: publicUrl(base, "ad-media", m.storage_path), type: m.type,
+  }));
+  const coverRow = (mediaRows ?? []).find((m: any) => m.is_cover && m.type === "photo")
+    ?? (mediaRows ?? []).find((m: any) => m.type === "photo");
+  const coverUrl = coverRow ? publicUrl(base, "ad-media", coverRow.storage_path) : null;
+
   return (
     <>
       <SiteHeader />
-      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} />
+      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} media={media} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
         {interactions.canInteract && (
           <div className="mb-6"><ReportButton adId={data.id} /></div>

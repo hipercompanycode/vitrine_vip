@@ -4,6 +4,7 @@ import CardMediaPlaceholder from "./CardMediaPlaceholder";
 import AvailableBadge from "./AvailableBadge";
 import LikeButton from "./LikeButton";
 import FavoriteButton from "./FavoriteButton";
+import Gallery, { type GalleryItem } from "./Gallery";
 import type { AdCardData } from "./AdCard";
 
 export default function AdDetail({
@@ -11,6 +12,8 @@ export default function AdDetail({
   now,
   backHref = "/",
   interactions,
+  coverUrl,
+  media,
 }: {
   ad: AdCardData;
   now: Date;
@@ -22,6 +25,8 @@ export default function AdDetail({
     canInteract: boolean;
     loggedIn: boolean;
   };
+  coverUrl?: string | null;
+  media?: GalleryItem[];
 }) {
   const digits = ad.whatsapp.replace(/\D/g, "");
   const waText = encodeURIComponent(`Olá! Vi seu anúncio "${ad.title}" e tenho interesse.`);
@@ -39,7 +44,9 @@ export default function AdDetail({
       </div>
 
       <div className="relative overflow-hidden rounded-card border border-line shadow-card">
-        <CardMediaPlaceholder title={ad.title} className="aspect-[16/10] w-full" />
+        {coverUrl
+          ? <img src={coverUrl} alt={ad.title} className="aspect-[16/10] w-full object-cover" />
+          : <CardMediaPlaceholder title={ad.title} className="aspect-[16/10] w-full" />}
         {ad.is_available && (
           <div className="absolute left-4 top-4">
             <AvailableBadge />
@@ -82,6 +89,10 @@ export default function AdDetail({
         <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-ink/90">
           {ad.description || "Sem descrição."}
         </p>
+
+        {media && media.length > 0 && (
+          <div className="mt-6"><Gallery items={media} /></div>
+        )}
       </div>
 
       {/* CTA WhatsApp — fixo no rodapé no mobile, inline no desktop */}
