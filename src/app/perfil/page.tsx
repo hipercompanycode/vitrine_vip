@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
+import { isActive } from "@/lib/subscription";
 import AdForm from "./ad-form";
 import AdActions from "./ad-actions";
 import MediaManager from "@/components/MediaManager";
@@ -15,24 +16,25 @@ export default async function PerfilPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const [{ data: ad }, { data: cities }, { data: profile }] = await Promise.all([
+  const [{ data: ad }, { data: cities }, { data: profile }, { data: sub }] = await Promise.all([
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
     admin.from("cities").select("id,name,uf").order("name"),
     admin.from("profiles").select("name,whatsapp").eq("id", user.id).maybeSingle(),
+    admin.from("subscriptions").select("status, current_period_end, plans ( allows_story )").eq("profile_id", user.id).maybeSingle(),
   ]);
+
+  // Assinatura já buscada acima (única por profile_id) — reutilizada tanto para o
+  // CTA "ver planos" quanto para liberar o Story 24h.
+  const active = isActive(sub as { status: string; current_period_end: string | null } | null, new Date());
+  const allowsStory = active && ((sub?.plans as unknown as { allows_story: boolean } | null)?.allows_story ?? false);
 
   const media = ad
     ? (await admin.from("ad_media").select("id, type, storage_path, is_cover").eq("ad_id", ad.id).order("position")).data ?? []
     : [];
 
-  let allowsStory = false;
   let hasStory = false;
   if (ad) {
-    const [{ data: sub }, { data: st }] = await Promise.all([
-      admin.from("subscriptions").select("plans ( allows_story )").eq("profile_id", user.id).eq("status", "active").gt("current_period_end", new Date().toISOString()).maybeSingle(),
-      admin.from("stories").select("id").eq("ad_id", ad.id).gt("expires_at", new Date().toISOString()).maybeSingle(),
-    ]);
-    allowsStory = (sub?.plans as unknown as { allows_story: boolean } | null)?.allows_story ?? false;
+    const { data: st } = await admin.from("stories").select("id").eq("ad_id", ad.id).gt("expires_at", new Date().toISOString()).maybeSingle();
     hasStory = !!st;
   }
 
@@ -59,6 +61,12 @@ export default async function PerfilPage() {
           </h1>
           <p className="mt-1 text-sm text-muted">Gerencie seu contato e seu anúncio.</p>
         </div>
+
+        {!active && (
+          <Link href="/planos" className="block rounded-card border border-accent/40 bg-accent-soft px-4 py-3 text-center text-sm font-semibold text-accent">
+            Seu anúncio fica visível com um plano ativo — ver planos
+          </Link>
+        )}
 
         <section className={cardCls}>
           <h2 className="font-display text-base font-bold text-ink">Seu contato</h2>
