@@ -14,8 +14,11 @@ export async function POST(request: Request) {
   const { data: ad } = await admin.from("ads").select("profile_id").eq("id", adId).maybeSingle();
   if (!ad || ad.profile_id !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
 
-  const { data: olds } = await admin.from("stories").select("storage_path").eq("ad_id", adId);
-  for (const o of olds ?? []) await admin.storage.from("ad-media").remove([o.storage_path as string]);
+  const { data: olds } = await admin.from("stories").select("id, storage_path").eq("ad_id", adId);
+  for (const o of olds ?? []) {
+    const p = o.storage_path as string;
+    if (p.startsWith(`${user.id}/${adId}/`)) await admin.storage.from("ad-media").remove([p]);
+  }
   await admin.from("stories").delete().eq("ad_id", adId);
   return NextResponse.json({ ok: true });
 }

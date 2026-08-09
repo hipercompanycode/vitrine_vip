@@ -16,8 +16,10 @@ export async function POST(request: Request) {
   const ownerId = (media?.ads as unknown as { profile_id: string } | null)?.profile_id;
   if (!media || ownerId !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
 
-  const { error: rmErr } = await admin.storage.from("ad-media").remove([media.storage_path]);
-  if (rmErr) return NextResponse.json({ error: rmErr.message }, { status: 500 });
+  if ((media.storage_path as string).startsWith(`${user.id}/${media.ad_id}/`)) {
+    const { error: rmErr } = await admin.storage.from("ad-media").remove([media.storage_path]);
+    if (rmErr) return NextResponse.json({ error: rmErr.message }, { status: 500 });
+  }
   const { error: delErr } = await admin.from("ad_media").delete().eq("id", mediaId);
   if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
 

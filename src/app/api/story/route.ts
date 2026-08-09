@@ -25,15 +25,17 @@ export async function POST(request: Request) {
   const allowsStory = (sub?.plans as unknown as { allows_story: boolean } | null)?.allows_story ?? false;
   if (!allowsStory) return NextResponse.json({ error: "seu plano não inclui story" }, { status: 403 });
 
-  // substitui o anterior (remove objetos + linhas)
+  // pega anteriores ANTES de inserir (não perde o atual se a inserção falhar)
   const { data: olds } = await admin.from("stories").select("id, storage_path").eq("ad_id", adId);
-  for (const o of olds ?? []) {
-    await admin.storage.from("ad-media").remove([o.storage_path as string]);
-  }
-  if ((olds ?? []).length) await admin.from("stories").delete().eq("ad_id", adId);
 
   const { data: inserted, error } = await admin
     .from("stories").insert({ ad_id: adId, storage_path: storagePath }).select("id").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  for (const o of olds ?? []) {
+    const p = o.storage_path as string;
+    if (p.startsWith(`${user.id}/${adId}/`)) await admin.storage.from("ad-media").remove([p]);
+    await admin.from("stories").delete().eq("id", o.id as string);
+  }
   return NextResponse.json({ id: inserted.id });
 }
