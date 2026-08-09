@@ -23,7 +23,8 @@ export default async function PreviewAnuncioPage({ params }: { params: Promise<{
     <>
       <PreviewNav active="home" />
       <AdDetail ad={ad} now={new Date()} backHref="/preview"
-        interactions={{ likeCount: ad.like_count ?? 0, liked: false, favorited: false, canInteract: true, loggedIn: true }} />
+        interactions={{ likeCount: ad.like_count ?? 0, liked: false, favorited: false, canInteract: true, loggedIn: true }}
+        coverUrl={null} media={[]} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
         <div className="mb-6"><ReportButton adId={ad.id} /></div>
         <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações</h2>
