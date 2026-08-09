@@ -17,7 +17,9 @@ export async function POST(request: Request) {
   if (!media || ownerId !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
   if (media.type !== "photo") return NextResponse.json({ error: "capa deve ser foto" }, { status: 400 });
 
-  await admin.from("ad_media").update({ is_cover: false }).eq("ad_id", media.ad_id);
-  await admin.from("ad_media").update({ is_cover: true }).eq("id", mediaId);
+  const { error: e1 } = await admin.from("ad_media").update({ is_cover: false }).eq("ad_id", media.ad_id);
+  if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
+  const { error: e2 } = await admin.from("ad_media").update({ is_cover: true }).eq("id", mediaId);
+  if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

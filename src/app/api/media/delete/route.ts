@@ -12,11 +12,20 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   const { data: media } = await admin
-    .from("ad_media").select("id, storage_path, ads ( profile_id )").eq("id", mediaId).maybeSingle();
+    .from("ad_media").select("id, ad_id, storage_path, is_cover, type, ads ( profile_id )").eq("id", mediaId).maybeSingle();
   const ownerId = (media?.ads as unknown as { profile_id: string } | null)?.profile_id;
   if (!media || ownerId !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
 
-  await admin.storage.from("ad-media").remove([media.storage_path]);
-  await admin.from("ad_media").delete().eq("id", mediaId);
+  const { error: rmErr } = await admin.storage.from("ad-media").remove([media.storage_path]);
+  if (rmErr) return NextResponse.json({ error: rmErr.message }, { status: 500 });
+  const { error: delErr } = await admin.from("ad_media").delete().eq("id", mediaId);
+  if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+
+  if (media.is_cover) {
+    const { data: next } = await admin
+      .from("ad_media").select("id").eq("ad_id", media.ad_id).eq("type", "photo")
+      .order("position").limit(1).maybeSingle();
+    if (next) await admin.from("ad_media").update({ is_cover: true }).eq("id", next.id);
+  }
   return NextResponse.json({ ok: true });
 }

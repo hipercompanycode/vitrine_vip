@@ -28,7 +28,8 @@ export async function POST(request: Request) {
   const { data: sub } = await admin
     .from("subscriptions")
     .select("plans ( max_photos, max_videos )")
-    .eq("profile_id", user.id).eq("status", "active").maybeSingle();
+    .eq("profile_id", user.id).eq("status", "active")
+    .gt("current_period_end", new Date().toISOString()).maybeSingle();
   const plan = (sub?.plans as unknown as { max_photos: number; max_videos: number } | null);
   const maxPhotos = plan?.max_photos ?? 6;
   const maxVideos = plan?.max_videos ?? 1;

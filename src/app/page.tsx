@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import AdCard, { type AdCardData } from "@/components/AdCard";
 import SiteHeader from "@/components/SiteHeader";
 import HomeFilters from "@/components/HomeFilters";
+import { publicUrl } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,6 @@ export default async function Home() {
     const { data: covers } = await admin
       .from("ad_media").select("ad_id, storage_path").eq("type", "photo").eq("is_cover", true).in("ad_id", ids);
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const { publicUrl } = await import("@/lib/storage");
     const byAd = new Map<string, string>();
     (covers ?? []).forEach((c: { ad_id: string; storage_path: string }) => byAd.set(c.ad_id, publicUrl(base, "ad-media", c.storage_path)));
     ads.forEach((a) => { a.cover_url = byAd.get(a.id) ?? null; });
