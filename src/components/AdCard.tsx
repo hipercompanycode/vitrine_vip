@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatBRL, timeAgo } from "@/lib/format";
 import WhatsAppButton from "./WhatsAppButton";
 import CardMediaPlaceholder from "./CardMediaPlaceholder";
+import StoryCover from "./StoryCover";
 import AvailableBadge from "./AvailableBadge";
 
 export type AdCardData = {
@@ -15,6 +16,7 @@ export type AdCardData = {
   whatsapp: string;
   like_count?: number;
   cover_url?: string | null;
+  story_url?: string | null;
 };
 
 export default function AdCard({
@@ -41,9 +43,7 @@ export default function AdCard({
       />
 
       <div className="relative">
-        {ad.cover_url
-          ? <img src={ad.cover_url} alt={ad.title} className="aspect-[4/3] w-full object-cover" />
-          : <CardMediaPlaceholder title={ad.title} className="aspect-[4/3] w-full" />}
+        <StoryCover title={ad.title} coverUrl={ad.cover_url} storyUrl={ad.story_url} className="aspect-[4/3] w-full" />
         {ad.is_available && (
           <div className="absolute left-3 top-3">
             <AvailableBadge />

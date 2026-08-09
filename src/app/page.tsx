@@ -83,6 +83,16 @@ export default async function Home() {
     const byAd = new Map<string, string>();
     (covers ?? []).forEach((c: { ad_id: string; storage_path: string }) => byAd.set(c.ad_id, publicUrl(base, "ad-media", c.storage_path)));
     ads.forEach((a) => { a.cover_url = byAd.get(a.id) ?? null; });
+
+    const ids2 = ads.map((a) => a.id);
+    const nowIso2 = new Date().toISOString();
+    const { data: stories } = await admin
+      .from("stories").select("ad_id, storage_path").in("ad_id", ids2).gt("expires_at", nowIso2);
+    const byAdStory = new Map<string, string>();
+    (stories ?? []).forEach((s: { ad_id: string; storage_path: string }) => {
+      if (!byAdStory.has(s.ad_id)) byAdStory.set(s.ad_id, publicUrl(process.env.NEXT_PUBLIC_SUPABASE_URL!, "ad-media", s.storage_path));
+    });
+    ads.forEach((a) => { a.story_url = byAdStory.get(a.id) ?? null; });
   }
 
   return (
