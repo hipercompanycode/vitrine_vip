@@ -105,10 +105,15 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     ?? (mediaRows ?? []).find((m: any) => m.type === "photo");
   const coverUrl = coverRow ? publicUrl(base, "ad-media", coverRow.storage_path) : null;
 
+  const { data: story } = await admin
+    .from("stories").select("storage_path").eq("ad_id", data.id).gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const storyUrl = story ? publicUrl(base, "ad-media", story.storage_path) : null;
+
   return (
     <>
       <SiteHeader />
-      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} media={media} />
+      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} storyUrl={storyUrl} media={media} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
         {interactions.canInteract && (
           <div className="mb-6"><ReportButton adId={data.id} /></div>

@@ -5,6 +5,7 @@ import AvailableBadge from "./AvailableBadge";
 import LikeButton from "./LikeButton";
 import FavoriteButton from "./FavoriteButton";
 import Gallery, { type GalleryItem } from "./Gallery";
+import StoryCover from "./StoryCover";
 import type { AdCardData } from "./AdCard";
 
 export default function AdDetail({
@@ -13,6 +14,7 @@ export default function AdDetail({
   backHref = "/",
   interactions,
   coverUrl,
+  storyUrl,
   media,
 }: {
   ad: AdCardData;
@@ -26,6 +28,7 @@ export default function AdDetail({
     loggedIn: boolean;
   };
   coverUrl?: string | null;
+  storyUrl?: string | null;
   media?: GalleryItem[];
 }) {
   const digits = ad.whatsapp.replace(/\D/g, "");
@@ -44,9 +47,7 @@ export default function AdDetail({
       </div>
 
       <div className="relative overflow-hidden rounded-card border border-line shadow-card">
-        {coverUrl
-          ? <img src={coverUrl} alt={ad.title} className="aspect-[16/10] w-full object-cover" />
-          : <CardMediaPlaceholder title={ad.title} className="aspect-[16/10] w-full" />}
+        <StoryCover title={ad.title} coverUrl={coverUrl} storyUrl={storyUrl} className="aspect-[16/10] w-full" />
         {ad.is_available && (
           <div className="absolute left-4 top-4">
             <AvailableBadge />
