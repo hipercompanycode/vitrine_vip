@@ -1,4 +1,5 @@
 // Dados fictícios do preview (sem backend). Compartilhado por home e detalhe.
+// Story_url: play só aparece com arquivo real no Storage (aqui é null apenas para type check).
 import type { AdCardData } from "@/components/AdCard";
 
 function isoMinutesAgo(min: number): string {
@@ -18,6 +19,7 @@ export function getPreviewAds(): AdCardData[] {
       city: { name: "São Paulo", uf: "SP" },
       whatsapp: "5511999990001",
       like_count: 12,
+      story_url: null,
     },
     {
       id: "2",
