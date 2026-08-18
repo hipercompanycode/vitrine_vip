@@ -6,9 +6,11 @@ import FilterDrawer from "./FilterDrawer";
 export default function VitrineTopBar({
   cityLabel,
   defaultQuery = "",
+  loggedIn = false,
 }: {
   cityLabel?: string;
   defaultQuery?: string;
+  loggedIn?: boolean;
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -78,13 +80,26 @@ export default function VitrineTopBar({
             <span className="hidden sm:inline">Favoritos</span>
           </Link>
 
-          {/* entrar */}
-          <Link
-            href="/login"
-            className="inline-flex shrink-0 items-center rounded-pill border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
-          >
-            Entrar
-          </Link>
+          {/* entrar / avatar */}
+          {loggedIn ? (
+            <Link
+              href="/perfil"
+              aria-label="Minha conta"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink transition-colors hover:border-accent hover:text-accent"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" strokeWidth="2" />
+                <path d="M4.5 20c0-3.4 3.4-6 7.5-6s7.5 2.6 7.5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex shrink-0 items-center rounded-pill border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+            >
+              Entrar
+            </Link>
+          )}
 
           {/* anunciar */}
           <Link

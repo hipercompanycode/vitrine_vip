@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createServerClient } from "@/lib/supabase/server";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript } from "@/lib/seo";
@@ -96,6 +96,9 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
 
   const profiles = await visibleProfilesInCity(city.id);
 
+  const ssr = await createServerClient();
+  const { data: { user } } = await ssr.auth.getUser();
+
   // cidades próximas COM anúncio -> links internos
   const admin = createAdminClient();
   const nowIso = new Date().toISOString();
@@ -123,7 +126,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
 
   return (
     <>
-      <VitrineTopBar cityLabel={`${city.name} - ${city.uf}`} />
+      <VitrineTopBar cityLabel={`${city.name} - ${city.uf}`} loggedIn={!!user} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 pb-16 sm:px-4">
         <nav className="pt-3 text-xs text-muted">
           <Link href="/" className="hover:text-accent">Início</Link> › <span className="text-ink">{city.name}-{city.uf}</span>
