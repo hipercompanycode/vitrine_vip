@@ -2,7 +2,7 @@ import CitySelect from "@/components/CitySelect";
 import { inputCls, labelCls, btnPrimary } from "@/components/ui";
 
 type City = { id: number; name: string; uf: string };
-type Ad = { title: string; description: string; price_cents: number; city_id: number | null } | null;
+type Ad = { title: string; description: string; price_cents: number; city_id: number | null; age?: number | null } | null;
 
 export default function AdForm({ ad, cities }: { ad: Ad; cities: City[] }) {
   return (
@@ -15,6 +15,19 @@ export default function AdForm({ ad, cities }: { ad: Ad; cities: City[] }) {
           placeholder="Ex: Eletricista 24h"
           className={inputCls}
           required
+        />
+      </label>
+
+      <label className="block">
+        <span className={labelCls}>Idade</span>
+        <input
+          name="age"
+          type="number"
+          min={18}
+          max={99}
+          defaultValue={ad?.age ?? ""}
+          placeholder="ex: 25"
+          className={inputCls}
         />
       </label>
 

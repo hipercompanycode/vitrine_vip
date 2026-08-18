@@ -20,12 +20,16 @@ export async function POST(request: Request) {
   const cityIdNum = cityRaw ? Number(cityRaw) : null;
   const cityId = cityIdNum !== null && Number.isNaN(cityIdNum) ? null : cityIdNum;
 
+  const ageRaw = String(form.get("age") ?? "").trim();
+  const ageNum = ageRaw ? Number(ageRaw) : null;
+  const age = ageNum !== null && Number.isInteger(ageNum) && ageNum >= 18 && ageNum <= 99 ? ageNum : null;
+
   const admin = createAdminClient();
   // upsert do anúncio único (profile_id unique)
   const { error } = await admin
     .from("ads")
     .upsert(
-      { profile_id: user.id, title, description, price_cents, city_id: cityId, updated_at: new Date().toISOString() },
+      { profile_id: user.id, title, description, price_cents, city_id: cityId, age, updated_at: new Date().toISOString() },
       { onConflict: "profile_id" }
     );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
