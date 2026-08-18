@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   async function cadastrar() {
     setLoading("cadastrar");
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
       options: {
@@ -41,8 +41,19 @@ export default function LoginPage() {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-    setMsgType(error ? "error" : "info");
-    setMsg(error ? error.message : "Enviamos um e-mail de confirmação. Verifique sua caixa de entrada para ativar a conta.");
+    if (error) {
+      setMsgType("error");
+      setMsg(error.message);
+      setLoading("");
+      return;
+    }
+    // Confirmação de e-mail desligada -> já vem com sessão -> entra direto.
+    if (data.session) {
+      window.location.href = next;
+      return;
+    }
+    setMsgType("info");
+    setMsg("Enviamos um e-mail de confirmação. Verifique sua caixa de entrada para ativar a conta.");
     setLoading("");
   }
 
