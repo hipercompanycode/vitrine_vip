@@ -28,15 +28,14 @@ export default function ProfileCard({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-2xl border bg-surface shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift ${
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-surface shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift ${
         p.featured ? "border-accent/70" : "border-line"
       }`}
     >
       <Link href={`${hrefBase}/${p.id}`} aria-label={`Ver anúncio de ${p.name}`} className="absolute inset-0 z-[1]" />
 
-      {/* Todas as imagens no MESMO tamanho (aspect fixo) */}
-      <div className="relative aspect-[3/4] w-full">
-        {/* placeholder (a foto real vem do anunciante) */}
+      {/* FOTO — mesmo tamanho em todos (aspect fixo). Placeholder (foto real vem do anunciante). */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden">
         <div
           className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]"
           style={{ background: `linear-gradient(150deg, hsl(${hue} 58% 27%), hsl(${(hue + 40) % 360} 48% 12%))` }}
@@ -44,9 +43,6 @@ export default function ProfileCard({
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="select-none font-display text-6xl font-black text-white/10">{p.name.charAt(0)}</span>
         </div>
-
-        {/* scrim inferior p/ legibilidade */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-black/90 via-black/45 to-transparent" />
 
         {/* topo-esquerda: gravada + contadores */}
         <div className="absolute left-2 top-2 z-[2] flex flex-col items-start gap-1">
@@ -101,26 +97,50 @@ export default function ProfileCard({
             </span>
           </span>
         )}
+      </div>
 
-        {/* info sobre a imagem (mantém card uniforme) */}
-        <div className="absolute inset-x-0 bottom-0 z-[2] p-2.5">
-          <div className="flex items-center gap-1">
-            <h3 className="truncate font-display text-sm font-bold text-white">{p.name}</h3>
-            {p.age > 0 && <span className="whitespace-nowrap text-xs font-medium text-white/85">· {p.age}</span>}
-            {p.verified && (
-              <span title="Verificada" className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#22c55e]">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </span>
-            )}
-          </div>
-          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-white/75">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.8" />
-              <circle cx="12" cy="11" r="2.2" fill="currentColor" />
+      {/* INFOS embaixo — alturas reservadas p/ manter todos os cards iguais */}
+      <div className="flex flex-1 flex-col gap-1 p-2.5">
+        <div className="flex min-w-0 items-center gap-1">
+          {p.featured && (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="shrink-0 text-accent" aria-hidden="true">
+              <path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" />
             </svg>
-            <span className="truncate">{p.city}</span>
-            {p.priceLabel && <span className="ml-auto whitespace-nowrap font-bold text-white">{p.priceLabel}</span>}
-          </div>
+          )}
+          <h3 className="truncate font-display text-sm font-bold text-ink">{p.name}</h3>
+          {p.age > 0 && <span className="shrink-0 text-xs font-medium text-muted">· {p.age}</span>}
+        </div>
+
+        <p className="line-clamp-2 min-h-[2.25rem] text-[12.5px] leading-snug text-muted">{p.description}</p>
+
+        <div className="mt-auto flex items-center gap-1 text-[11px] text-muted">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" className="shrink-0" aria-hidden="true">
+            <path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.8" />
+            <circle cx="12" cy="11" r="2.2" fill="currentColor" />
+          </svg>
+          <span className="truncate">{p.city}</span>
+          {p.priceLabel && <span className="ml-auto shrink-0 font-bold text-ink">{p.priceLabel}</span>}
+        </div>
+
+        <div className="flex min-h-[1.35rem] flex-wrap items-center gap-1">
+          {p.verified && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-[#12331f] px-1.5 py-0.5 text-[10px] font-semibold text-[#43d17f]">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Verificada
+            </span>
+          )}
+          {typeof p.videoCount === "number" && p.videoCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-[#3a2410] px-1.5 py-0.5 text-[10px] font-semibold text-[#f3a24a]">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+              {p.videoCount}
+            </span>
+          )}
+          {p.hasAudio && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent-strong">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 5V4L8 9H4z" /></svg>
+              Áudio
+            </span>
+          )}
         </div>
       </div>
     </article>
