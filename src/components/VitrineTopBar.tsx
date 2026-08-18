@@ -66,6 +66,18 @@ export default function VitrineTopBar({
             Filtros
           </button>
 
+          {/* favoritos */}
+          <Link
+            href="/conta"
+            aria-label="Favoritos"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 20s-6.5-4.2-9-8C1.2 8.5 3 5 6.3 5 8.2 5 9.4 6.1 12 8.3 14.6 6.1 15.8 5 17.7 5 21 5 22.8 8.5 21 12c-2.5 3.8-9 8-9 8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+            <span className="hidden sm:inline">Favoritos</span>
+          </Link>
+
           {/* entrar */}
           <Link
             href="/login"

@@ -58,18 +58,6 @@ export default async function PerfilPage() {
             <button className={btnSecondary}>Salvar</button>
           </form>
         </section>
-
-        {/* atalhos */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Link href="/meu-anuncio" className="flex items-center justify-between rounded-card border border-accent/40 bg-accent-soft px-4 py-4 text-sm font-semibold text-accent transition-colors hover:bg-accent-soft/70">
-            Meu anúncio
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </Link>
-          <Link href="/conta" className="flex items-center justify-between rounded-card border border-line bg-surface px-4 py-4 text-sm font-semibold text-ink transition-colors hover:border-accent/50">
-            Meus favoritos
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </Link>
-        </div>
       </main>
     </>
   );
