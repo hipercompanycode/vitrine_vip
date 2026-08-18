@@ -219,7 +219,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
       ) : (
         <>
           <p className="mt-1 max-w-xs text-sm text-muted">Seja a primeira a divulgar seu perfil nesta cidade.</p>
-          <Link href="/perfil" className="mt-5 inline-flex items-center gap-1.5 rounded-pill bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-strong active:scale-95">Criar meu anúncio</Link>
+          <Link href="/meu-anuncio" className="mt-5 inline-flex items-center gap-1.5 rounded-pill bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-strong active:scale-95">Criar meu anúncio</Link>
         </>
       )}
     </div>
