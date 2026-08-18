@@ -3,28 +3,21 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/browser";
 
-type Role = "comum" | "anunciante";
-
 export default function LoginPage() {
   const supabase = createBrowserClient();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [mode, setMode] = useState<Role>("comum");
   const [next, setNext] = useState("/");
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState<"error" | "info">("info");
   const [loading, setLoading] = useState<"" | "entrar" | "cadastrar">("");
   const busy = loading !== "";
 
-  // papel + destino vêm da URL (?as=anunciante&next=/perfil) — setados pelos botões do appbar
+  // destino após login (?next=/perfil) — setado pelo botão que trouxe a pessoa
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    if (p.get("as") === "anunciante") setMode("anunciante");
-    const n = p.get("next");
+    const n = new URLSearchParams(window.location.search).get("next");
     if (n && n.startsWith("/")) setNext(n);
   }, []);
-
-  const isAdv = mode === "anunciante";
 
   async function entrar() {
     setLoading("entrar");
@@ -34,7 +27,7 @@ export default function LoginPage() {
       setMsg(error.message);
       setLoading("");
     } else {
-      window.location.href = isAdv ? "/perfil" : next;
+      window.location.href = next;
     }
   }
 
@@ -44,7 +37,7 @@ export default function LoginPage() {
       email,
       password: senha,
       options: {
-        data: { role: mode },
+        data: { role: "comum" },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -62,14 +55,8 @@ export default function LoginPage() {
         </Link>
 
         <div className="rounded-card border border-line bg-surface p-6 shadow-card sm:p-8">
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">
-            {isAdv ? "Criar conta de anunciante" : "Entrar ou criar conta"}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {isAdv
-              ? "Cadastre-se com seu e-mail para publicar seu anúncio. Já tem conta? É só entrar."
-              : "Entre para curtir, favoritar e avaliar — ou crie sua conta."}
-          </p>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">Entrar ou criar conta</h1>
+          <p className="mt-1 text-sm text-muted">Entre com seu e-mail. Para anunciar, é só clicar em “Anunciar” depois de entrar.</p>
 
           <form className="mt-6 space-y-3" onSubmit={(e) => { e.preventDefault(); entrar(); }}>
             <label className="block">
@@ -91,17 +78,9 @@ export default function LoginPage() {
             </button>
             <button type="button" onClick={cadastrar} disabled={busy}
               className="w-full rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-soft disabled:opacity-60">
-              {loading === "cadastrar" ? "Criando…" : isAdv ? "Criar conta de anunciante" : "Criar conta"}
+              {loading === "cadastrar" ? "Criando…" : "Criar conta"}
             </button>
           </form>
-
-          <p className="mt-3 text-center text-[11px] text-muted">
-            {isAdv ? (
-              <>Só quer navegar? <Link href="/login" className="text-accent hover:underline">Criar conta de usuário</Link>.</>
-            ) : (
-              <>Quer anunciar? <Link href="/login?as=anunciante&next=/perfil" className="text-accent hover:underline">Criar conta de anunciante</Link>.</>
-            )}
-          </p>
 
           {msg && (
             <p className={`mt-4 rounded-input px-3 py-2 text-sm ${msgType === "error" ? "bg-red-500/15 text-red-300" : "bg-accent-soft text-accent-strong"}`}>

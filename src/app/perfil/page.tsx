@@ -14,9 +14,11 @@ export default async function PerfilPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?as=anunciante&next=/perfil");
+  if (!user) redirect("/login?next=/perfil");
 
   const admin = createAdminClient();
+  // Clicar em "Anunciar" transforma o perfil em anunciante (promove só quem é comum).
+  await admin.from("profiles").update({ role: "anunciante" }).eq("id", user.id).eq("role", "comum");
   const [{ data: ad }, { data: cities }, { data: profile }, { data: sub }] = await Promise.all([
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
     admin.from("cities").select("id,name,uf").order("name"),
