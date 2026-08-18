@@ -1,8 +1,16 @@
 import CitySelect from "@/components/CitySelect";
 import { inputCls, labelCls, btnPrimary } from "@/components/ui";
+import { ATTRIBUTE_GROUPS } from "@/lib/attributes";
 
 type City = { id: number; name: string; uf: string };
-type Ad = { title: string; description: string; price_cents: number; city_id: number | null; age?: number | null } | null;
+type Ad = {
+  title: string;
+  description: string;
+  price_cents: number;
+  city_id: number | null;
+  age?: number | null;
+  attributes?: string[] | null;
+} | null;
 
 export default function AdForm({ ad, cities }: { ad: Ad; cities: City[] }) {
   return (
@@ -57,6 +65,35 @@ export default function AdForm({ ad, cities }: { ad: Ad; cities: City[] }) {
           <span className={labelCls}>Cidade</span>
           <CitySelect cities={cities} defaultValue={ad?.city_id ?? null} />
         </label>
+      </div>
+
+      <div>
+        <span className={labelCls}>Características e serviços (aparecem nos filtros)</span>
+        <div className="mt-1 space-y-3 rounded-card border border-line bg-surface-2/40 p-3">
+          {ATTRIBUTE_GROUPS.map((g, gi) => (
+            <div key={gi}>
+              <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted">
+                {g.title}{g.label ? ` · ${g.label}` : ""}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {g.items.map((it) => (
+                  <label key={it.slug} className="cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="attr"
+                      value={it.slug}
+                      defaultChecked={ad?.attributes?.includes(it.slug) ?? false}
+                      className="peer sr-only"
+                    />
+                    <span className="inline-block rounded-pill border border-line bg-surface px-2.5 py-1 text-xs text-muted transition-colors peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-accent">
+                      {it.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <button className={btnPrimary}>{ad ? "Salvar alterações" : "Publicar anúncio"}</button>

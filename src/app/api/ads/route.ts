@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { parsePriceToCents } from "@/lib/price";
+import { sanitizeAttrs } from "@/lib/attributes";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -24,12 +25,14 @@ export async function POST(request: Request) {
   const ageNum = ageRaw ? Number(ageRaw) : null;
   const age = ageNum !== null && Number.isInteger(ageNum) && ageNum >= 18 && ageNum <= 99 ? ageNum : null;
 
+  const attributes = sanitizeAttrs(form.getAll("attr").map((v) => String(v)));
+
   const admin = createAdminClient();
   // upsert do anúncio único (profile_id unique)
   const { error } = await admin
     .from("ads")
     .upsert(
-      { profile_id: user.id, title, description, price_cents, city_id: cityId, age, updated_at: new Date().toISOString() },
+      { profile_id: user.id, title, description, price_cents, city_id: cityId, age, attributes, updated_at: new Date().toISOString() },
       { onConflict: "profile_id" }
     );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
