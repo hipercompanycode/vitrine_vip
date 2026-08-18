@@ -2,13 +2,10 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
-import SiteHeader from "@/components/SiteHeader";
+import VitrineTopBar from "@/components/VitrineTopBar";
 import HomeFilters from "@/components/HomeFilters";
 
 export const dynamic = "force-dynamic";
-
-const TIME_BUCKETS = ["5 Minutos", "15 Minutos", "25 Minutos", "35 Minutos", "45 Minutos", "1 Hora"];
-const RATIOS: NonNullable<ProfileCardData["ratio"]>[] = ["portrait", "tall", "square", "tall", "portrait", "square"];
 
 function hueFromId(id: string): number {
   let h = 0;
@@ -31,9 +28,11 @@ type AdRow = {
   profiles: ProfileEmbed | ProfileEmbed[] | null;
 };
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ [k: string]: string | undefined }> }) {
   const admin = createAdminClient();
   const nowIso = new Date().toISOString();
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim().replace(/[,%()]/g, " ").slice(0, 60);
 
   // Visibilidade: assinatura ativa. featured = plano premium.
   const { data: activeSubs, error: activeSubsError } = await admin
@@ -70,7 +69,7 @@ export default async function Home() {
   }
 
   let data: AdRow[] = [];
-  const profileOf = new Map<string, string>(); // ad_id -> profile_id
+  const profileOf = new Map<string, string>();
   if (activeProfileIds.length > 0) {
     let query = admin
       .from("ads")
@@ -78,6 +77,7 @@ export default async function Home() {
       .eq("status", "active")
       .in("profile_id", activeProfileIds);
     if (cityFilter) query = query.in("city_id", cityFilter);
+    if (q) query = query.ilike("title", `%${q}%`);
     const res = await query
       .order("bumped_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
@@ -88,27 +88,21 @@ export default async function Home() {
 
   const ids = data.map((r) => r.id);
 
-  // age/verified (query separada e tolerante: se a migration 0008 ainda não rodou, usa defaults)
   const ageVerified = new Map<string, { age: number | null; verified: boolean }>();
-  if (ids.length > 0) {
-    const av = await admin.from("ads").select("id, age, verified").in("id", ids);
-    if (!av.error) (av.data ?? []).forEach((r: any) => ageVerified.set(r.id, { age: r.age ?? null, verified: !!r.verified }));
-  }
-
-  // contagem de vídeos por anúncio
   const videoCount = new Map<string, number>();
-  // stories ativas -> play + "Gravada às"
-  const story = new Map<string, string>(); // ad_id -> created_at
+  const story = new Map<string, string>();
   if (ids.length > 0) {
-    const [vids, stories] = await Promise.all([
+    const [av, vids, stories] = await Promise.all([
+      admin.from("ads").select("id, age, verified").in("id", ids),
       admin.from("ad_media").select("ad_id").eq("type", "video").in("ad_id", ids),
       admin.from("stories").select("ad_id, created_at").in("ad_id", ids).gt("expires_at", nowIso),
     ]);
+    if (!av.error) (av.data ?? []).forEach((r: any) => ageVerified.set(r.id, { age: r.age ?? null, verified: !!r.verified }));
     (vids.data ?? []).forEach((r: any) => videoCount.set(r.ad_id, (videoCount.get(r.ad_id) ?? 0) + 1));
     (stories.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
   }
 
-  const profiles: ProfileCardData[] = data.map((r, i) => {
+  const profiles: ProfileCardData[] = data.map((r) => {
     const city = (Array.isArray(r.cities) ? r.cities[0] : r.cities) ?? null;
     const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
     const av = ageVerified.get(r.id) ?? { age: null, verified: false };
@@ -127,48 +121,34 @@ export default async function Home() {
       recordedAt: storyAt ? hhmm(storyAt) : null,
       featured: slug === "premium",
       hue: hueFromId(r.id),
-      ratio: RATIOS[i % RATIOS.length],
     };
   });
 
   return (
     <>
-      <SiteHeader />
+      <VitrineTopBar cityLabel={cityLabel} defaultQuery={q} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 pb-16 sm:px-4">
-        <section className="py-5">
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
-            Acompanhantes {cityLabel ? <>em <span className="text-accent">{cityLabel.replace(" - ", "-")}</span></> : <>perto de <span className="text-accent">você</span></>}
-          </h1>
-          <p className="mt-1 text-sm text-muted">Perfis verificados perto de você — contato direto, sem intermediário.</p>
-          <div className="mt-4">
+        <section className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+              Acompanhantes {cityLabel ? <>em <span className="text-accent">{cityLabel.replace(" - ", "-")}</span></> : <>perto de <span className="text-accent">você</span></>}
+            </h1>
+            {q && <p className="mt-0.5 text-sm text-muted">Busca: “{q}” · {profiles.length} resultado{profiles.length === 1 ? "" : "s"}</p>}
+          </div>
+          <div className="shrink-0">
             <HomeFilters cityLabel={cityLabel} nearby={nearby} />
           </div>
         </section>
 
-        <section className="flex gap-3">
-          <aside className="hidden w-16 shrink-0 md:block">
-            <div className="sticky top-20 flex flex-col gap-3">
-              {TIME_BUCKETS.map((t) => (
-                <div key={t} className="rounded-md bg-[#f2c94c] px-1.5 py-2 text-center text-[10px] font-bold leading-tight text-black shadow-card">
-                  <span className="block text-[9px] font-semibold uppercase tracking-wide text-black/70">Faz</span>
-                  {t}
-                </div>
-              ))}
-            </div>
-          </aside>
-
-          <div className="min-w-0 flex-1">
-            {profiles.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6">
-                {profiles.map((p) => (
-                  <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />
-                ))}
-              </div>
-            )}
+        {profiles.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {profiles.map((p) => (
+              <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />
+            ))}
           </div>
-        </section>
+        )}
       </main>
       <SiteFooter />
     </>
@@ -195,11 +175,11 @@ function EmptyState() {
 function SiteFooter() {
   return (
     <footer className="mt-8 border-t border-line/70">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted sm:flex-row">
+      <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted sm:flex-row">
         <span className="font-display font-bold text-ink">
-          serviços<span className="text-accent">.</span>
+          vitrine<span className="text-accent">.</span>
         </span>
-        <span>Contato direto via WhatsApp · anúncios locais</span>
+        <span>Perfis verificados · contato direto · anúncios locais</span>
       </div>
     </footer>
   );
