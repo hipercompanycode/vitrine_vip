@@ -66,6 +66,14 @@ export default function VitrineTopBar({
             Filtros
           </button>
 
+          {/* entrar */}
+          <Link
+            href="/login"
+            className="inline-flex shrink-0 items-center rounded-pill border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          >
+            Entrar
+          </Link>
+
           {/* anunciar */}
           <Link
             href="/perfil"

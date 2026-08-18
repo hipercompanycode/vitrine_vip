@@ -14,7 +14,7 @@ export default async function PerfilPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?as=anunciante&next=/perfil");
 
   const admin = createAdminClient();
   const [{ data: ad }, { data: cities }, { data: profile }, { data: sub }] = await Promise.all([
