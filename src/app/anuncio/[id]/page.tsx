@@ -9,11 +9,40 @@ import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 import ReportButton from "@/components/ReportButton";
 import { publicUrl } from "@/lib/storage";
 import type { GalleryItem } from "@/components/Gallery";
+import type { Metadata } from "next";
+import { SITE_NAME, absUrl, jsonLdScript, ldBreadcrumb, ldProfile, SITE_URL, cityPath } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 type CityEmbed = { name: string; uf: string };
 type ProfileEmbed = { whatsapp: string };
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const admin = createAdminClient();
+  const { data: ad } = await admin
+    .from("ads")
+    .select("title, description, age, profile_id, cities ( name, uf ), profiles ( name )")
+    .eq("id", id).eq("status", "active").maybeSingle();
+  if (!ad) return { title: "Anúncio não encontrado", robots: { index: false, follow: false } };
+  const { data: sub } = await admin
+    .from("subscriptions").select("id").eq("profile_id", ad.profile_id as string)
+    .eq("status", "active").gt("current_period_end", new Date().toISOString()).maybeSingle();
+  const city = (Array.isArray(ad.cities) ? ad.cities[0] : ad.cities) as CityEmbed | null;
+  const prof = Array.isArray(ad.profiles) ? ad.profiles[0] : (ad.profiles as { name?: string } | null);
+  const name = (prof?.name?.trim() || (ad.title as string)) as string;
+  const loc = city ? ` em ${city.name}-${city.uf}` : "";
+  const agePart = ad.age ? `, ${ad.age} anos` : "";
+  const title = `${name}${agePart} — Acompanhante${loc}`;
+  const description = String(ad.description || `Conheça ${name}, acompanhante${loc}.`).slice(0, 160);
+  return {
+    title,
+    description,
+    alternates: { canonical: `/anuncio/${id}` },
+    openGraph: { title: `${title} | ${SITE_NAME}`, description, url: absUrl(`/anuncio/${id}`), type: "profile" },
+    robots: sub ? { index: true, follow: true } : { index: false, follow: true },
+  };
+}
 
 export default async function AnuncioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -113,6 +142,19 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
   return (
     <>
       <SiteHeader />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScript([
+            ldBreadcrumb([
+              { name: "Início", url: SITE_URL },
+              ...(data.city ? [{ name: `Acompanhantes em ${data.city.name}-${data.city.uf}`, url: absUrl(cityPath(data.city.name, data.city.uf)) }] : []),
+              { name: data.title, url: absUrl(`/anuncio/${data.id}`) },
+            ]),
+            ldProfile({ name: data.title, url: absUrl(`/anuncio/${data.id}`), city: data.city ? `${data.city.name}-${data.city.uf}` : undefined, description: data.description }),
+          ]),
+        }}
+      />
       <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} storyUrl={storyUrl} media={media} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
         {interactions.canInteract && (

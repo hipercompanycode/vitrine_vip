@@ -1,11 +1,19 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import { sanitizeAttrs } from "@/lib/attributes";
+import { cityPath } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ [k: string]: string | undefined }> }): Promise<Metadata> {
+  const sp = await searchParams;
+  const filtered = !!(sp.q || sp.pmin || sp.pmax || sp.imin || sp.imax || sp.verified || sp.video || sp.attrs || sp.city_id || sp.nearby);
+  return { alternates: { canonical: "/" }, robots: filtered ? { index: false, follow: true } : { index: true, follow: true } };
+}
 
 function hueFromId(id: string): number {
   let h = 0;
@@ -143,6 +151,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
 
   const hasFilters = !!(q || pmin || pmax || imin || imax || onlyVerified || onlyVideo || attrs.length || cityId);
 
+  // links internos p/ SEO (cidades com anúncios visíveis nos resultados)
+  const browseCities = Array.from(
+    new Map(
+      data
+        .map((r) => {
+          const c = (Array.isArray(r.cities) ? r.cities[0] : r.cities) as CityEmbed | null;
+          return c ? ([`${c.name}|${c.uf}`, { name: c.name, uf: c.uf }] as const) : null;
+        })
+        .filter(Boolean) as [string, { name: string; uf: string }][]
+    ).values()
+  ).slice(0, 24);
+
   return (
     <>
       <VitrineTopBar cityLabel={cityLabel} defaultQuery={q} />
@@ -168,6 +188,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
               <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />
             ))}
           </div>
+        )}
+        {browseCities.length > 1 && (
+          <nav className="mt-10 border-t border-line/60 pt-5">
+            <h2 className="mb-2 font-display text-sm font-bold text-ink">Acompanhantes por cidade</h2>
+            <div className="flex flex-wrap gap-2">
+              {browseCities.map((c) => (
+                <Link key={`${c.name}-${c.uf}`} href={cityPath(c.name, c.uf)} className="rounded-pill border border-line bg-surface px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent hover:text-accent">
+                  {c.name}-{c.uf}
+                </Link>
+              ))}
+            </div>
+          </nav>
         )}
       </main>
       <SiteFooter />
