@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
-import HomeFilters from "@/components/HomeFilters";
 
 export const dynamic = "force-dynamic";
 
@@ -128,16 +127,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
     <>
       <VitrineTopBar cityLabel={cityLabel} defaultQuery={q} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 pb-16 sm:px-4">
-        <section className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-              Acompanhantes {cityLabel ? <>em <span className="text-accent">{cityLabel.replace(" - ", "-")}</span></> : <>perto de <span className="text-accent">você</span></>}
-            </h1>
-            {q && <p className="mt-0.5 text-sm text-muted">Busca: “{q}” · {profiles.length} resultado{profiles.length === 1 ? "" : "s"}</p>}
-          </div>
-          <div className="shrink-0">
-            <HomeFilters cityLabel={cityLabel} nearby={nearby} />
-          </div>
+        <section className="py-4">
+          <h1 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            Acompanhantes {cityLabel ? <>em <span className="text-accent">{cityLabel.replace(" - ", "-")}</span></> : <>perto de <span className="text-accent">você</span></>}
+          </h1>
+          {q && <p className="mt-0.5 text-sm text-muted">Busca: “{q}” · {profiles.length} resultado{profiles.length === 1 ? "" : "s"}</p>}
         </section>
 
         {profiles.length === 0 ? (
