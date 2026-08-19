@@ -112,7 +112,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   return (
     <>
       <AccountHeader />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+      <main className={`mx-auto w-full flex-1 px-4 py-8 ${step === 3 ? "max-w-5xl" : "max-w-2xl"}`}>
         <div className="mb-6">
           <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Criar meu anúncio</h1>
           <p className="mt-1 text-sm text-muted">Siga os passos. Você pode voltar e editar quando quiser.</p>
