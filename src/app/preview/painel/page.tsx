@@ -1,7 +1,7 @@
 // TEMPORÁRIO — preview do painel do anunciante com dados fake (sem auth/Supabase).
 // Reusa AdForm e AdActions reais. Os botões apontam para as rotas reais (só visual aqui).
 import Link from "next/link";
-import AdForm from "../../perfil/ad-form";
+import { AdBasicsForm } from "../../perfil/ad-form";
 import AdActions from "../../perfil/ad-actions";
 import PreviewNav from "@/components/PreviewNav";
 import { inputCls, labelCls, cardCls, btnSecondary } from "@/components/ui";
@@ -68,7 +68,7 @@ export default function PreviewPainelPage() {
 
         <section className={cardCls}>
           <h2 className="mb-4 font-display text-base font-bold text-ink">Seu anúncio</h2>
-          <AdForm ad={MOCK_AD} cities={CITIES} />
+          <AdBasicsForm ad={MOCK_AD} cities={CITIES} next="/preview/painel" />
         </section>
 
         <section className={cardCls}>
