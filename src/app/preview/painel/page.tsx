@@ -68,7 +68,7 @@ export default function PreviewPainelPage() {
 
         <section className={cardCls}>
           <h2 className="mb-4 font-display text-base font-bold text-ink">Seu anúncio</h2>
-          <AdBasicsForm ad={MOCK_AD} cities={CITIES} next="/preview/painel" />
+          <AdBasicsForm ad={MOCK_AD} defaultCity={{ id: 1, name: "São Paulo", uf: "SP" }} next="/preview/painel" />
         </section>
 
         <section className={cardCls}>

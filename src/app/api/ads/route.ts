@@ -27,8 +27,7 @@ export async function POST(request: Request) {
   const description = String(form.get("description") ?? "").trim();
   if (!title) return NextResponse.json({ error: "nome obrigatório" }, { status: 400 });
 
-  const price_cents = parsePriceToCents(String(form.get("price") ?? ""));
-  if (price_cents === null) return NextResponse.json({ error: "preço inválido" }, { status: 400 });
+  const headline = String(form.get("headline") ?? "").trim().slice(0, 240);
 
   const cityRaw = form.get("city_id");
   const cityIdNum = cityRaw ? Number(cityRaw) : null;
@@ -38,10 +37,20 @@ export async function POST(request: Request) {
   const ageNum = ageRaw ? Number(ageRaw) : null;
   const age = ageNum !== null && Number.isInteger(ageNum) && ageNum >= 18 && ageNum <= 99 ? ageNum : null;
 
+  // tabela de preços (serviço + valor)
+  const labels = form.getAll("price_label").map((v) => String(v).trim());
+  const values = form.getAll("price_value").map((v) => String(v));
+  const priceTable: { label: string; price_cents: number }[] = [];
+  for (let i = 0; i < labels.length; i++) {
+    const c = parsePriceToCents(values[i] ?? "");
+    if (labels[i] && c !== null && c > 0) priceTable.push({ label: labels[i].slice(0, 60), price_cents: c });
+  }
+  const price_cents = priceTable.length ? Math.min(...priceTable.map((r) => r.price_cents)) : 0;
+
   const { error } = await admin
     .from("ads")
     .upsert(
-      { profile_id: user.id, title, description, price_cents, city_id: cityId, age, updated_at: new Date().toISOString() },
+      { profile_id: user.id, title, description, headline, price_cents, price_table: priceTable, city_id: cityId, age, updated_at: new Date().toISOString() },
       { onConflict: "profile_id" }
     );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -2,11 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isActive } from "@/lib/subscription";
-import { PLANS } from "@/lib/plans";
+import { PLANS, planBySlug, type PlanSlug } from "@/lib/plans";
 import { AdBasicsForm, AdAttributesForm } from "../perfil/ad-form";
 import MediaManager from "@/components/MediaManager";
-import StoryManager from "@/components/StoryManager";
 import BillingButton from "@/components/BillingButton";
+import PlanCards from "@/components/PlanCards";
 import VerificationUploader from "@/components/VerificationUploader";
 import { cardCls } from "@/components/ui";
 
@@ -94,14 +94,10 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
   const plan = sub?.plans as unknown as { slug?: string; allows_story?: boolean } | null;
   const active = isActive(sub as { status: string; current_period_end: string | null } | null, new Date());
-  const allowsStory = active && (plan?.allows_story ?? false);
+  const planLimits = plan?.slug && PLANS.some((x) => x.slug === plan.slug) ? planBySlug(plan.slug as PlanSlug) : PLANS[0];
 
   const media = ad ? (await admin.from("ad_media").select("id, type, storage_path, is_cover").eq("ad_id", ad.id).order("position")).data ?? [] : [];
-  let hasStory = false;
-  if (ad) {
-    const { data: st } = await admin.from("stories").select("id").eq("ad_id", ad.id).gt("expires_at", new Date().toISOString()).maybeSingle();
-    hasStory = !!st;
-  }
+  const defaultCity = ad?.city_id ? (cities ?? []).find((c) => c.id === ad.city_id) ?? null : null;
 
   const sp = await searchParams;
   const step = Math.min(4, Math.max(1, Number(sp.step ?? "1") || 1));
@@ -129,18 +125,13 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
           <div className="space-y-6">
             <section className={cardCls}>
               <h2 className="mb-4 font-display text-base font-bold text-ink">Dados do anúncio</h2>
-              <AdBasicsForm ad={ad ?? null} cities={cities ?? []} next="/meu-anuncio?step=1" cta="Salvar dados" />
+              <AdBasicsForm ad={ad ?? null} defaultCity={defaultCity} next="/meu-anuncio?step=1" cta="Salvar dados" />
             </section>
             {ad && (
               <section className={cardCls}>
-                <h2 className="mb-4 font-display text-base font-bold text-ink">Fotos e vídeos</h2>
-                <MediaManager adId={ad.id} userId={user.id} initial={media} />
-              </section>
-            )}
-            {ad && allowsStory && (
-              <section className={cardCls}>
-                <h2 className="mb-2 font-display text-base font-bold text-ink">Story 24h</h2>
-                <StoryManager adId={ad.id} userId={user.id} hasStory={hasStory} />
+                <h2 className="font-display text-base font-bold text-ink">Fotos e vídeos</h2>
+                <p className="mb-4 mt-0.5 text-xs text-muted">Seu plano ({planLimits.name}): até {planLimits.maxPhotos} fotos e {planLimits.maxVideos} vídeo(s). A 1ª foto vira a capa.</p>
+                <MediaManager adId={ad.id} userId={user.id} initial={media} maxPhotos={planLimits.maxPhotos} maxVideos={planLimits.maxVideos} />
               </section>
             )}
             <StepNav step={1} canNext={!!ad} nextHref="/meu-anuncio?step=2" />
@@ -166,31 +157,17 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
         {/* PASSO 3 — Plano */}
         {step === 3 && (
           <div className="space-y-6">
-            {active ? (
-              <section className="rounded-card border border-[#1f6b3f] bg-[#0f2a1b] p-5 text-[#7ee2a8]">
-                <h2 className="font-display text-lg font-extrabold">Plano ativo</h2>
-                <p className="mt-1 text-sm opacity-90">{sub?.method === "pix" ? "Pix" : "Cartão"} — até {new Date(sub!.current_period_end!).toLocaleDateString("pt-BR")}. Seu anúncio fica visível.</p>
-                {sub?.method === "card" && sub?.stripe_customer_id && <div className="mt-3"><BillingButton /></div>}
-              </section>
-            ) : (
-              <>
-                <p className="text-sm text-muted">Escolha um plano pra deixar seu anúncio visível na vitrine.</p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {PLANS.map((p) => (
-                    <div key={p.slug} className={cardCls}>
-                      <h3 className="font-display text-base font-bold text-ink">{p.name}</h3>
-                      <p className="mt-0.5 text-xl font-extrabold text-accent">{(p.priceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}<span className="text-xs font-medium text-muted">/mês</span></p>
-                      <ul className="mt-2 space-y-0.5 text-xs text-muted">
-                        <li>{p.maxPhotos} fotos · {p.maxVideos} vídeo(s)</li>
-                        <li>{p.allowsStory ? "Story 24h" : "Sem story"}</li>
-                        <li>{p.bumpCooldownMinutes === 0 ? "Subir a qualquer hora" : `Subir a cada ${p.bumpCooldownMinutes}min`}</li>
-                      </ul>
-                      <Link href={`/assinar/${p.slug}`} className="mt-3 block rounded-input bg-accent py-2 text-center text-sm font-bold text-white transition-all hover:bg-accent-strong">Assinar</Link>
-                    </div>
-                  ))}
+            {active && (
+              <section className="flex flex-wrap items-center gap-3 rounded-card border border-[#1f6b3f] bg-[#0f2a1b] p-4 text-[#7ee2a8]">
+                <div>
+                  <p className="font-semibold">Plano {planLimits.name} ativo</p>
+                  <p className="text-xs opacity-90">{sub?.method === "pix" ? "Pix" : "Cartão"} — até {new Date(sub!.current_period_end!).toLocaleDateString("pt-BR")}. Seu anúncio fica visível.</p>
                 </div>
-              </>
+                {sub?.method === "card" && sub?.stripe_customer_id && <div className="ml-auto"><BillingButton /></div>}
+              </section>
             )}
+            {!active && <p className="text-sm text-muted">Escolha um plano pra deixar seu anúncio visível na vitrine.</p>}
+            <PlanCards currentSlug={active ? plan?.slug : undefined} />
             <StepNav step={3} canNext={true} nextHref="/meu-anuncio?step=4" />
           </div>
         )}

@@ -39,7 +39,7 @@ async function visibleProfilesInCity(cityId: number): Promise<ProfileCardData[]>
 
   const { data } = await admin
     .from("ads")
-    .select("id, title, description, age, verified, profile_id, cities ( name, uf ), profiles ( name )")
+    .select("*, cities ( name, uf ), profiles ( name )")
     .eq("status", "active").eq("city_id", cityId).in("profile_id", pids)
     .order("bumped_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
@@ -64,7 +64,9 @@ async function visibleProfilesInCity(cityId: number): Promise<ProfileCardData[]>
     const sa = story.get(r.id);
     return {
       id: r.id, name: prof?.name?.trim() || r.title, age: r.age ?? 0, city: city ? city.name : "",
-      description: r.description, verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
+      description: r.headline?.trim() || r.description,
+      priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100).toLocaleString("pt-BR")}` : null,
+      verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
       recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium", hue: hueFromId(r.id),
     };
   });

@@ -35,6 +35,8 @@ type AdRow = {
   id: string;
   title: string;
   description: string;
+  headline: string | null;
+  price_cents: number;
   age: number | null;
   verified: boolean | null;
   is_available: boolean;
@@ -102,7 +104,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   if (activeProfileIds.length > 0) {
     let query = admin
       .from("ads")
-      .select(`id, title, description, age, verified, is_available, created_at, profile_id, cities ( name, uf ), profiles ( name, whatsapp )`)
+      .select(`*, cities ( name, uf ), profiles ( name, whatsapp )`)
       .eq("status", "active")
       .in("profile_id", activeProfileIds);
     if (cityFilter) query = query.in("city_id", cityFilter);
@@ -143,7 +145,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       name: profile?.name?.trim() || r.title,
       age: r.age ?? 0,
       city: city ? `${city.name}` : "",
-      description: r.description,
+      description: r.headline?.trim() || r.description,
+      priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100).toLocaleString("pt-BR")}` : null,
       verified: !!r.verified,
       videoCount: vc,
       hasVideo: vc > 0 || !!storyAt,

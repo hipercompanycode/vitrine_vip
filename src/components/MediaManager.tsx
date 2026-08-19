@@ -21,13 +21,16 @@ async function videoTooLong(file: File): Promise<boolean> {
 }
 
 export default function MediaManager({
-  adId, userId, initial,
-}: { adId: string; userId: string; initial: Media[] }) {
+  adId, userId, initial, maxPhotos = 12, maxVideos = 3,
+}: { adId: string; userId: string; initial: Media[]; maxPhotos?: number; maxVideos?: number }) {
   const supabase = createBrowserClient();
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const [items, setItems] = useState<Media[]>(initial);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+
+  const nPhotos = items.filter((m) => m.type === "photo").length;
+  const nVideos = items.filter((m) => m.type === "video").length;
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -36,6 +39,8 @@ export default function MediaManager({
     setMsg("");
     const v = validateFile({ type: file.type, size: file.size });
     if (!v.ok) { setMsg(v.error); return; }
+    if (v.kind === "photo" && nPhotos >= maxPhotos) { setMsg(`Limite de ${maxPhotos} fotos no seu plano.`); return; }
+    if (v.kind === "video" && nVideos >= maxVideos) { setMsg(`Limite de ${maxVideos} vídeos no seu plano.`); return; }
     if (v.kind === "video" && (await videoTooLong(file))) { setMsg("Vídeo acima de 60s."); return; }
 
     setBusy(true);
@@ -73,11 +78,21 @@ export default function MediaManager({
 
   return (
     <div>
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-input border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-soft">
-        {busy ? "Enviando…" : "Adicionar foto/vídeo"}
-        <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" className="hidden" onChange={onPick} disabled={busy} />
-      </label>
-      {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
+        <span className="rounded-pill bg-surface-2 px-2 py-0.5 font-semibold">Fotos {nPhotos}/{maxPhotos}</span>
+        <span className="rounded-pill bg-surface-2 px-2 py-0.5 font-semibold">Vídeos {nVideos}/{maxVideos}</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <label className={`inline-flex cursor-pointer items-center gap-2 rounded-input border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-soft ${nPhotos >= maxPhotos ? "pointer-events-none opacity-50" : ""}`}>
+          {busy ? "Enviando…" : "Adicionar foto"}
+          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPick} disabled={busy || nPhotos >= maxPhotos} />
+        </label>
+        <label className={`inline-flex cursor-pointer items-center gap-2 rounded-input border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-soft ${nVideos >= maxVideos ? "pointer-events-none opacity-50" : ""}`}>
+          {busy ? "Enviando…" : "Adicionar vídeo"}
+          <input type="file" accept="video/mp4,video/webm" className="hidden" onChange={onPick} disabled={busy || nVideos >= maxVideos} />
+        </label>
+      </div>
+      {msg && <p className="mt-2 text-sm text-red-400">{msg}</p>}
 
       <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
         {items.map((m) => (
