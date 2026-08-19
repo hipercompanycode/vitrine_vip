@@ -4,6 +4,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import { reasonLabel } from "@/lib/interactions";
 import { timeAgo } from "@/lib/format";
+import AdminHeader from "@/components/AdminHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,9 @@ export default async function AdminPage() {
   const rows = (reports ?? []) as any[];
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+    <>
+      <AdminHeader />
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
       <nav className="mb-6 flex items-center gap-2 text-sm">
         <span className="rounded-pill bg-accent px-3 py-1.5 font-semibold text-white">Denúncias</span>
         <Link href="/admin/verificacoes" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Verificações</Link>
@@ -74,6 +77,7 @@ export default async function AdminPage() {
           })}
         </ul>
       )}
-    </main>
+      </main>
+    </>
   );
 }
