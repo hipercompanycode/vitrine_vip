@@ -114,7 +114,7 @@ export default function VitrineTopBar({
         </div>
       </header>
 
-      <FilterDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} />
+      <FilterDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} cityLabel={cityLabel} />
     </>
   );
 }

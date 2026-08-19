@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { createAdminClient, createServerClient } from "@/lib/supabase/server";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
-import { sanitizeAttrs } from "@/lib/attributes";
+import { sanitizeAttrs, labelOf } from "@/lib/attributes";
 import { cityPath } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -167,6 +167,23 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
     ).values()
   ).slice(0, 24);
 
+  // chips de filtros aplicados (removíveis) acima dos resultados
+  function hrefWithout(changes: Record<string, string | null>): string {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if (typeof v === "string" && v) p.set(k, v);
+    for (const [k, v] of Object.entries(changes)) { if (v) p.set(k, v); else p.delete(k); }
+    const s = p.toString();
+    return s ? `/?${s}` : "/";
+  }
+  const chips: { label: string; href: string }[] = [];
+  if (q) chips.push({ label: `“${q}”`, href: hrefWithout({ q: null }) });
+  if (cityId) chips.push({ label: cityLabel ?? "Cidade", href: hrefWithout({ city_id: null, nearby: null }) });
+  if (pmin || pmax) chips.push({ label: `R$ ${pmin ?? 0}–${pmax ?? "∞"}`, href: hrefWithout({ pmin: null, pmax: null }) });
+  if (imin || imax) chips.push({ label: `${imin ?? 18}–${imax ?? "∞"} anos`, href: hrefWithout({ imin: null, imax: null }) });
+  if (onlyVerified) chips.push({ label: "Verificada", href: hrefWithout({ verified: null }) });
+  if (onlyVideo) chips.push({ label: "Com vídeo", href: hrefWithout({ video: null }) });
+  for (const slug of attrs) chips.push({ label: labelOf(slug), href: hrefWithout({ attrs: attrs.filter((a) => a !== slug).join(",") || null }) });
+
   return (
     <>
       <VitrineTopBar cityLabel={cityLabel} defaultQuery={q} loggedIn={loggedIn} />
@@ -183,6 +200,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
             </p>
           )}
         </section>
+
+        {chips.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {chips.map((c) => (
+              <Link key={c.label} href={c.href} className="inline-flex items-center gap-1 rounded-pill bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent hover:text-white">
+                {c.label}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
+              </Link>
+            ))}
+            <Link href="/" className="text-xs font-semibold text-muted hover:text-accent">Limpar tudo</Link>
+          </div>
+        )}
 
         {profiles.length === 0 ? (
           <EmptyState hasFilters={hasFilters} />
