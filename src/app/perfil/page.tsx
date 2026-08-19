@@ -17,7 +17,7 @@ export default async function PerfilPage() {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="inline-flex items-baseline gap-0.5">
             <span className="font-display text-xl font-extrabold tracking-tight text-ink">vitrine</span>
             <span className="h-2 w-2 rounded-full bg-accent" />
