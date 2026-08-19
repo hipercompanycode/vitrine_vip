@@ -63,25 +63,44 @@ export function AdBasicsForm({ ad, defaultCity, next = "/meu-anuncio", cta = "Sa
 /** Passo 2 — características (atributos, viram filtros). */
 export function AdAttributesForm({ ad, next = "/meu-anuncio", cta = "Salvar" }: { ad: Ad; next?: string; cta?: string }) {
   const selected = new Set(ad?.attributes ?? []);
+  const byTitle = new Map<string, typeof ATTRIBUTE_GROUPS>();
+  for (const g of ATTRIBUTE_GROUPS) {
+    const a = byTitle.get(g.title) ?? [];
+    a.push(g);
+    byTitle.set(g.title, a);
+  }
+
   return (
-    <form action="/api/ads" method="post" className="space-y-3">
+    <form action="/api/ads" method="post" className="space-y-7">
       <input type="hidden" name="has_attrs" value="1" />
       <input type="hidden" name="next" value={next} />
-      {ATTRIBUTE_GROUPS.map((g, gi) => (
-        <div key={gi} className="rounded-card border border-line bg-surface-2/40 p-3">
-          <span className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-accent">{g.title}{g.label ? ` · ${g.label}` : ""}</span>
-          <div className="flex flex-wrap gap-1.5">
-            {g.items.map((it) => (
-              <label key={it.slug} className="cursor-pointer">
-                <input type="checkbox" name="attr" value={it.slug} defaultChecked={selected.has(it.slug)} className="peer sr-only" />
-                <span className="inline-block rounded-pill border border-line bg-surface px-3 py-1.5 text-[13px] text-muted transition-colors peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-accent">
-                  {it.label}
-                </span>
-              </label>
+
+      {[...byTitle.entries()].map(([title, groups]) => (
+        <div key={title}>
+          <div className="mb-3 flex items-center gap-2 border-b border-line/60 pb-2">
+            <span className="h-2 w-2 rounded-full bg-accent" />
+            <h3 className="font-display text-sm font-bold text-ink">{title}</h3>
+          </div>
+          <div className="space-y-3">
+            {groups.map((g, gi) => (
+              <div key={gi}>
+                {g.label && <span className="mb-1.5 block text-xs font-medium text-muted">{g.label}</span>}
+                <div className="flex flex-wrap gap-2">
+                  {g.items.map((it) => (
+                    <label key={it.slug} className="cursor-pointer">
+                      <input type="checkbox" name="attr" value={it.slug} defaultChecked={selected.has(it.slug)} className="peer sr-only" />
+                      <span className="inline-flex items-center rounded-pill border border-line bg-surface-2 px-3.5 py-2 text-[13px] font-medium text-muted transition-all hover:border-accent/50 hover:text-ink peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-checked:shadow-pop peer-focus-visible:ring-2 peer-focus-visible:ring-accent">
+                        {it.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
       ))}
+
       <button className={btnPrimary}>{cta}</button>
     </form>
   );
