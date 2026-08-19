@@ -27,7 +27,7 @@ export default function LoginPage() {
       setMsg(error.message);
       setLoading("");
     } else {
-      window.location.href = next;
+      window.location.href = `/pos-login?next=${encodeURIComponent(next)}`;
     }
   }
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
     }
     // Confirmação de e-mail desligada -> já vem com sessão -> entra direto.
     if (data.session) {
-      window.location.href = next;
+      window.location.href = `/pos-login?next=${encodeURIComponent(next)}`;
       return;
     }
     setMsgType("info");
