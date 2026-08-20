@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { createAdminClient, createServerClient } from "@/lib/supabase/server";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
@@ -74,11 +73,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   });
   const activeProfileIds = Array.from(planByProfile.keys());
 
-  // geo: params têm prioridade sobre cookies
-  const jar = await cookies();
-  const cityIdRaw = sp.city_id ?? jar.get("city_id")?.value;
+  // geo — só via query params (assim "limpar filtros" = "/" limpa tudo)
+  const cityIdRaw = sp.city_id;
   const cityId = cityIdRaw && Number.isFinite(Number(cityIdRaw)) ? Number(cityIdRaw) : null;
-  const nearby = (sp.nearby ?? jar.get("nearby")?.value ?? "1") !== "0";
+  const nearby = (sp.nearby ?? "1") !== "0";
 
   let cityFilter: number[] | null = null;
   let cityLabel: string | undefined;
