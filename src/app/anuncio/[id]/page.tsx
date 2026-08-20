@@ -3,6 +3,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/SiteHeader";
 import AdDetail from "@/components/AdDetail";
 import type { AdCardData } from "@/components/AdCard";
+import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import { canInteract, type Role } from "@/lib/roles";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList, { type ReviewItem } from "@/components/ReviewList";
@@ -15,7 +16,7 @@ import { SITE_NAME, absUrl, jsonLdScript, ldBreadcrumb, ldProfile, SITE_URL, cit
 export const dynamic = "force-dynamic";
 
 type CityEmbed = { name: string; uf: string };
-type ProfileEmbed = { whatsapp: string };
+type ProfileEmbed = { name?: string; whatsapp: string };
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -50,9 +51,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
 
   const { data: ad, error } = await admin
     .from("ads")
-    .select(
-      "id, title, description, price_cents, is_available, created_at, profile_id, cities ( name, uf ), profiles ( whatsapp )"
-    )
+    .select("*, cities ( name, uf ), profiles ( name, whatsapp )")
     .eq("id", id)
     .eq("status", "active")
     .eq("verified", true)
@@ -77,7 +76,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
 
   const data: AdCardData = {
     id: ad.id as string,
-    title: ad.title as string,
+    title: (profile?.name?.trim() || (ad.title as string)) as string,
     description: ad.description as string,
     price_cents: ad.price_cents as number,
     is_available: ad.is_available as boolean,
@@ -140,6 +139,39 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     .order("created_at", { ascending: false }).limit(1).maybeSingle();
   const storyUrl = story ? publicUrl(base, "ad-media", story.storage_path) : null;
 
+  // stats de reputação
+  const nFotos = (mediaRows ?? []).filter((m: any) => m.type === "photo").length;
+  const nVideos = (mediaRows ?? []).filter((m: any) => m.type === "video").length;
+  const { data: verifRow } = await admin.from("verifications").select("reviewed_at").eq("profile_id", ad.profile_id as string).maybeSingle();
+  const DAY = 86400000;
+  const dias = Math.max(0, Math.floor((Date.now() - new Date(ad.created_at as string).getTime()) / DAY));
+  const ultimaVerif = verifRow?.reviewed_at ? Math.floor((Date.now() - new Date(verifRow.reviewed_at as string).getTime()) / DAY) : null;
+
+  const extra = {
+    age: (ad.age as number | null) ?? null,
+    verified: !!ad.verified,
+    attributes: (ad.attributes as string[] | null) ?? [],
+    priceTable: (ad.price_table as { label: string; price_cents: number }[] | null) ?? [],
+    stats: { dias, ultimaVerif, nFotos, nVideos },
+  };
+
+  // perfis na mesma cidade (destaques)
+  const hueFromId = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; };
+  let related: ProfileCardData[] = [];
+  if (city && ad.city_id) {
+    const { data: subs2 } = await admin.from("subscriptions").select("profile_id").eq("status", "active").gt("current_period_end", new Date().toISOString());
+    const pids2 = Array.from(new Set((subs2 ?? []).map((s: any) => s.profile_id)));
+    if (pids2.length) {
+      const { data: rel } = await admin.from("ads")
+        .select("id, title, headline, price_cents, age, profiles ( name )")
+        .eq("status", "active").eq("verified", true).eq("city_id", ad.city_id as number).in("profile_id", pids2).neq("id", id).limit(6);
+      related = (rel ?? []).map((r: any) => {
+        const pn = Array.isArray(r.profiles) ? r.profiles[0]?.name : r.profiles?.name;
+        return { id: r.id, name: pn?.trim() || r.title, age: r.age ?? 0, city: city.name, description: r.headline || "", verified: true, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null } as ProfileCardData;
+      });
+    }
+  }
+
   return (
     <>
       <SiteHeader />
@@ -156,7 +188,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
           ]),
         }}
       />
-      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} storyUrl={storyUrl} media={media} />
+      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} storyUrl={storyUrl} media={media} extra={extra} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
         {interactions.canInteract && (
           <div className="mb-6"><ReportButton adId={data.id} /></div>
@@ -173,6 +205,15 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
         )}
         <ReviewList reviews={reviews} now={new Date()} currentUserId={user?.id ?? null} adId={data.id} />
       </section>
+
+      {related.length > 0 && data.city && (
+        <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
+          <h2 className="mb-3 font-display text-lg font-bold text-ink">Acompanhantes em {data.city.name}-{data.city.uf}</h2>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {related.map((p) => <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />)}
+          </div>
+        </section>
+      )}
     </>
   );
 }
