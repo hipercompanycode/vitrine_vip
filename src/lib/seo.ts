@@ -1,6 +1,6 @@
 // Helpers de SEO: URLs, slugs de cidade, JSON-LD.
 
-export const SITE_NAME = "Vitrine";
+export const SITE_NAME = "Vitrine VIP";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export function absUrl(path: string): string {

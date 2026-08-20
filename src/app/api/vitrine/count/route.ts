@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   // geo
   const cityId = intp(p.get("city_id"));
-  const nearby = (p.get("nearby") ?? "1") !== "0";
+  const nearby = p.get("nearby") === "1";
   let cityFilter: number[] | null = null;
   if (cityId) {
     if (nearby) {

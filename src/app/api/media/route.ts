@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   const { data: ad } = await admin.from("ads").select("id, profile_id").eq("id", adId).maybeSingle();
   if (!ad || ad.profile_id !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
 
-  // limites do plano ativo (fallback Básico: 6 fotos / 1 vídeo)
+  // limites do plano ativo (fallback conservador sem plano: 6 fotos / 1 vídeo)
   const { data: sub } = await admin
     .from("subscriptions")
     .select("plans ( max_photos, max_videos )")

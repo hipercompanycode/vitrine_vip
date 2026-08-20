@@ -1,7 +1,11 @@
 import StateCityPicker from "@/components/StateCityPicker";
 import PriceTable from "@/components/PriceTable";
+import PhoneInput from "@/components/PhoneInput";
+import CharTextarea from "@/components/CharTextarea";
 import { inputCls, labelCls } from "@/components/ui";
 import { ATTRIBUTE_GROUPS } from "@/lib/attributes";
+
+type Contact = { whatsapp: boolean; call: boolean; telegram: boolean };
 
 type PriceRow = { label: string; price_cents: number };
 type City = { id: number; name: string; uf: string };
@@ -19,7 +23,13 @@ type Ad = {
 const FORM_ID = "wizard-form";
 
 /** Passo 1 — dados básicos. Sem botão: o "Próximo" do wizard submete (form={FORM_ID}). */
-export function AdBasicsForm({ ad, defaultCity, next }: { ad: Ad; defaultCity?: City | null; next: string }) {
+export function AdBasicsForm({ ad, defaultCity, defaultWhatsapp, defaultContact, next }: { ad: Ad; defaultCity?: City | null; defaultWhatsapp?: string; defaultContact?: Contact; next: string }) {
+  const contact = defaultContact ?? { whatsapp: true, call: false, telegram: false };
+  const CH = [
+    { name: "contact_whatsapp", label: "WhatsApp", on: contact.whatsapp },
+    { name: "contact_call", label: "Ligação", on: contact.call },
+    { name: "contact_telegram", label: "Telegram", on: contact.telegram },
+  ];
   return (
     <form id={FORM_ID} action="/api/ads" method="post" className="space-y-5">
       <input type="hidden" name="next" value={next} />
@@ -35,15 +45,36 @@ export function AdBasicsForm({ ad, defaultCity, next }: { ad: Ad; defaultCity?: 
         </label>
       </div>
 
+      <label className="block">
+        <span className={labelCls}>Telefone / contato</span>
+        <PhoneInput name="whatsapp" defaultValue={defaultWhatsapp ?? ""} className={inputCls} />
+        <span className="mt-1 block text-[11px] text-muted">Só o DDD + número. O código do país (+55) é adicionado automaticamente no contato.</span>
+      </label>
+
       <div className="block">
-        <span className={labelCls}>Estado e cidade</span>
+        <span className={labelCls}>Este número atende por</span>
+        <div className="flex flex-wrap gap-2">
+          {CH.map((c) => (
+            <label key={c.name} className="cursor-pointer">
+              <input type="checkbox" name={c.name} value="1" defaultChecked={c.on} className="peer sr-only" />
+              <span className="inline-flex items-center rounded-pill border border-line bg-surface-2 px-3.5 py-2 text-[13px] font-medium text-muted transition-all hover:border-accent/50 hover:text-ink peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-checked:shadow-pop">
+                {c.label}
+              </span>
+            </label>
+          ))}
+        </div>
+        <span className="mt-1 block text-[11px] text-muted">Define quais botões de contato aparecem no anúncio.</span>
+      </div>
+
+      <div className="block">
+        <span className={labelCls}>Estado e cidade <span className="text-accent">*</span></span>
         <StateCityPicker defaultCity={defaultCity ?? null} />
       </div>
 
       <label className="block">
-        <span className={labelCls}>Chamada do card (até 120)</span>
-        <input name="headline" defaultValue={ad?.headline ?? ""} maxLength={120} placeholder="Frase curta que aparece no card" className={inputCls} />
-        <span className="mt-1 block text-[11px] text-muted">É o texto curto que aparece no card da listagem.</span>
+        <span className={labelCls}>Chamada do card</span>
+        <CharTextarea name="headline" defaultValue={ad?.headline ?? ""} maxLength={120} placeholder="Frase curta que aparece no card" className={inputCls} />
+        <span className="mt-0.5 block text-[11px] text-muted">É o texto curto que aparece no card da listagem.</span>
       </label>
 
       <label className="block">

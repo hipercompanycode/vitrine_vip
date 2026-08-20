@@ -5,6 +5,7 @@ import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import { sanitizeAttrs, labelOf } from "@/lib/attributes";
 import { cityPath } from "@/lib/seo";
+import { userHasAd } from "@/lib/ads";
 
 export const dynamic = "force-dynamic";
 
@@ -51,8 +52,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   const sp = await searchParams;
 
   const ssr = await createServerClient();
-  const { data: { user } } = await ssr.auth.getUser();
-  const loggedIn = !!user;
 
   const q = (sp.q ?? "").trim().replace(/[,%()]/g, " ").slice(0, 60);
   const pmin = intParam(sp.pmin), pmax = intParam(sp.pmax);
@@ -61,10 +60,61 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   const onlyVideo = sp.video === "1";
   const attrs = sanitizeAttrs((sp.attrs ?? "").split(",").filter(Boolean));
 
-  // assinatura ativa -> visibilidade; premium -> featured
-  const { data: activeSubs, error: activeSubsError } = await admin
-    .from("subscriptions").select("profile_id, plans ( slug )").eq("status", "active").gt("current_period_end", nowIso);
+  // geo — só via query params (assim "limpar filtros" = "/" limpa tudo)
+  const cityIdRaw = sp.city_id;
+  const cityId = cityIdRaw && Number.isFinite(Number(cityIdRaw)) ? Number(cityIdRaw) : null;
+  const nearby = sp.nearby === "1"; // padrão: só a cidade selecionada (vizinhas via toggle)
+
+  // estágio 1: tudo que não depende de outra query, em paralelo
+  const userInfoFn = async () => {
+    const { data: { user } } = await ssr.auth.getUser();
+    const hasAd = user ? await userHasAd(admin, user.id) : false;
+    return { user, hasAd };
+  };
+  const cityInfoFn = async (): Promise<{ cityFilter: number[] | null; cityLabel?: string }> => {
+    if (!cityId) return { cityFilter: null };
+    const { data: cityRow } = await admin.from("cities").select("name, uf").eq("id", cityId).maybeSingle();
+    const cityLabel = cityRow ? `${cityRow.name} - ${cityRow.uf}` : undefined;
+    if (nearby) {
+      const { data: ids } = await admin.rpc("nearby_city_ids", { p_city_id: cityId, p_km: 100 });
+      return { cityFilter: (ids ?? []).map((r: any) => (typeof r === "number" ? r : r.nearby_city_ids ?? r.id)), cityLabel };
+    }
+    return { cityFilter: [cityId], cityLabel };
+  };
+  const videoIdsFn = async (): Promise<string[] | null> => {
+    if (!onlyVideo) return null;
+    const { data } = await admin.from("ad_media").select("ad_id").eq("type", "video");
+    return Array.from(new Set((data ?? []).map((r: any) => r.ad_id)));
+  };
+  // cidades candidatas próximas (geo puro; filtro de "tem anúncio" vem depois do batch)
+  const nearbyRawFn = async (): Promise<{ self: { lat: number; lng: number } | null; candidates: { id: number; name: string; uf: string; lat: number; lng: number }[] }> => {
+    if (!cityId) return { self: null, candidates: [] };
+    const { data: self } = await admin.from("cities").select("lat, lng").eq("id", cityId).maybeSingle();
+    if (!self) return { self: null, candidates: [] };
+    const { data: idsRaw } = await admin.rpc("nearby_city_ids", { p_city_id: cityId, p_km: 200 });
+    const idList = (idsRaw ?? [])
+      .map((r: any) => (typeof r === "number" ? r : r.nearby_city_ids ?? r.id))
+      .filter((x: number) => x !== cityId)
+      .slice(0, 400);
+    if (!idList.length) return { self, candidates: [] };
+    const { data: rows } = await admin.from("cities").select("id, name, uf, lat, lng").in("id", idList);
+    return { self, candidates: (rows ?? []) as any[] };
+  };
+
+  const [{ data: activeSubs, error: activeSubsError }, userInfo, cityInfo, videoAdIds, nearbyRaw] = await Promise.all([
+    admin.from("subscriptions").select("profile_id, plans ( slug )").eq("status", "active").gt("current_period_end", nowIso),
+    userInfoFn(),
+    cityInfoFn(),
+    videoIdsFn(),
+    nearbyRawFn(),
+  ]);
   if (activeSubsError) console.error("home subscriptions query:", activeSubsError.message);
+
+  const user = userInfo.user;
+  const loggedIn = !!user;
+  const hasAd = userInfo.hasAd;
+  const cityFilter = cityInfo.cityFilter;
+  const cityLabel = cityInfo.cityLabel;
 
   const planByProfile = new Map<string, string>();
   ((activeSubs ?? []) as { profile_id: string; plans: { slug: string } | { slug: string }[] | null }[]).forEach((s) => {
@@ -73,29 +123,27 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   });
   const activeProfileIds = Array.from(planByProfile.keys());
 
-  // geo — só via query params (assim "limpar filtros" = "/" limpa tudo)
-  const cityIdRaw = sp.city_id;
-  const cityId = cityIdRaw && Number.isFinite(Number(cityIdRaw)) ? Number(cityIdRaw) : null;
-  const nearby = (sp.nearby ?? "1") !== "0";
-
-  let cityFilter: number[] | null = null;
-  let cityLabel: string | undefined;
-  if (cityId) {
-    const { data: cityRow } = await admin.from("cities").select("name, uf").eq("id", cityId).maybeSingle();
-    if (cityRow) cityLabel = `${cityRow.name} - ${cityRow.uf}`;
-    if (nearby) {
-      const { data: ids } = await admin.rpc("nearby_city_ids", { p_city_id: cityId, p_km: 100 });
-      cityFilter = (ids ?? []).map((r: any) => (typeof r === "number" ? r : r.nearby_city_ids ?? r.id));
-    } else {
-      cityFilter = [cityId];
-    }
-  }
-
-  // filtro "com vídeo": ids de anúncios que têm mídia de vídeo
-  let videoAdIds: string[] | null = null;
-  if (onlyVideo) {
-    const { data } = await admin.from("ad_media").select("ad_id").eq("type", "video");
-    videoAdIds = Array.from(new Set((data ?? []).map((r: any) => r.ad_id)));
+  // cidades próximas: só as que TÊM anúncio visível (ativo + verificado + assinatura ativa)
+  let nearbyCities: { id: number; name: string; uf: string }[] = [];
+  if (cityId && nearbyRaw.self && nearbyRaw.candidates.length && activeProfileIds.length) {
+    const candIds = nearbyRaw.candidates.map((c) => c.id);
+    const { data: adCities } = await admin
+      .from("ads").select("city_id")
+      .eq("status", "active").eq("verified", true)
+      .in("profile_id", activeProfileIds).in("city_id", candIds);
+    const withAds = new Set((adCities ?? []).map((a: any) => a.city_id));
+    const self = nearbyRaw.self;
+    const R = Math.PI / 180;
+    const hav = (la: number, lo: number) => {
+      const dLat = (la - self.lat) * R, dLng = (lo - self.lng) * R;
+      return Math.sin(dLat / 2) ** 2 + Math.cos(self.lat * R) * Math.cos(la * R) * Math.sin(dLng / 2) ** 2;
+    };
+    nearbyCities = nearbyRaw.candidates
+      .filter((c) => withAds.has(c.id))
+      .map((c) => ({ id: c.id, name: c.name, uf: c.uf, d: hav(c.lat, c.lng) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 8)
+      .map(({ id, name, uf }) => ({ id, name, uf }));
   }
 
   let data: AdRow[] = [];
@@ -151,6 +199,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       hasVideo: vc > 0 || !!storyAt,
       recordedAt: storyAt ? hhmm(storyAt) : null,
       featured: planByProfile.get(r.profile_id) === "premium",
+      available: !!r.is_available,
       hue: hueFromId(r.id),
     };
   });
@@ -188,7 +237,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
 
   return (
     <>
-      <VitrineTopBar cityLabel={cityLabel} defaultQuery={q} loggedIn={loggedIn} />
+      <VitrineTopBar cityLabel={cityLabel} defaultQuery={q} loggedIn={loggedIn} hasAd={hasAd} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 pb-16 sm:px-4">
         <section className="py-4">
           <h1 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
@@ -224,6 +273,37 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
             ))}
           </div>
         )}
+        {cityId && nearbyCities.length > 0 && (
+          <nav className="mt-14 border-t border-line/60 pt-8">
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-accent">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.9" /><circle cx="12" cy="11" r="2.4" fill="currentColor" /></svg>
+              </span>
+              <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+                Cidades próximas de <span className="text-accent">{cityLabel?.replace(" - ", "-") ?? "você"}</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {nearbyCities.map((c) => (
+                <Link
+                  key={c.id}
+                  href={hrefWithout({ city_id: String(c.id), nearby: null })}
+                  className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-line bg-surface px-3.5 py-3 transition-all hover:border-accent/60 hover:bg-gradient-to-r hover:from-accent-soft/50 hover:to-surface"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent transition-colors group-hover:bg-accent group-hover:text-white">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.9" /><circle cx="12" cy="11" r="2.4" fill="currentColor" /></svg>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-display text-sm font-bold text-ink group-hover:text-accent">{c.name}</span>
+                    <span className="block text-[11px] font-medium uppercase tracking-wide text-muted">{c.uf}</span>
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted transition-all group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </Link>
+              ))}
+            </div>
+          </nav>
+        )}
+
         {browseCities.length > 1 && (
           <nav className="mt-10 border-t border-line/60 pt-5">
             <h2 className="mb-2 font-display text-sm font-bold text-ink">Acompanhantes por cidade</h2>
@@ -264,9 +344,19 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
 function SiteFooter() {
   return (
     <footer className="mt-8 border-t border-line/70">
-      <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted sm:flex-row">
-        <span className="font-display font-bold text-ink">vitrine<span className="text-accent">.</span></span>
-        <span>Perfis verificados · contato direto · anúncios locais</span>
+      <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="flex flex-col items-center justify-between gap-3 text-xs text-muted sm:flex-row">
+          <span className="font-display font-bold text-ink">vitrine<span className="text-accent">vip</span></span>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <span className="rounded bg-surface-2 px-1.5 py-0.5 font-semibold text-ink">+18</span>
+            <Link href="/termos" className="transition-colors hover:text-accent">Termos de Uso</Link>
+            <Link href="/privacidade" className="transition-colors hover:text-accent">Privacidade</Link>
+            <Link href="/cookies" className="transition-colors hover:text-accent">Cookies</Link>
+          </div>
+        </div>
+        <p className="mx-auto mt-4 max-w-3xl text-center text-[11px] leading-relaxed text-muted/80">
+          A vitrine é uma plataforma de <strong className="text-muted">publicidade</strong>. Os anúncios são de responsabilidade exclusiva de cada anunciante, maior de 18 anos, que divulga por conta própria seus serviços de acompanhante (festas, jantares, viagens etc.). <strong className="text-muted">Não intermediamos garotas de programa</strong> nem participamos de qualquer contato ou negociação entre as partes.
+        </p>
       </div>
     </footer>
   );

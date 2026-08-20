@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState<"error" | "info">("info");
   const [loading, setLoading] = useState<"" | "entrar" | "cadastrar">("");
+  const [agree, setAgree] = useState(false);
   const busy = loading !== "";
 
   // destino após login (?next=/perfil) — setado pelo botão que trouxe a pessoa
@@ -18,6 +19,15 @@ export default function LoginPage() {
     const n = new URLSearchParams(window.location.search).get("next");
     if (n && n.startsWith("/")) setNext(n);
   }, []);
+
+  async function esqueci() {
+    if (!email) { setMsgType("error"); setMsg("Digite seu e-mail primeiro."); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/redefinir-senha`,
+    });
+    if (error) { setMsgType("error"); setMsg(error.message); return; }
+    setMsgType("info"); setMsg("Enviamos um link de redefinição pro seu e-mail. Verifique sua caixa de entrada.");
+  }
 
   async function entrar() {
     setLoading("entrar");
@@ -32,6 +42,11 @@ export default function LoginPage() {
   }
 
   async function cadastrar() {
+    if (!agree) {
+      setMsgType("error");
+      setMsg("Você precisa confirmar que tem 18+ e aceitar os Termos e a Política de Privacidade.");
+      return;
+    }
     setLoading("cadastrar");
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -61,7 +76,7 @@ export default function LoginPage() {
     <main className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 inline-flex items-baseline gap-0.5">
-          <span className="font-display text-2xl font-extrabold tracking-tight text-ink">vitrine</span>
+          <span className="font-display text-2xl font-extrabold tracking-tight text-ink">vitrine<span className="text-accent">vip</span></span>
           <span className="h-2 w-2 rounded-full bg-accent" />
         </Link>
 
@@ -77,10 +92,22 @@ export default function LoginPage() {
                 className="w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none" />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-medium text-muted">Senha</span>
+              <span className="mb-1 flex items-center justify-between text-xs font-medium text-muted">
+                Senha
+                <button type="button" onClick={esqueci} className="font-semibold text-accent hover:underline">Esqueci a senha</button>
+              </span>
               <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
                 autoComplete="current-password" placeholder="••••••••"
                 className="w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none" />
+            </label>
+
+            <label className="flex cursor-pointer items-start gap-2 pt-1 text-xs text-muted">
+              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-[var(--accent)]" />
+              <span>
+                Confirmo que tenho <strong className="text-ink">18 anos ou mais</strong> e li e aceito os{" "}
+                <Link href="/termos" className="text-accent underline">Termos</Link> e a{" "}
+                <Link href="/privacidade" className="text-accent underline">Política de Privacidade</Link>.
+              </span>
             </label>
 
             <button type="submit" disabled={busy}

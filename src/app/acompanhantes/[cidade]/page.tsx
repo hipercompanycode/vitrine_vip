@@ -67,7 +67,8 @@ async function visibleProfilesInCity(cityId: number): Promise<ProfileCardData[]>
       description: r.headline?.trim() || r.description,
       priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100).toLocaleString("pt-BR")}` : null,
       verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
-      recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium", hue: hueFromId(r.id),
+      recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium",
+      available: !!r.is_available, hue: hueFromId(r.id),
     };
   });
 }

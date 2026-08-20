@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ATTRIBUTE_GROUPS, labelOf, sanitizeAttrs } from "@/lib/attributes";
+import { VIDEO_ENABLED } from "@/lib/media";
 
 const PRICE_MIN = 0, PRICE_MAX = 2000, PRICE_STEP = 50;
 const AGE_MIN = 18, AGE_MAX = 60;
@@ -87,7 +88,6 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
   const [phi, setPhi] = useState(PRICE_MAX);
   const [alo, setAlo] = useState(AGE_MIN);
   const [ahi, setAhi] = useState(AGE_MAX);
-  const [nearby, setNearby] = useState(true);
   const [city, setCity] = useState<City | null>(null);
   const [cityQuery, setCityQuery] = useState("");
   const [cityResults, setCityResults] = useState<City[]>([]);
@@ -106,7 +106,6 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
     setPhi(Number(searchParams.get("pmax") ?? PRICE_MAX));
     setAlo(Number(searchParams.get("imin") ?? AGE_MIN));
     setAhi(Number(searchParams.get("imax") ?? AGE_MAX));
-    setNearby((searchParams.get("nearby") ?? "1") !== "0");
     const cid = searchParams.get("city_id");
     if (cid && cityLabel) {
       const [nm, uf] = cityLabel.split(" - ");
@@ -127,9 +126,8 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
     if (video) p.set("video", "1");
     if (attrs.size) p.set("attrs", [...attrs].join(","));
     if (city) p.set("city_id", String(city.id));
-    p.set("nearby", nearby ? "1" : "0");
     return p;
-  }, [searchParams, plo, phi, alo, ahi, video, attrs, city, nearby]);
+  }, [searchParams, plo, phi, alo, ahi, video, attrs, city]);
 
   // contagem ao vivo
   const paramsKey = buildParams().toString();
@@ -206,7 +204,7 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
   function clearAll() {
     setAttrs(new Set()); setVideo(false);
     setPlo(PRICE_MIN); setPhi(PRICE_MAX); setAlo(AGE_MIN); setAhi(AGE_MAX);
-    setCity(null); setCityQuery(""); setCityResults([]); setNearby(true);
+    setCity(null); setCityQuery(""); setCityResults([]);
     router.push("/"); onClose();
   }
 
@@ -266,10 +264,6 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
                   {gpsBusy ? "Localizando…" : "Usar minha localização"}
                 </button>
               </div>
-              <label className="mt-1 flex items-center gap-2 text-xs text-muted">
-                <input type="checkbox" checked={nearby} onChange={(e) => setNearby(e.target.checked)} className="accent-[var(--accent)]" />
-                Incluir cidades próximas (100km)
-              </label>
               {gpsMsg && <p className="text-xs text-accent-strong">{gpsMsg}</p>}
             </div>
           </Section>
@@ -289,9 +283,11 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
           </Section>
 
           {/* Com vídeo — standalone (fora do accordion) */}
-          <div className="border-b border-line/70 py-4">
-            <Toggle label="Só perfis com vídeo" on={video} onClick={() => setVideo((v) => !v)} />
-          </div>
+          {VIDEO_ENABLED && (
+            <div className="border-b border-line/70 py-4">
+              <Toggle label="Só perfis com vídeo" on={video} onClick={() => setVideo((v) => !v)} />
+            </div>
+          )}
 
           {/* demais grupos */}
           {[...byTitle.keys()].filter((t) => t !== "Conteúdo").map((title) => (

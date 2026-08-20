@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/SiteHeader";
 import AdCard, { type AdCardData } from "@/components/AdCard";
+import { userHasAd } from "@/lib/ads";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ export default async function ContaPage() {
   const now = new Date();
   return (
     <>
-      <SiteHeader />
+      <SiteHeader loggedIn hasAd={await userHasAd(admin, user.id)} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16">
         <h1 className="py-7 font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Favoritos</h1>
         {ads.length === 0 ? (

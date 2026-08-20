@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 
-const MAX_DOC = 15 * 1024 * 1024; // 15 MB
-const MAX_VIDEO = 150 * 1024 * 1024; // 150 MB
+const MAX_IMG = 15 * 1024 * 1024; // 15 MB
 
-function Slot({ label, hint, done, busy, accept, onPick }: {
-  label: string; hint: string; done: boolean; busy: boolean; accept: string; onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
+type Kind = "doc" | "face" | "body";
+
+function Slot({ label, hint, done, busy, onPick }: {
+  label: string; hint: string; done: boolean; busy: boolean; onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <label className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-card border border-dashed px-4 py-6 text-center transition-colors ${done ? "border-[#1f6b3f] bg-[#0f2a1b]" : "border-line bg-surface-2/40 hover:border-accent/60"}`}>
@@ -17,29 +18,31 @@ function Slot({ label, hint, done, busy, accept, onPick }: {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M12 4l-4 4M12 4l4 4M5 20h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         )}
       </span>
-      <span className="text-sm font-semibold text-ink">{busy ? "Enviando…" : done ? `${label} enviado` : label}</span>
+      <span className="text-sm font-semibold text-ink">{busy ? "Enviando…" : done ? `${label} enviada` : label}</span>
       <span className="text-[11px] text-muted">{hint}</span>
-      <input type="file" accept={accept} className="hidden" onChange={onPick} disabled={busy} />
+      <input type="file" accept="image/*" className="hidden" onChange={onPick} disabled={busy} />
     </label>
   );
 }
 
-export default function VerificationUploader({ userId, status: initStatus, hasDoc, hasVideo }: {
-  userId: string; status: string | null; hasDoc: boolean; hasVideo: boolean;
+export default function VerificationUploader({ userId, status: initStatus, hasDoc, hasFace, hasBody, feedback }: {
+  userId: string; status: string | null; hasDoc: boolean; hasFace: boolean; hasBody: boolean; feedback?: string | null;
 }) {
   const supabase = createBrowserClient();
   const [docPath, setDocPath] = useState<string | null>(null);
-  const [videoPath, setVideoPath] = useState<string | null>(null);
+  const [facePath, setFacePath] = useState<string | null>(null);
+  const [bodyPath, setBodyPath] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(initStatus);
-  const [busy, setBusy] = useState<"" | "doc" | "video" | "submit">("");
+  const [busy, setBusy] = useState<"" | Kind | "submit">("");
   const [msg, setMsg] = useState("");
 
   const docDone = !!docPath || hasDoc;
-  const videoDone = !!videoPath || hasVideo;
+  const faceDone = !!facePath || hasFace;
+  const bodyDone = !!bodyPath || hasBody;
 
-  async function upload(file: File, kind: "doc" | "video"): Promise<string | null> {
+  async function upload(file: File, kind: Kind): Promise<string | null> {
     setBusy(kind); setMsg("");
-    const ext = file.name.split(".").pop() || (kind === "doc" ? "jpg" : "mp4");
+    const ext = file.name.split(".").pop() || "jpg";
     const path = `${userId}/${kind}-${crypto.randomUUID()}.${ext}`;
     const up = await supabase.storage.from("verifications").upload(path, file, { contentType: file.type, upsert: true });
     setBusy("");
@@ -47,24 +50,20 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
     return path;
   }
 
-  async function onDoc(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
-    if (!f.type.startsWith("image/")) { setMsg("O documento deve ser uma imagem (foto)."); return; }
-    if (f.size > MAX_DOC) { setMsg("Imagem acima de 15 MB."); return; }
-    const p = await upload(f, "doc"); if (p) setDocPath(p);
-  }
-  async function onVideo(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
-    if (!f.type.startsWith("video/")) { setMsg("Envie um vídeo."); return; }
-    if (f.size > MAX_VIDEO) { setMsg("Vídeo acima de 150 MB."); return; }
-    const p = await upload(f, "video"); if (p) setVideoPath(p);
+  function picker(kind: Kind, set: (p: string) => void) {
+    return async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
+      if (!f.type.startsWith("image/")) { setMsg("Envie uma imagem (foto)."); return; }
+      if (f.size > MAX_IMG) { setMsg("Imagem acima de 15 MB."); return; }
+      const p = await upload(f, kind); if (p) set(p);
+    };
   }
 
   async function submit() {
-    if (!docPath || !videoPath) { setMsg("Envie o documento e o vídeo antes de enviar para verificação."); return; }
+    if (!docPath || !facePath || !bodyPath) { setMsg("Envie o documento, a foto do rosto e a foto de corpo antes de enviar."); return; }
     setBusy("submit");
     const body = new FormData();
-    body.set("doc_path", docPath); body.set("video_path", videoPath);
+    body.set("doc_path", docPath); body.set("face_path", facePath); body.set("body_path", bodyPath);
     const res = await fetch("/api/verification", { method: "POST", body });
     setBusy("");
     if (!res.ok) { const j = await res.json().catch(() => ({})); setMsg(j.error ?? "Falha ao enviar."); return; }
@@ -73,12 +72,22 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
 
   if (status === "approved") {
     return (
-      <div className="flex items-center gap-3 rounded-card border border-[#1f6b3f] bg-[#0f2a1b] px-4 py-4 text-sm text-[#7ee2a8]">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        <div><p className="font-semibold">Verificação aprovada</p><p className="text-xs opacity-80">Seu selo “Verificada” está ativo.</p></div>
+      <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-4 shadow-card ring-1 ring-[#43d17f]/15">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </span>
+        <div>
+          <p className="font-semibold text-ink">Verificação aprovada</p>
+          <p className="text-xs text-muted">Seu selo “Verificada” está ativo.</p>
+        </div>
+        <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill bg-[#12331f] px-2.5 py-1 text-[11px] font-bold text-[#43d17f]">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>Verificada
+        </span>
       </div>
     );
   }
+
+  const canSubmit = !!docPath && !!facePath && !!bodyPath;
 
   return (
     <div className="space-y-3">
@@ -86,19 +95,23 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
         <div className="rounded-card border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-accent">Comprovação enviada — em análise. Você recebe o selo assim que aprovarmos.</div>
       )}
       {status === "rejected" && (
-        <div className="rounded-card border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">Comprovação recusada. Reenvie um documento e vídeo nítidos.</div>
+        <div className="rounded-card border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <p className="font-semibold">Comprovação recusada. Reenvie o documento e as fotos nítidas.</p>
+          {feedback && <p className="mt-1 text-red-200/90"><span className="font-semibold">Motivo:</span> {feedback}</p>}
+        </div>
       )}
 
       <p className="text-xs text-muted">
-        Pra ganhar o selo <strong className="text-ink">Verificada</strong> (e mais confiança), envie: uma foto de um <strong className="text-ink">documento com foto</strong> (RG/CNH) e um <strong className="text-ink">vídeo curto</strong> seu. Arquivos <strong className="text-ink">privados</strong> — só a moderação vê, nunca aparecem no anúncio.
+        Pra ganhar o selo <strong className="text-ink">Verificada</strong> (e mais confiança), envie: uma foto de um <strong className="text-ink">documento com foto</strong> (RG/CNH), uma <strong className="text-ink">foto do rosto</strong> e uma <strong className="text-ink">foto de corpo inteiro com o rosto visível</strong> (pra confirmar que é você). Arquivos <strong className="text-ink">privados</strong> — só a moderação vê, nunca aparecem no anúncio.
       </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Slot label="Documento com foto" hint="Foto do RG ou CNH (imagem)" done={docDone} busy={busy === "doc"} accept="image/*" onPick={onDoc} />
-        <Slot label="Vídeo de verificação" hint="Vídeo curto seu (até 150 MB)" done={videoDone} busy={busy === "video"} accept="video/*" onPick={onVideo} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Slot label="Documento com foto" hint="RG ou CNH (imagem)" done={docDone} busy={busy === "doc"} onPick={picker("doc", setDocPath)} />
+        <Slot label="Foto do rosto" hint="Selfie nítida do rosto" done={faceDone} busy={busy === "face"} onPick={picker("face", setFacePath)} />
+        <Slot label="Foto de corpo + rosto" hint="Corpo inteiro com o rosto visível" done={bodyDone} busy={busy === "body"} onPick={picker("body", setBodyPath)} />
       </div>
 
-      <button onClick={submit} disabled={busy === "submit" || !docPath || !videoPath}
+      <button onClick={submit} disabled={busy === "submit" || !canSubmit}
         className="w-full rounded-input bg-accent py-2.5 text-sm font-bold text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-50">
         {busy === "submit" ? "Enviando…" : "Enviar para verificação"}
       </button>

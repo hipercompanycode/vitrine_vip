@@ -42,7 +42,7 @@ export default function StateCityPicker({ defaultCity, name = "city_id" }: { def
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <select value={uf} onChange={(e) => onUf(e.target.value)} className={`${inputCls} appearance-none`}>
+        <select value={uf} onChange={(e) => onUf(e.target.value)} required className={`${inputCls} appearance-none`}>
           <option value="">Estado…</option>
           {BR_STATES.map((s) => <option key={s.uf} value={s.uf}>{s.name} ({s.uf})</option>)}
         </select>
@@ -54,6 +54,7 @@ export default function StateCityPicker({ defaultCity, name = "city_id" }: { def
             onBlur={() => setTimeout(() => setOpen(false), 150)}
             placeholder={uf ? "Buscar cidade…" : "Escolha o estado antes"}
             disabled={!uf}
+            required
             className={`${inputCls} disabled:opacity-50`}
             autoComplete="off"
           />

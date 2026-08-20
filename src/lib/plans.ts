@@ -1,4 +1,4 @@
-export type PlanSlug = "basico" | "pro" | "premium";
+export type PlanSlug = "pro" | "premium";
 
 export type Plan = {
   slug: PlanSlug;
@@ -11,9 +11,8 @@ export type Plan = {
 };
 
 export const PLANS: Plan[] = [
-  { slug: "basico",  name: "Básico",  priceCents: 3990, bumpCooldownMinutes: 60, allowsStory: false, maxPhotos: 6,  maxVideos: 1 },
-  { slug: "pro",     name: "Pro",     priceCents: 6990, bumpCooldownMinutes: 15, allowsStory: true,  maxPhotos: 12, maxVideos: 3 },
-  { slug: "premium", name: "Premium", priceCents: 9990, bumpCooldownMinutes: 0,  allowsStory: true,  maxPhotos: 12, maxVideos: 3 },
+  { slug: "pro",     name: "Pro",     priceCents: 9990,  bumpCooldownMinutes: 15, allowsStory: true, maxPhotos: 12, maxVideos: 3 },
+  { slug: "premium", name: "Premium", priceCents: 14990, bumpCooldownMinutes: 0,  allowsStory: true, maxPhotos: 12, maxVideos: 3 },
 ];
 
 export function planBySlug(slug: PlanSlug): Plan {

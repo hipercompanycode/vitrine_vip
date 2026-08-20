@@ -1,8 +1,16 @@
 export type MediaKind = "photo" | "video";
 
+// Vídeo na galeria do anúncio está desligado até o upgrade do Supabase
+// (plano Free limita upload a 50 MB no projeto todo). Reativar = true.
+export const VIDEO_ENABLED = false;
+
+// Teto real de upload do projeto no Supabase (plano Free = 50 MB, cap global
+// que vence o limite do bucket). Subir só no plano Pro.
+export const GLOBAL_UPLOAD_MAX = 50 * 1024 * 1024;
+
 export const MEDIA_LIMITS = {
   photo: { maxBytes: 15 * 1024 * 1024, mimes: ["image/jpeg", "image/png", "image/webp"] as string[] },
-  video: { maxBytes: 150 * 1024 * 1024, mimes: ["video/mp4", "video/webm"] as string[], maxSeconds: 60 },
+  video: { maxBytes: GLOBAL_UPLOAD_MAX, mimes: ["video/mp4", "video/webm"] as string[], maxSeconds: 60 },
 } as const;
 
 export function kindOfMime(mime: string): MediaKind | null {

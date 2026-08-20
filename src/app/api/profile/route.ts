@@ -8,10 +8,13 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const name = String(form.get("name") ?? "").trim();
-  const whatsapp = String(form.get("whatsapp") ?? "").trim();
+
+  const patch: Record<string, string> = { name };
+  // só toca no whatsapp se o form enviar o campo (o contato mora no anúncio)
+  if (form.has("whatsapp")) patch.whatsapp = String(form.get("whatsapp") ?? "").trim();
 
   const admin = createAdminClient();
-  const { error } = await admin.from("profiles").update({ name, whatsapp }).eq("id", user.id);
+  const { error } = await admin.from("profiles").update(patch).eq("id", user.id);
   if (error) console.error("profile update:", error.message);
   return NextResponse.redirect(new URL("/perfil", request.url), { status: 303 });
 }

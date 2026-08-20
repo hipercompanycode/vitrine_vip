@@ -73,7 +73,7 @@ export default function PreviewPainelPage() {
 
         <section className={cardCls}>
           <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>
-          <AdActions ad={{ id: "mock", is_available: true, bumped_at: null }} />
+          <AdActions ad={{ id: "mock", is_available: true, bumped_at: null, status: "active" }} cooldownMinutes={60} />
         </section>
       </main>
     </>

@@ -19,5 +19,6 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { error } = await admin.from("ads").update({ status }).eq("id", adId);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.redirect(new URL("/admin", request.url), { status: 303 });
+  const back = String(form.get("back") ?? "/admin");
+  return NextResponse.redirect(new URL(back.startsWith("/admin") ? back : "/admin", request.url), { status: 303 });
 }

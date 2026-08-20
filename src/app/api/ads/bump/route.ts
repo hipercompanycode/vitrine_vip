@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
-import { canBump } from "@/lib/bump";
+import { canBump, nextBumpAt } from "@/lib/bump";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -22,10 +22,12 @@ export async function POST(request: Request) {
   const cooldown = (sub?.plans as unknown as { bump_cooldown_minutes: number } | null)?.bump_cooldown_minutes ?? 60;
   const last = ad.bumped_at ? new Date(ad.bumped_at) : null;
   if (!canBump(last, cooldown, new Date())) {
-    return NextResponse.json({ error: "aguarde o cooldown para subir de novo" }, { status: 429 });
+    const next = nextBumpAt(last, cooldown);
+    const remainingMs = next ? Math.max(0, next.getTime() - Date.now()) : 0;
+    return NextResponse.json({ error: "cooldown", remainingMs, cooldownMinutes: cooldown }, { status: 429 });
   }
 
-  const { error } = await admin.from("ads").update({ bumped_at: new Date().toISOString() }).eq("id", ad.id);
-  if (error) console.error("bump update:", error.message);
-  return NextResponse.redirect(new URL("/perfil", request.url), { status: 303 });
+  const { error } = await admin.rpc("bump_ad", { p_ad: ad.id });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, cooldownMinutes: cooldown });
 }

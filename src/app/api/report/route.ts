@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { isValidReason } from "@/lib/interactions";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
+
+  const rl = rateLimit(clientKey(request, user.id) + ":report", 5, 10 * 60 * 1000);
+  if (!rl.ok) return NextResponse.json({ error: "Muitas denúncias em pouco tempo. Tente mais tarde." }, { status: 429 });
 
   const form = await request.formData();
   const adId = String(form.get("ad_id") ?? "");

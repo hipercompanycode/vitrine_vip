@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { PLANS } from "@/lib/plans";
+import { VIDEO_ENABLED } from "@/lib/media";
 
 const HIGHLIGHT = "premium"; // mais vantajoso
 
 const TAGLINE: Record<string, string> = {
-  basico: "Pra começar",
-  pro: "Mais recursos",
+  pro: "Pra começar",
   premium: "Máximo destaque",
 };
 
@@ -32,16 +32,16 @@ function Feat({ ok, children }: { ok: boolean; children: React.ReactNode }) {
 
 export default function PlanCards({ currentSlug }: { currentSlug?: string }) {
   return (
-    <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
+    <div className="mx-auto grid max-w-3xl grid-cols-1 items-stretch gap-6 sm:grid-cols-2">
       {PLANS.map((p) => {
         const top = p.slug === HIGHLIGHT;
         const isCurrent = p.slug === currentSlug;
         return (
           <div
             key={p.slug}
-            className={`relative flex min-h-[460px] flex-col rounded-2xl border p-7 transition-transform ${
+            className={`relative flex min-h-[460px] flex-col rounded-2xl border p-7 ${
               top
-                ? "border-accent bg-gradient-to-b from-accent-soft/70 via-surface to-surface shadow-lift md:-translate-y-3"
+                ? "border-accent/70 bg-gradient-to-b from-accent-soft/35 to-surface ring-1 ring-accent/25 shadow-[0_10px_50px_-24px_var(--accent)]"
                 : "border-line bg-surface shadow-card"
             }`}
           >
@@ -65,19 +65,24 @@ export default function PlanCards({ currentSlug }: { currentSlug?: string }) {
 
             <ul className="flex-1 space-y-3.5">
               <Feat ok>{p.maxPhotos} fotos no anúncio</Feat>
-              <Feat ok>{p.maxVideos} vídeo{p.maxVideos > 1 ? "s" : ""}</Feat>
+              {VIDEO_ENABLED && <Feat ok>{p.maxVideos} vídeo{p.maxVideos > 1 ? "s" : ""}</Feat>}
               <Feat ok={p.allowsStory}>Story 24h na capa</Feat>
               <Feat ok>{p.bumpCooldownMinutes === 0 ? "Subir ao topo a qualquer hora" : `Subir ao topo a cada ${p.bumpCooldownMinutes} min`}</Feat>
               <Feat ok={p.slug === "premium"}>Selo de destaque (TOP)</Feat>
             </ul>
 
             {isCurrent ? (
-              <span className="mt-7 block rounded-input border border-[#1f6b3f] bg-[#0f2a1b] py-3.5 text-center text-sm font-bold text-[#7ee2a8]">Seu plano atual</span>
+              <span className="mt-7 flex items-center justify-center gap-2 rounded-input border border-line bg-surface-2 py-3.5 text-center text-sm font-bold text-ink ring-1 ring-[#43d17f]/15">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </span>
+                Seu plano atual
+              </span>
             ) : (
               <Link
                 href={`/assinar/${p.slug}`}
                 className={`mt-7 block rounded-input py-3.5 text-center text-sm font-bold transition-all active:scale-[0.98] ${
-                  top ? "bg-accent text-white shadow-[0_10px_28px_-8px_var(--accent)] hover:bg-accent-strong" : "border border-line bg-surface-2 text-ink hover:border-accent hover:text-accent"
+                  top ? "bg-accent text-white hover:bg-accent-strong" : "border border-line bg-surface-2 text-ink hover:border-accent hover:text-accent"
                 }`}
               >
                 Assinar {p.name}

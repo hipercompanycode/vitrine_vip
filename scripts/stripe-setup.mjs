@@ -18,8 +18,20 @@ if (error) throw error;
 for (const plan of plans) {
   const lookup = `plan_${plan.slug}_monthly`;
   const found = await stripe.prices.list({ lookup_keys: [lookup], limit: 1 });
-  let priceId = found.data[0]?.id;
-  if (!priceId) {
+  const existing = found.data[0];
+  let priceId = existing?.id;
+
+  if (existing && existing.unit_amount !== plan.price_cents) {
+    // Preços do Stripe são imutáveis: cria um novo com o valor novo,
+    // transfere a lookup_key e desativa o antigo.
+    const price = await stripe.prices.create({
+      product: existing.product, unit_amount: plan.price_cents, currency: "brl",
+      recurring: { interval: "month" }, lookup_key: lookup, transfer_lookup_key: true,
+    });
+    await stripe.prices.update(existing.id, { active: false });
+    priceId = price.id;
+    console.log(`${plan.slug}: repreçado ${existing.unit_amount} -> ${plan.price_cents}`);
+  } else if (!existing) {
     const product = await stripe.products.create({ name: `Plano ${plan.name}`, metadata: { slug: plan.slug } });
     const price = await stripe.prices.create({
       product: product.id, unit_amount: plan.price_cents, currency: "brl",
@@ -27,8 +39,9 @@ for (const plan of plans) {
     });
     priceId = price.id;
   }
+
   const up = await supabase.from("plans").update({ stripe_price_id: priceId }).eq("id", plan.id);
   if (up.error) throw up.error;
-  console.log(`${plan.slug} -> ${priceId}`);
+  console.log(`${plan.slug} -> ${priceId} (${plan.price_cents})`);
 }
 console.log("stripe-setup: done");

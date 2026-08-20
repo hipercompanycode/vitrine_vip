@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { inputCls, labelCls, cardCls, btnSecondary } from "@/components/ui";
+import { userHasAd } from "@/lib/ads";
+import DeleteAccount from "@/components/DeleteAccount";
 
 export const dynamic = "force-dynamic";
 
@@ -13,19 +15,29 @@ export default async function PerfilPage() {
   const admin = createAdminClient();
   const { data: profile } = await admin.from("profiles").select("name, whatsapp").eq("id", user.id).maybeSingle();
   const initial = (profile?.name?.trim() || user.email || "?").charAt(0).toUpperCase();
+  const hasAd = await userHasAd(admin, user.id);
 
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="inline-flex items-baseline gap-0.5">
-            <span className="font-display text-xl font-extrabold tracking-tight text-ink">vitrine</span>
+            <span className="font-display text-xl font-extrabold tracking-tight text-ink">vitrine<span className="text-accent">vip</span></span>
             <span className="h-2 w-2 rounded-full bg-accent" />
           </Link>
           <nav className="flex items-center gap-2">
             <Link href="/meu-anuncio" className="inline-flex items-center gap-1.5 rounded-pill bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-strong active:scale-95">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
-              Anunciar
+              {hasAd ? (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+                  Meu anúncio
+                </>
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
+                  Anunciar
+                </>
+              )}
             </Link>
             <form action="/logout" method="post">
               <button className="rounded-pill px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-accent-soft hover:text-accent">Sair</button>
@@ -51,19 +63,17 @@ export default async function PerfilPage() {
         {/* dados */}
         <section className={cardCls}>
           <h2 className="font-display text-base font-bold text-ink">Seus dados</h2>
-          <p className="mb-4 mt-0.5 text-xs text-muted">O WhatsApp aparece no botão de contato do seu anúncio.</p>
+          <p className="mb-4 mt-0.5 text-xs text-muted">Como você aparece no site. O contato (WhatsApp) fica no seu anúncio.</p>
           <form action="/api/profile" method="post" className="space-y-3">
             <label className="block">
               <span className={labelCls}>Seu nome</span>
               <input name="name" defaultValue={profile?.name ?? ""} placeholder="Como você quer aparecer" className={inputCls} />
             </label>
-            <label className="block">
-              <span className={labelCls}>WhatsApp</span>
-              <input name="whatsapp" defaultValue={profile?.whatsapp ?? ""} placeholder="5511999999999 (com DDD e país)" inputMode="numeric" className={inputCls} />
-            </label>
             <button className={btnSecondary}>Salvar</button>
           </form>
         </section>
+
+        <DeleteAccount />
       </main>
     </>
   );

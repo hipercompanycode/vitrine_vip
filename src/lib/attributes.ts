@@ -21,12 +21,6 @@ export const ATTRIBUTE_GROUPS: AttrGroup[] = [
     { slug: "casais", label: "Casais" },
     { slug: "deficientes", label: "Deficientes físicos" },
   ] },
-  { title: "Principais", label: "Contato", items: [
-    { slug: "ligacao", label: "Ligação" },
-    { slug: "whatsapp", label: "WhatsApp" },
-    { slug: "telegram", label: "Telegram" },
-  ] },
-
   { title: "Aparência", label: "Etnia", items: [
     { slug: "brancas", label: "Brancas" },
     { slug: "latinas", label: "Latinas" },
@@ -76,6 +70,32 @@ export const ATTRIBUTE_GROUPS: AttrGroup[] = [
     { slug: "oral-com-camisinha", label: "Sexo oral com camisinha" },
     { slug: "oral-ate-final", label: "Sexo oral até o final" },
     { slug: "sexo-anal", label: "Sexo anal" },
+    { slug: "sexo-virtual", label: "Sexo virtual" },
+    { slug: "striptease", label: "Striptease" },
+  ] },
+
+  { title: "Serviços extras", items: [
+    { slug: "beijo-grego", label: "Beijo grego" },
+    { slug: "garganta-profunda", label: "Garganta profunda" },
+    { slug: "bdsm", label: "BDSM" },
+    { slug: "inversao", label: "Inversão" },
+    { slug: "chuva-dourada", label: "Chuva dourada" },
+    { slug: "chuva-marrom", label: "Chuva marrom" },
+    { slug: "dominacao", label: "Dominação" },
+    { slug: "submissao", label: "Submissão" },
+    { slug: "sadomasoquismo", label: "Sadomasoquismo" },
+    { slug: "fetichismo", label: "Fetichismo" },
+    { slug: "podolatria", label: "Podolatria (pés)" },
+    { slug: "squirting", label: "Squirting" },
+    { slug: "voyeurismo", label: "Voyeurismo" },
+    { slug: "role-play", label: "Role-play" },
+  ] },
+
+  { title: "Finalizações", items: [
+    { slug: "fin-1", label: "1 finalização" },
+    { slug: "fin-2", label: "2 finalizações" },
+    { slug: "fin-3", label: "3 finalizações" },
+    { slug: "fin-sem-limite", label: "Sem limite" },
   ] },
 
   { title: "Lugar", items: [

@@ -29,7 +29,7 @@ export default function StoryManager({
     if (!file) return;
     setMsg("");
     if (kindOfMime(file.type) !== "video") { setMsg("Envie um vídeo (mp4/webm)."); return; }
-    if (file.size > MEDIA_LIMITS.video.maxBytes) { setMsg("Vídeo acima de 150 MB."); return; }
+    if (file.size > MEDIA_LIMITS.video.maxBytes) { setMsg("Vídeo acima de 50 MB."); return; }
     if (await videoTooLong(file)) { setMsg("Vídeo acima de 60s."); return; }
 
     setBusy(true);

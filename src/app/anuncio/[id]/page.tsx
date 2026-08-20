@@ -8,6 +8,8 @@ import { canInteract, type Role } from "@/lib/roles";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 import ReportButton from "@/components/ReportButton";
+import { userHasAd } from "@/lib/ads";
+import ViewTracker from "@/components/ViewTracker";
 import { publicUrl } from "@/lib/storage";
 import type { GalleryItem } from "@/components/Gallery";
 import type { Metadata } from "next";
@@ -48,26 +50,64 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function AnuncioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const admin = createAdminClient();
+  const ssr = await createServerClient();
+  const nowIso = new Date().toISOString();
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const hueFromId = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; };
 
-  const { data: ad, error } = await admin
-    .from("ads")
-    .select("*, cities ( name, uf ), profiles ( name, whatsapp )")
-    .eq("id", id)
-    .eq("status", "active")
-    .eq("verified", true)
-    .maybeSingle();
+  // 1) anúncio + usuário em paralelo
+  const [{ data: ad, error }, { data: { user } }] = await Promise.all([
+    admin.from("ads").select("*, cities ( name, uf ), profiles ( name, whatsapp )")
+      .eq("id", id).eq("status", "active").eq("verified", true).maybeSingle(),
+    ssr.auth.getUser(),
+  ]);
   if (error) console.error("anuncio query:", error.message);
   if (!ad) notFound();
 
-  // visível só com assinatura ativa
-  const { data: sub } = await admin
-    .from("subscriptions")
-    .select("id")
-    .eq("profile_id", ad.profile_id as string)
-    .eq("status", "active")
-    .gt("current_period_end", new Date().toISOString())
-    .maybeSingle();
-  if (!sub) notFound();
+  const pid = ad.profile_id as string;
+  const cityId = ad.city_id as number | null;
+
+  // estado do usuário logado (curtiu / favoritou / papel / tem anúncio)
+  const userStateFn = async () => {
+    if (!user) return { liked: false, favorited: false, role: null as string | null, hasAd: false };
+    const [{ data: l }, { data: f }, { data: p }, hasAd] = await Promise.all([
+      admin.from("likes").select("id").eq("ad_id", id).eq("user_id", user.id).maybeSingle(),
+      admin.from("favorites").select("id").eq("ad_id", id).eq("user_id", user.id).maybeSingle(),
+      admin.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      userHasAd(admin, user.id),
+    ]);
+    return { liked: !!l, favorited: !!f, role: (p?.role as string | undefined) ?? null, hasAd };
+  };
+
+  // destaques: perfis PREMIUM na mesma cidade, ordenados pelos que subiram mais recentemente
+  const relatedFn = async () => {
+    if (!cityId) return [] as any[];
+    const { data: subs2 } = await admin.from("subscriptions").select("profile_id, plans ( slug )").eq("status", "active").gt("current_period_end", nowIso);
+    const premiumPids = Array.from(new Set(
+      (subs2 ?? [])
+        .filter((s: any) => (Array.isArray(s.plans) ? s.plans[0] : s.plans)?.slug === "premium")
+        .map((s: any) => s.profile_id)
+    ));
+    if (!premiumPids.length) return [] as any[];
+    const { data: rel } = await admin.from("ads")
+      .select("id, title, headline, price_cents, age, is_available, bumped_at, profiles ( name )")
+      .eq("status", "active").eq("verified", true).eq("city_id", cityId).in("profile_id", premiumPids).neq("id", id)
+      .order("bumped_at", { ascending: false, nullsFirst: false }).limit(5);
+    return rel ?? [];
+  };
+
+  // 2) todo o resto do anúncio em paralelo
+  const [{ data: sub }, { count: likeCount }, userState, { data: reviewRows }, { data: mediaRows }, { data: story }, { data: verifRow }, relRows] = await Promise.all([
+    admin.from("subscriptions").select("id").eq("profile_id", pid).eq("status", "active").gt("current_period_end", nowIso).maybeSingle(),
+    admin.from("likes").select("*", { count: "exact", head: true }).eq("ad_id", id),
+    userStateFn(),
+    admin.from("reviews").select("id, user_id, comment, tags, created_at, profiles ( name )").eq("ad_id", id).order("created_at", { ascending: false }),
+    admin.from("ad_media").select("type, storage_path, is_cover").eq("ad_id", id).order("position"),
+    admin.from("stories").select("storage_path").eq("ad_id", id).gt("expires_at", nowIso).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("verifications").select("reviewed_at").eq("profile_id", pid).maybeSingle(),
+    relatedFn(),
+  ]);
+  if (!sub) notFound(); // visível só com assinatura ativa
 
   const cityRaw = ad.cities as CityEmbed | CityEmbed[] | null;
   const profileRaw = ad.profiles as ProfileEmbed | ProfileEmbed[] | null;
@@ -85,64 +125,31 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     whatsapp: profile?.whatsapp ?? "",
   };
 
-  // interações: contagem de curtidas + estado do usuário logado
-  const ssr = await createServerClient();
-  const { data: { user } } = await ssr.auth.getUser();
-  const { count: likeCount } = await admin
-    .from("likes").select("*", { count: "exact", head: true }).eq("ad_id", data.id);
-
-  let liked = false;
-  let favorited = false;
-  let role: string | null = null;
-  if (user) {
-    const [{ data: l }, { data: f }, { data: p }] = await Promise.all([
-      admin.from("likes").select("id").eq("ad_id", data.id).eq("user_id", user.id).maybeSingle(),
-      admin.from("favorites").select("id").eq("ad_id", data.id).eq("user_id", user.id).maybeSingle(),
-      admin.from("profiles").select("role").eq("id", user.id).maybeSingle(),
-    ]);
-    liked = !!l;
-    favorited = !!f;
-    role = (p?.role as string | undefined) ?? null;
-  }
-
   const interactions = {
     likeCount: likeCount ?? 0,
-    liked,
-    favorited,
-    canInteract: canInteract(role as Role | null),
+    liked: userState.liked,
+    favorited: userState.favorited,
+    canInteract: canInteract(userState.role as Role | null),
     loggedIn: !!user,
   };
+  const hasAd = userState.hasAd;
 
-  const { data: reviewRows } = await admin
-    .from("reviews")
-    .select("id, user_id, comment, tags, created_at, profiles ( name )")
-    .eq("ad_id", data.id)
-    .order("created_at", { ascending: false });
   const reviews: ReviewItem[] = (reviewRows ?? []).map((r: any) => ({
     id: r.id, user_id: r.user_id, comment: r.comment, tags: r.tags ?? [],
     created_at: r.created_at,
     authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
   }));
 
-  const { data: mediaRows } = await admin
-    .from("ad_media").select("type, storage_path, is_cover").eq("ad_id", data.id).order("position");
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const media: GalleryItem[] = (mediaRows ?? []).map((m: any) => ({
     url: publicUrl(base, "ad-media", m.storage_path), type: m.type,
   }));
   const coverRow = (mediaRows ?? []).find((m: any) => m.is_cover && m.type === "photo")
     ?? (mediaRows ?? []).find((m: any) => m.type === "photo");
   const coverUrl = coverRow ? publicUrl(base, "ad-media", coverRow.storage_path) : null;
-
-  const { data: story } = await admin
-    .from("stories").select("storage_path").eq("ad_id", data.id).gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false }).limit(1).maybeSingle();
   const storyUrl = story ? publicUrl(base, "ad-media", story.storage_path) : null;
 
-  // stats de reputação
   const nFotos = (mediaRows ?? []).filter((m: any) => m.type === "photo").length;
   const nVideos = (mediaRows ?? []).filter((m: any) => m.type === "video").length;
-  const { data: verifRow } = await admin.from("verifications").select("reviewed_at").eq("profile_id", ad.profile_id as string).maybeSingle();
   const DAY = 86400000;
   const dias = Math.max(0, Math.floor((Date.now() - new Date(ad.created_at as string).getTime()) / DAY));
   const ultimaVerif = verifRow?.reviewed_at ? Math.floor((Date.now() - new Date(verifRow.reviewed_at as string).getTime()) / DAY) : null;
@@ -152,29 +159,23 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     verified: !!ad.verified,
     attributes: (ad.attributes as string[] | null) ?? [],
     priceTable: (ad.price_table as { label: string; price_cents: number }[] | null) ?? [],
+    contact: {
+      whatsapp: ad.contact_whatsapp !== false,
+      call: !!ad.contact_call,
+      telegram: !!ad.contact_telegram,
+    },
     stats: { dias, ultimaVerif, nFotos, nVideos, nAvaliacoes: reviews.length },
   };
 
-  // perfis na mesma cidade (destaques)
-  const hueFromId = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; };
-  let related: ProfileCardData[] = [];
-  if (city && ad.city_id) {
-    const { data: subs2 } = await admin.from("subscriptions").select("profile_id").eq("status", "active").gt("current_period_end", new Date().toISOString());
-    const pids2 = Array.from(new Set((subs2 ?? []).map((s: any) => s.profile_id)));
-    if (pids2.length) {
-      const { data: rel } = await admin.from("ads")
-        .select("id, title, headline, price_cents, age, profiles ( name )")
-        .eq("status", "active").eq("verified", true).eq("city_id", ad.city_id as number).in("profile_id", pids2).neq("id", id).limit(6);
-      related = (rel ?? []).map((r: any) => {
-        const pn = Array.isArray(r.profiles) ? r.profiles[0]?.name : r.profiles?.name;
-        return { id: r.id, name: pn?.trim() || r.title, age: r.age ?? 0, city: city.name, description: r.headline || "", verified: true, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null } as ProfileCardData;
-      });
-    }
-  }
+  const related: ProfileCardData[] = (relRows ?? []).map((r: any) => {
+    const pn = Array.isArray(r.profiles) ? r.profiles[0]?.name : r.profiles?.name;
+    return { id: r.id, name: pn?.trim() || r.title, age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null } as ProfileCardData;
+  });
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader loggedIn={!!user} hasAd={hasAd} />
+      <ViewTracker adId={data.id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -205,7 +206,12 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
 
       {related.length > 0 && data.city && (
         <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
-          <h2 className="mb-3 font-display text-lg font-bold text-ink">Acompanhantes em {data.city.name}-{data.city.uf}</h2>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-pill bg-gradient-to-r from-accent-strong to-accent px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-pop">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>Premium
+            </span>
+            <h2 className="font-display text-lg font-bold text-ink">Perfis em destaque em {data.city.name}-{data.city.uf}</h2>
+          </div>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {related.map((p) => <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />)}
           </div>

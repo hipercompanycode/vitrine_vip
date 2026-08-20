@@ -11,7 +11,8 @@ export type ProfileCardData = {
   hasAudio?: boolean;
   hasVideo?: boolean;
   recordedAt?: string | null; // "13:07" -> chip "Gravada às 13:07"
-  featured?: boolean;
+  featured?: boolean; // dono no plano Premium -> destaque forte + selo TOP
+  available?: boolean; // "disponível agora" -> destaque verde
   priceLabel?: string | null;
   hue?: number;
   ratio?: "tall" | "portrait" | "square"; // ignorado (cards uniformes) — compat
@@ -25,12 +26,17 @@ export default function ProfileCard({
   hrefBase?: string;
 }) {
   const hue = p.hue ?? 320;
+  const premium = !!p.featured;
+  const available = !!p.available;
+  const shell = premium
+    ? "border-transparent bg-gradient-to-b from-accent-soft/55 via-surface to-surface ring-2 ring-accent shadow-lift"
+    : available
+    ? "border-available/45 bg-surface ring-1 ring-available/40"
+    : "border-line bg-surface";
 
   return (
     <article
-      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-surface shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift ${
-        p.featured ? "border-accent/70" : "border-line"
-      }`}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift ${shell}`}
     >
       <Link href={`${hrefBase}/${p.id}`} aria-label={`Ver anúncio de ${p.name}`} className="absolute inset-0 z-[1]" />
 
@@ -44,12 +50,12 @@ export default function ProfileCard({
           <span className="select-none font-display text-6xl font-black text-white/10">{p.name.charAt(0)}</span>
         </div>
 
-        {/* topo-esquerda: Verificada + gravada + contadores */}
+        {/* topo-esquerda: Disponível + Verificada + gravada + contadores */}
         <div className="absolute left-2 top-2 z-[2] flex flex-col items-start gap-1">
-          {p.verified && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-[#12331f]/90 px-1.5 py-0.5 text-[10px] font-bold text-[#43d17f] backdrop-blur-sm">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              Verificada
+          {available && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-[#0f2a1b]/90 px-1.5 py-0.5 text-[10px] font-bold text-[#43d17f] shadow-sm ring-1 ring-[#43d17f]/40 backdrop-blur-sm">
+              <span className="dot-live h-1.5 w-1.5 rounded-full bg-[#43d17f]" />
+              Disponível agora
             </span>
           )}
           {p.recordedAt && (
@@ -74,8 +80,8 @@ export default function ProfileCard({
 
         {/* topo-direita: destaque + coração */}
         <div className="absolute right-2 top-2 z-[2] flex items-center gap-1.5">
-          {p.featured && (
-            <span className="inline-flex items-center gap-0.5 rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white shadow-pop">
+          {premium && (
+            <span className="inline-flex items-center gap-0.5 rounded-md bg-gradient-to-r from-accent-strong to-accent px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-pop ring-1 ring-white/25">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>TOP
             </span>
           )}
@@ -92,6 +98,14 @@ export default function ProfileCard({
             </span>
           </span>
         )}
+
+        {/* rodapé-direita da foto: Verificada */}
+        {p.verified && (
+          <span className="absolute bottom-2 right-2 z-[2] inline-flex items-center gap-1 rounded-md bg-[#12331f]/90 px-1.5 py-0.5 text-[10px] font-bold text-[#43d17f] shadow-sm ring-1 ring-[#43d17f]/30 backdrop-blur-sm">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Verificada
+          </span>
+        )}
       </div>
 
       {/* INFOS embaixo (mais espaço) */}
@@ -104,7 +118,7 @@ export default function ProfileCard({
         <div className="mt-auto flex items-center gap-1.5 pt-0.5">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="11" r="2.2" fill="currentColor" /></svg>
           <span className="truncate text-[12px] text-muted">{p.city}</span>
-          {p.priceLabel && <span className="ml-auto whitespace-nowrap font-display text-base font-extrabold text-ink">{p.priceLabel}</span>}
+          {p.priceLabel && <span className={`ml-auto whitespace-nowrap font-display text-base font-extrabold ${premium ? "text-accent" : "text-ink"}`}>{p.priceLabel}</span>}
         </div>
       </div>
     </article>
