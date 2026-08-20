@@ -189,8 +189,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
         }}
       />
       <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} storyUrl={storyUrl} media={media} extra={extra} />
-      <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
-        <div className="mb-6"><ReportButton adId={data.id} loggedIn={interactions.loggedIn} /></div>
+      <section className="mx-auto w-full max-w-3xl px-4 pb-8">
         <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações</h2>
         {interactions.canInteract ? (
           <div className="mb-4"><ReviewForm adId={data.id} /></div>
@@ -212,6 +211,10 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
           </div>
         </section>
       )}
+
+      <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
+        <ReportButton adId={data.id} loggedIn={interactions.loggedIn} />
+      </section>
     </>
   );
 }
