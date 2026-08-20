@@ -31,7 +31,8 @@ export default function LikeButton({
       <svg width="16" height="16" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
         <path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z" />
       </svg>
-      {count}
+      {active ? "Curtido" : "Curtir"}
+      {count > 0 && <span className={`ml-0.5 rounded-full px-1.5 text-xs ${active ? "bg-accent/20" : "bg-surface-2"}`}>{count}</span>}
     </button>
   );
 }

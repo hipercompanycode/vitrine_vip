@@ -97,6 +97,13 @@ export default function AdDetail({
           )}
         </div>
 
+        {interactions && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <LikeButton adId={ad.id} initialActive={interactions.liked} initialCount={interactions.likeCount} canInteract={interactions.canInteract} loggedIn={interactions.loggedIn} />
+            <FavoriteButton adId={ad.id} initialActive={interactions.favorited} canInteract={interactions.canInteract} loggedIn={interactions.loggedIn} />
+          </div>
+        )}
+
         {/* tags */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {ad.city && (
@@ -113,13 +120,6 @@ export default function AdDetail({
           <span className="text-xs text-muted">A partir de</span>
           <div className="font-display text-3xl font-extrabold text-accent">{formatBRL(ad.price_cents)}</div>
         </div>
-
-        {interactions && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <LikeButton adId={ad.id} initialActive={interactions.liked} initialCount={interactions.likeCount} canInteract={interactions.canInteract} loggedIn={interactions.loggedIn} />
-            <FavoriteButton adId={ad.id} initialActive={interactions.favorited} canInteract={interactions.canInteract} loggedIn={interactions.loggedIn} />
-          </div>
-        )}
 
         {waHref && (
           <a href={waHref} target="_blank" rel="noopener noreferrer" className="mt-5 flex w-full items-center justify-center gap-2 rounded-pill bg-wa px-5 py-3.5 text-base font-semibold text-white shadow-pop transition-all hover:bg-wa-strong active:scale-[0.99]">
