@@ -20,19 +20,17 @@ export default function ReviewList({
     <ul className="space-y-3">
       {reviews.map((r) => (
         <li key={r.id} className="rounded-card border border-line bg-surface p-4 shadow-card">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-ink">{r.authorName || "Usuário"}</span>
-            <span className="text-xs text-muted">{timeAgo(new Date(r.created_at), now)}</span>
-          </div>
-          {r.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-sm font-semibold text-ink">{r.authorName || "Usuário"}</span>
               {r.tags.map((t) => (
                 <span key={t} className="rounded-pill bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">
                   {tagLabel(t)}
                 </span>
               ))}
             </div>
-          )}
+            <span className="shrink-0 whitespace-nowrap text-xs text-muted">{timeAgo(new Date(r.created_at), now)}</span>
+          </div>
           {r.comment && <p className="mt-2 whitespace-pre-line text-sm text-ink/90">{r.comment}</p>}
           {currentUserId === r.user_id && (
             <form action="/api/review/delete" method="post" className="mt-2">
