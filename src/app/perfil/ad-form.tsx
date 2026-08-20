@@ -1,6 +1,6 @@
 import StateCityPicker from "@/components/StateCityPicker";
 import PriceTable from "@/components/PriceTable";
-import { inputCls, labelCls, btnPrimary } from "@/components/ui";
+import { inputCls, labelCls } from "@/components/ui";
 import { ATTRIBUTE_GROUPS } from "@/lib/attributes";
 
 type PriceRow = { label: string; price_cents: number };
@@ -16,10 +16,12 @@ type Ad = {
   price_table?: PriceRow[] | null;
 } | null;
 
-/** Passo 1 — dados básicos. */
-export function AdBasicsForm({ ad, defaultCity, next = "/meu-anuncio", cta = "Salvar" }: { ad: Ad; defaultCity?: City | null; next?: string; cta?: string }) {
+const FORM_ID = "wizard-form";
+
+/** Passo 1 — dados básicos. Sem botão: o "Próximo" do wizard submete (form={FORM_ID}). */
+export function AdBasicsForm({ ad, defaultCity, next }: { ad: Ad; defaultCity?: City | null; next: string }) {
   return (
-    <form action="/api/ads" method="post" className="space-y-5">
+    <form id={FORM_ID} action="/api/ads" method="post" className="space-y-5">
       <input type="hidden" name="next" value={next} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_6.5rem]">
@@ -48,27 +50,24 @@ export function AdBasicsForm({ ad, defaultCity, next = "/meu-anuncio", cta = "Sa
         <span className={labelCls}>Descrição completa</span>
         <textarea name="description" defaultValue={ad?.description ?? ""} placeholder="Texto completo — aparece na página do anúncio." className={`${inputCls} resize-none`} rows={5} />
       </label>
-
-      <button className={btnPrimary}>{cta}</button>
     </form>
   );
 }
 
-/** Passo — tabela de preços (vários serviços/faixas). */
-export function AdPricesForm({ ad, next = "/meu-anuncio", cta = "Salvar" }: { ad: Ad; next?: string; cta?: string }) {
+/** Passo 2 — tabela de preços. */
+export function AdPricesForm({ ad, next }: { ad: Ad; next: string }) {
   return (
-    <form action="/api/ads" method="post" className="space-y-4">
+    <form id={FORM_ID} action="/api/ads" method="post" className="space-y-4">
       <input type="hidden" name="has_prices" value="1" />
       <input type="hidden" name="next" value={next} />
       <p className="text-xs text-muted">Adicione serviços e valores (ex.: 1 hora, pernoite, diária). O menor valor vira “a partir de” no card.</p>
       <PriceTable initial={ad?.price_table ?? undefined} />
-      <button className={btnPrimary}>{cta}</button>
     </form>
   );
 }
 
-/** Passo 2 — características (atributos, viram filtros). */
-export function AdAttributesForm({ ad, next = "/meu-anuncio", cta = "Salvar" }: { ad: Ad; next?: string; cta?: string }) {
+/** Passo 4 — características (atributos, viram filtros). */
+export function AdAttributesForm({ ad, next }: { ad: Ad; next: string }) {
   const selected = new Set(ad?.attributes ?? []);
   const byTitle = new Map<string, typeof ATTRIBUTE_GROUPS>();
   for (const g of ATTRIBUTE_GROUPS) {
@@ -78,7 +77,7 @@ export function AdAttributesForm({ ad, next = "/meu-anuncio", cta = "Salvar" }: 
   }
 
   return (
-    <form action="/api/ads" method="post" className="space-y-7">
+    <form id={FORM_ID} action="/api/ads" method="post" className="space-y-7">
       <input type="hidden" name="has_attrs" value="1" />
       <input type="hidden" name="next" value={next} />
 
@@ -107,8 +106,6 @@ export function AdAttributesForm({ ad, next = "/meu-anuncio", cta = "Salvar" }: 
           </div>
         </div>
       ))}
-
-      <button className={btnPrimary}>{cta}</button>
     </form>
   );
 }

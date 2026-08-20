@@ -59,20 +59,22 @@ function Stepper({ step, done }: { step: number; done: boolean[] }) {
   );
 }
 
-function StepNav({ step, canNext }: { step: number; canNext: boolean }) {
+const NEXT_CLS = "rounded-input bg-accent px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-accent-strong active:scale-[0.98]";
+
+function StepNav({ step, formId }: { step: number; formId?: string }) {
   return (
     <div className="mt-6 flex items-center justify-between">
       {step > 1 ? (
         <Link href={`/meu-anuncio?step=${step - 1}`} className="rounded-input border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface-2">← Voltar</Link>
       ) : <span />}
       {step < N ? (
-        canNext ? (
-          <Link href={`/meu-anuncio?step=${step + 1}`} className="rounded-input bg-accent px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-accent-strong active:scale-[0.98]">Próximo →</Link>
+        formId ? (
+          <button type="submit" form={formId} className={NEXT_CLS}>Salvar e continuar →</button>
         ) : (
-          <span className="rounded-input bg-surface-2 px-6 py-2.5 text-sm font-bold text-muted">Próximo →</span>
+          <Link href={`/meu-anuncio?step=${step + 1}`} className={NEXT_CLS}>Próximo →</Link>
         )
       ) : (
-        <Link href="/perfil" className="rounded-input bg-accent px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-accent-strong">Concluir</Link>
+        <Link href="/perfil" className={NEXT_CLS}>Concluir</Link>
       )}
     </div>
   );
@@ -138,9 +140,9 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
           <div className="space-y-6">
             <section className={cardCls}>
               <h2 className="mb-4 font-display text-base font-bold text-ink">Dados do anúncio</h2>
-              <AdBasicsForm ad={ad ?? null} defaultCity={defaultCity} next="/meu-anuncio?step=1" cta="Salvar dados" />
+              <AdBasicsForm ad={ad ?? null} defaultCity={defaultCity} next="/meu-anuncio?step=2" />
             </section>
-            <StepNav step={1} canNext={!!ad} />
+            <StepNav step={1} formId="wizard-form" />
           </div>
         )}
 
@@ -150,12 +152,12 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
             <section className={cardCls}>
               <h2 className="mb-4 font-display text-base font-bold text-ink">Tabela de preços</h2>
               {ad ? (
-                <AdPricesForm ad={ad ?? null} next="/meu-anuncio?step=2" cta="Salvar preços" />
+                <AdPricesForm ad={ad ?? null} next="/meu-anuncio?step=3" />
               ) : (
                 <p className="text-sm text-muted">Salve os <Link href="/meu-anuncio?step=1" className="text-accent underline">dados</Link> primeiro.</p>
               )}
             </section>
-            <StepNav step={2} canNext={!!ad} />
+            <StepNav step={2} formId={ad ? "wizard-form" : undefined} />
           </div>
         )}
 
@@ -171,7 +173,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 <p className="text-sm text-muted">Salve os <Link href="/meu-anuncio?step=1" className="text-accent underline">dados</Link> primeiro.</p>
               )}
             </section>
-            <StepNav step={3} canNext={!!ad} />
+            <StepNav step={3} />
           </div>
         )}
 
@@ -182,12 +184,12 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
               <h2 className="mb-1 font-display text-base font-bold text-ink">Características e serviços</h2>
               <p className="mb-4 text-xs text-muted">Marque o que você oferece — vira filtro pra quem procura.</p>
               {ad ? (
-                <AdAttributesForm ad={ad ?? null} next="/meu-anuncio?step=4" cta="Salvar características" />
+                <AdAttributesForm ad={ad ?? null} next="/meu-anuncio?step=5" />
               ) : (
                 <p className="text-sm text-muted">Salve os <Link href="/meu-anuncio?step=1" className="text-accent underline">dados</Link> primeiro.</p>
               )}
             </section>
-            <StepNav step={4} canNext={!!ad} />
+            <StepNav step={4} formId={ad ? "wizard-form" : undefined} />
           </div>
         )}
 
@@ -205,7 +207,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
             )}
             {!active && <p className="text-sm text-muted">Escolha um plano pra deixar seu anúncio visível na vitrine.</p>}
             <PlanCards currentSlug={active ? plan?.slug : undefined} />
-            <StepNav step={5} canNext={true} />
+            <StepNav step={5} />
           </div>
         )}
 
@@ -222,7 +224,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 hasVideo={!!verif?.video_path}
               />
             </section>
-            <StepNav step={6} canNext={false} />
+            <StepNav step={6} />
           </div>
         )}
       </main>
