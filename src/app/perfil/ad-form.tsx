@@ -49,12 +49,19 @@ export function AdBasicsForm({ ad, defaultCity, next = "/meu-anuncio", cta = "Sa
         <textarea name="description" defaultValue={ad?.description ?? ""} placeholder="Texto completo — aparece na página do anúncio." className={`${inputCls} resize-none`} rows={5} />
       </label>
 
-      <div className="block">
-        <span className={labelCls}>Tabela de preços</span>
-        <p className="mb-2 text-[11px] text-muted">Adicione serviços e valores (ex.: 1 hora, pernoite). O menor valor vira “a partir de” no card.</p>
-        <PriceTable initial={ad?.price_table ?? undefined} />
-      </div>
+      <button className={btnPrimary}>{cta}</button>
+    </form>
+  );
+}
 
+/** Passo — tabela de preços (vários serviços/faixas). */
+export function AdPricesForm({ ad, next = "/meu-anuncio", cta = "Salvar" }: { ad: Ad; next?: string; cta?: string }) {
+  return (
+    <form action="/api/ads" method="post" className="space-y-4">
+      <input type="hidden" name="has_prices" value="1" />
+      <input type="hidden" name="next" value={next} />
+      <p className="text-xs text-muted">Adicione serviços e valores (ex.: 1 hora, pernoite, diária). O menor valor vira “a partir de” no card.</p>
+      <PriceTable initial={ad?.price_table ?? undefined} />
       <button className={btnPrimary}>{cta}</button>
     </form>
   );

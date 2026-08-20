@@ -106,6 +106,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       .from("ads")
       .select(`*, cities ( name, uf ), profiles ( name, whatsapp )`)
       .eq("status", "active")
+      .eq("verified", true)
       .in("profile_id", activeProfileIds);
     if (cityFilter) query = query.in("city_id", cityFilter);
     if (q) query = query.ilike("title", `%${q}%`);

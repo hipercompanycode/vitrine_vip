@@ -1,23 +1,19 @@
-// Taxonomia de atributos do perfil (tags em ads.attributes). Usada pelo form e pelo filtro.
+// Taxonomia de atributos do perfil (tags em ads.attributes). Usada pelo form E pelos filtros.
 // slugs em ascii-kebab (seguros em URL/DB). Rótulos exibidos ao usuário.
 
 export type AttrItem = { slug: string; label: string };
 export type AttrGroup = { title: string; label?: string; items: AttrItem[] };
 
 export const ATTRIBUTE_GROUPS: AttrGroup[] = [
-  {
-    title: "Principais",
-    label: "Pagamento",
-    items: [
-      { slug: "cartao-credito", label: "Cartão crédito" },
-      { slug: "pix", label: "PIX" },
-      { slug: "de-luxo", label: "De luxo" },
-      { slug: "economica", label: "Econômicas" },
-    ],
-  },
+  { title: "Principais", label: "Pagamento", items: [
+    { slug: "cartao-credito", label: "Cartão crédito" },
+    { slug: "cartao-debito", label: "Cartão débito" },
+    { slug: "pix", label: "Pix" },
+    { slug: "dinheiro", label: "Dinheiro" },
+  ] },
   { title: "Principais", label: "Perfil", items: [
     { slug: "maduras", label: "Maduras" },
-    { slug: "ninfetas", label: "Ninfetas" },
+    { slug: "novinhas", label: "Novinhas" },
   ] },
   { title: "Principais", label: "Atendimento a", items: [
     { slug: "homens", label: "Homens" },
@@ -30,10 +26,7 @@ export const ATTRIBUTE_GROUPS: AttrGroup[] = [
     { slug: "whatsapp", label: "WhatsApp" },
     { slug: "telegram", label: "Telegram" },
   ] },
-  { title: "Conteúdo", items: [
-    { slug: "rosto-visivel", label: "Rosto visível" },
-    { slug: "com-audio", label: "Com áudio" },
-  ] },
+
   { title: "Aparência", label: "Etnia", items: [
     { slug: "brancas", label: "Brancas" },
     { slug: "latinas", label: "Latinas" },
@@ -46,40 +39,45 @@ export const ATTRIBUTE_GROUPS: AttrGroup[] = [
     { slug: "loiras", label: "Loiras" },
     { slug: "ruivas", label: "Ruivas" },
   ] },
-  { title: "Aparência", label: "Estatura", items: [
-    { slug: "altas", label: "Altas" },
-    { slug: "mignon", label: "Mignon" },
+  { title: "Aparência", label: "Estrutura", items: [
+    { slug: "alta", label: "Alta" },
+    { slug: "baixa", label: "Baixa" },
   ] },
   { title: "Aparência", label: "Corpo", items: [
-    { slug: "gordinhas", label: "Gordinhas" },
-    { slug: "magras", label: "Magras" },
+    { slug: "gordinha", label: "Gordinha" },
+    { slug: "magra", label: "Magra" },
+    { slug: "mignon", label: "Mignon" },
   ] },
   { title: "Aparência", label: "Seios", items: [
-    { slug: "peitudas", label: "Peitudas" },
-    { slug: "seios-naturais", label: "Seios naturais" },
+    { slug: "silicone", label: "Silicone" },
+    { slug: "natural", label: "Natural" },
+  ] },
+  { title: "Aparência", label: "Tamanho dos seios", items: [
+    { slug: "peituda", label: "Peituda" },
+    { slug: "seios-medios", label: "Seios médios" },
+    { slug: "seios-pequenos", label: "Seios pequenos" },
   ] },
   { title: "Aparência", label: "Púbis", items: [
     { slug: "peludas", label: "Peludas" },
     { slug: "pubis-depilado", label: "Púbis depilado" },
   ] },
-  { title: "Serviços gerais", items: [
-    { slug: "beijos-na-boca", label: "Beijos na boca" },
-    { slug: "ejaculacao-corpo", label: "Ejaculação corpo" },
-    { slug: "facial", label: "Facial" },
-    { slug: "fantasias", label: "Fantasias e disfarces" },
+
+  { title: "Serviços", items: [
+    { slug: "beijo-na-boca", label: "Beijo na boca" },
+    { slug: "ejaculacao-corpo", label: "Ejaculação no corpo" },
+    { slug: "ejaculacao-rosto", label: "Ejaculação no rosto" },
+    { slug: "fantasias", label: "Fantasias e disfarce" },
     { slug: "massagem-erotica", label: "Massagem erótica" },
+    { slug: "massagem-nuru", label: "Massagem nuru" },
+    { slug: "massagem-tantrica", label: "Massagem tântrica" },
+    { slug: "massagem-relaxante", label: "Massagem relaxante" },
     { slug: "namoradinha", label: "Namoradinha" },
-    { slug: "oral", label: "Oral" },
-    { slug: "pse", label: "PSE" },
+    { slug: "oral-sem-camisinha", label: "Sexo oral sem camisinha" },
+    { slug: "oral-com-camisinha", label: "Sexo oral com camisinha" },
+    { slug: "oral-ate-final", label: "Sexo oral até o final" },
     { slug: "sexo-anal", label: "Sexo anal" },
   ] },
-  { title: "Serviços especiais", items: [
-    { slug: "fetichismo", label: "Fetichismo" },
-    { slug: "sado-suave", label: "Sado suave" },
-    { slug: "sado-duro", label: "Sado duro" },
-    { slug: "squirting", label: "Squirting" },
-    { slug: "strap-on", label: "Strap on" },
-  ] },
+
   { title: "Lugar", items: [
     { slug: "a-domicilio", label: "A domicílio" },
     { slug: "com-local", label: "Com local" },

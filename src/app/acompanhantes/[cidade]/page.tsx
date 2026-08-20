@@ -40,7 +40,7 @@ async function visibleProfilesInCity(cityId: number): Promise<ProfileCardData[]>
   const { data } = await admin
     .from("ads")
     .select("*, cities ( name, uf ), profiles ( name )")
-    .eq("status", "active").eq("city_id", cityId).in("profile_id", pids)
+    .eq("status", "active").eq("verified", true).eq("city_id", cityId).in("profile_id", pids)
     .order("bumped_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as any[];
@@ -111,7 +111,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
     const { data: subs } = await admin.from("subscriptions").select("profile_id").eq("status", "active").gt("current_period_end", nowIso);
     const pids = Array.from(new Set((subs ?? []).map((s: any) => s.profile_id)));
     if (pids.length) {
-      const { data: adCities } = await admin.from("ads").select("city_id").eq("status", "active").in("profile_id", pids).in("city_id", nearbyIds);
+      const { data: adCities } = await admin.from("ads").select("city_id").eq("status", "active").eq("verified", true).in("profile_id", pids).in("city_id", nearbyIds);
       const withAds = Array.from(new Set((adCities ?? []).map((a: any) => a.city_id)));
       if (withAds.length) {
         const { data: cs } = await admin.from("cities").select("id, name, uf").in("id", withAds.slice(0, 12));

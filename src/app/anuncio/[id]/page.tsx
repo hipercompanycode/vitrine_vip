@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { data: ad } = await admin
     .from("ads")
     .select("title, description, age, profile_id, cities ( name, uf ), profiles ( name )")
-    .eq("id", id).eq("status", "active").maybeSingle();
+    .eq("id", id).eq("status", "active").eq("verified", true).maybeSingle();
   if (!ad) return { title: "Anúncio não encontrado", robots: { index: false, follow: false } };
   const { data: sub } = await admin
     .from("subscriptions").select("id").eq("profile_id", ad.profile_id as string)
@@ -55,6 +55,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     )
     .eq("id", id)
     .eq("status", "active")
+    .eq("verified", true)
     .maybeSingle();
   if (error) console.error("anuncio query:", error.message);
   if (!ad) notFound();

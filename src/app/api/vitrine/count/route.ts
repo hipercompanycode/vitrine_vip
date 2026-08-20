@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     videoAdIds = Array.from(new Set((data ?? []).map((r: any) => r.ad_id)));
   }
 
-  let query = admin.from("ads").select("id", { count: "exact", head: true }).eq("status", "active").in("profile_id", pids);
+  let query = admin.from("ads").select("id", { count: "exact", head: true }).eq("status", "active").eq("verified", true).in("profile_id", pids);
   if (cityFilter) query = query.in("city_id", cityFilter);
   if (q) query = query.ilike("title", `%${q}%`);
   if (pmin != null) query = query.gte("price_cents", pmin * 100);

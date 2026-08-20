@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from("ads")
     .select("id, updated_at, city_id, cities ( name, uf )")
     .eq("status", "active")
+    .eq("verified", true)
     .in("profile_id", pids);
 
   const cityMap = new Map<number, { name: string; uf: string }>();
