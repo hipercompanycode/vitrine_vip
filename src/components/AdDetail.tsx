@@ -58,8 +58,6 @@ export default function AdDetail({
   const about: { title: string; label?: string; items: string[] }[] = ATTRIBUTE_GROUPS
     .map((g) => ({ title: g.title, label: g.label, items: g.items.filter((it) => attrs.has(it.slug)).map((it) => it.label) }))
     .filter((g) => g.items.length > 0);
-  const aboutByTitle = new Map<string, { label?: string; items: string[] }[]>();
-  for (const g of about) { const a = aboutByTitle.get(g.title) ?? []; a.push({ label: g.label, items: g.items }); aboutByTitle.set(g.title, a); }
 
   const priceTable = extra?.priceTable ?? [];
 
@@ -151,30 +149,20 @@ export default function AdDetail({
           </section>
         )}
 
-        {/* Sobre mim (atributos) — cards por categoria */}
+        {/* Sobre mim (atributos) — ficha em linhas */}
         {about.length > 0 && (
           <section className="mt-8">
             <h2 className="mb-3 font-display text-lg font-bold text-ink">Sobre mim</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[...aboutByTitle.entries()].map(([title, groups]) => (
-                <div key={title} className="rounded-2xl border border-line bg-gradient-to-b from-surface-2/50 to-surface p-4 shadow-card">
-                  <div className="mb-3 flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft text-accent"><CategoryIcon title={title} /></span>
-                    <h3 className="font-display text-sm font-bold text-ink">{title}</h3>
+            <div className="rounded-card border border-line bg-surface px-4 shadow-card sm:px-5">
+              {about.map((g, i) => (
+                <div key={i} className="flex flex-col gap-2 border-b border-line/60 py-3.5 last:border-0 sm:flex-row sm:gap-4">
+                  <div className="flex w-32 shrink-0 items-center gap-2 text-sm font-medium text-muted">
+                    <span className="text-accent"><CategoryIcon title={g.title} /></span>
+                    {g.label ?? g.title}
                   </div>
-                  <div className="space-y-2.5">
-                    {groups.map((g, gi) => (
-                      <div key={gi}>
-                        {g.label && <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted">{g.label}</span>}
-                        <div className="flex flex-wrap gap-1.5">
-                          {g.items.map((label) => (
-                            <span key={label} className="inline-flex items-center gap-1 rounded-pill bg-accent-soft px-2.5 py-1 text-[12.5px] font-medium text-accent-strong">
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                              {label}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {g.items.map((label) => (
+                      <span key={label} className="rounded-pill bg-accent-soft px-2.5 py-1 text-[13px] font-medium text-accent-strong">{label}</span>
                     ))}
                   </div>
                 </div>
