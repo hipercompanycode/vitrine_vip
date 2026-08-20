@@ -72,11 +72,8 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* topo-direita: idade + destaque + coração (mesma linha) */}
+        {/* topo-direita: destaque + coração */}
         <div className="absolute right-2 top-2 z-[2] flex items-center gap-1.5">
-          {p.age > 0 && (
-            <span className="rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">{p.age} anos</span>
-          )}
           {p.featured && (
             <span className="inline-flex items-center gap-0.5 rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white shadow-pop">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>TOP
@@ -99,7 +96,10 @@ export default function ProfileCard({
 
       {/* INFOS embaixo (mais espaço) */}
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <h3 className="truncate font-display text-[15px] font-bold text-ink">{p.name}</h3>
+        <div className="flex min-w-0 items-baseline gap-1.5">
+          <h3 className="truncate font-display text-[15px] font-bold text-ink">{p.name}</h3>
+          {p.age > 0 && <span className="shrink-0 text-xs font-medium text-muted">· {p.age} anos</span>}
+        </div>
         <p className="line-clamp-2 min-h-[2.5rem] text-[13px] leading-snug text-muted">{p.description}</p>
         <div className="mt-auto flex items-center gap-1.5 pt-0.5">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="11" r="2.2" fill="currentColor" /></svg>
