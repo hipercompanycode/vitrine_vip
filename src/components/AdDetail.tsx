@@ -26,6 +26,18 @@ function StatTile({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function CategoryIcon({ title }: { title: string }) {
+  const common = { width: 17, height: 17, viewBox: "0 0 24 24", fill: "none", "aria-hidden": true } as const;
+  if (title === "Aparência")
+    return <svg {...common}><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z" fill="currentColor" /><path d="M19 14l.7 1.9L21.6 17l-1.9.6L19 20l-.7-2.4L16.4 17l1.9-.9L19 14z" fill="currentColor" opacity=".7" /></svg>;
+  if (title === "Serviços")
+    return <svg {...common}><path d="M12 20s-6.5-4.2-9-8C1.2 8.5 3 5 6.3 5 8.2 5 9.4 6.1 12 8.3 14.6 6.1 15.8 5 17.7 5 21 5 22.8 8.5 21 12c-2.5 3.8-9 8-9 8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>;
+  if (title === "Lugar")
+    return <svg {...common}><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="11" r="2.3" fill="currentColor" /></svg>;
+  // Principais
+  return <svg {...common}><path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /></svg>;
+}
+
 export default function AdDetail({
   ad, now, backHref = "/", interactions, coverUrl, storyUrl, media, extra,
 }: {
@@ -62,9 +74,8 @@ export default function AdDetail({
 
       {/* Reputação / stats */}
       {extra?.stats && (
-        <div className="mb-4 grid grid-cols-4 gap-2 rounded-card border border-accent/30 bg-gradient-to-b from-accent-soft/50 to-surface p-3">
+        <div className="mb-4 grid grid-cols-3 gap-2 rounded-card border border-accent/30 bg-gradient-to-b from-accent-soft/50 to-surface p-3">
           <StatTile label="Dias anunciado" value={extra.stats.dias} />
-          <StatTile label="Últ. verificação" value={extra.stats.ultimaVerif != null ? `${extra.stats.ultimaVerif}d` : "—"} />
           <StatTile label="Fotos" value={extra.stats.nFotos} />
           <StatTile label="Vídeos" value={extra.stats.nVideos} />
         </div>
@@ -140,20 +151,29 @@ export default function AdDetail({
           </section>
         )}
 
-        {/* Sobre mim (atributos) */}
+        {/* Sobre mim (atributos) — cards por categoria */}
         {about.length > 0 && (
           <section className="mt-8">
             <h2 className="mb-3 font-display text-lg font-bold text-ink">Sobre mim</h2>
-            <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
               {[...aboutByTitle.entries()].map(([title, groups]) => (
-                <div key={title}>
-                  <h3 className="mb-2 text-sm font-bold text-accent">{title}</h3>
-                  <div className="space-y-2">
+                <div key={title} className="rounded-2xl border border-line bg-gradient-to-b from-surface-2/50 to-surface p-4 shadow-card">
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft text-accent"><CategoryIcon title={title} /></span>
+                    <h3 className="font-display text-sm font-bold text-ink">{title}</h3>
+                  </div>
+                  <div className="space-y-2.5">
                     {groups.map((g, gi) => (
-                      <div key={gi} className="flex flex-wrap gap-1.5">
-                        {g.items.map((label) => (
-                          <span key={label} className="rounded-pill bg-surface-2 px-2.5 py-1 text-[13px] text-ink">{label}</span>
-                        ))}
+                      <div key={gi}>
+                        {g.label && <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted">{g.label}</span>}
+                        <div className="flex flex-wrap gap-1.5">
+                          {g.items.map((label) => (
+                            <span key={label} className="inline-flex items-center gap-1 rounded-pill bg-accent-soft px-2.5 py-1 text-[12.5px] font-medium text-accent-strong">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              {label}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
