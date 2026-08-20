@@ -14,7 +14,7 @@ type Extra = {
   verified?: boolean;
   attributes?: string[];
   priceTable?: PriceRow[];
-  stats?: { dias: number; ultimaVerif: number | null; nFotos: number; nVideos: number };
+  stats?: { dias: number; ultimaVerif: number | null; nFotos: number; nVideos: number; nAvaliacoes: number };
 };
 
 function StatTile({ label, value }: { label: string; value: string | number }) {
@@ -72,8 +72,9 @@ export default function AdDetail({
 
       {/* Reputação / stats */}
       {extra?.stats && (
-        <div className="mb-4 grid grid-cols-3 gap-2 rounded-card border border-accent/30 bg-gradient-to-b from-accent-soft/50 to-surface p-3">
+        <div className="mb-4 grid grid-cols-4 gap-2 rounded-card border border-accent/30 bg-gradient-to-b from-accent-soft/50 to-surface p-3">
           <StatTile label="Dias anunciado" value={extra.stats.dias} />
+          <StatTile label="Avaliações" value={extra.stats.nAvaliacoes} />
           <StatTile label="Fotos" value={extra.stats.nFotos} />
           <StatTile label="Vídeos" value={extra.stats.nVideos} />
         </div>

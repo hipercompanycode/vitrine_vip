@@ -152,7 +152,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     verified: !!ad.verified,
     attributes: (ad.attributes as string[] | null) ?? [],
     priceTable: (ad.price_table as { label: string; price_cents: number }[] | null) ?? [],
-    stats: { dias, ultimaVerif, nFotos, nVideos },
+    stats: { dias, ultimaVerif, nFotos, nVideos, nAvaliacoes: reviews.length },
   };
 
   // perfis na mesma cidade (destaques)
