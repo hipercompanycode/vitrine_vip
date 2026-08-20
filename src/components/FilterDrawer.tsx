@@ -82,7 +82,6 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
   const searchParams = useSearchParams();
 
   const [attrs, setAttrs] = useState<Set<string>>(new Set());
-  const [verified, setVerified] = useState(false);
   const [video, setVideo] = useState(false);
   const [plo, setPlo] = useState(PRICE_MIN);
   const [phi, setPhi] = useState(PRICE_MAX);
@@ -102,7 +101,6 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
   useEffect(() => {
     if (!open) return;
     setAttrs(new Set(sanitizeAttrs((searchParams.get("attrs") ?? "").split(",").filter(Boolean))));
-    setVerified(searchParams.get("verified") === "1");
     setVideo(searchParams.get("video") === "1");
     setPlo(Number(searchParams.get("pmin") ?? PRICE_MIN));
     setPhi(Number(searchParams.get("pmax") ?? PRICE_MAX));
@@ -126,13 +124,12 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
     if (phi < PRICE_MAX) p.set("pmax", String(phi));
     if (alo > AGE_MIN) p.set("imin", String(alo));
     if (ahi < AGE_MAX) p.set("imax", String(ahi));
-    if (verified) p.set("verified", "1");
     if (video) p.set("video", "1");
     if (attrs.size) p.set("attrs", [...attrs].join(","));
     if (city) p.set("city_id", String(city.id));
     p.set("nearby", nearby ? "1" : "0");
     return p;
-  }, [searchParams, plo, phi, alo, ahi, verified, video, attrs, city, nearby]);
+  }, [searchParams, plo, phi, alo, ahi, video, attrs, city, nearby]);
 
   // contagem ao vivo
   const paramsKey = buildParams().toString();
@@ -195,26 +192,23 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
   const priceChanged = plo > PRICE_MIN || phi < PRICE_MAX;
   const ageChanged = alo > AGE_MIN || ahi < AGE_MAX;
   const attrsInTitle = (t: string) => (byTitle.get(t) ?? []).flatMap((g) => g.items).filter((it) => attrs.has(it.slug)).length;
-  const total = attrs.size + (verified ? 1 : 0) + (video ? 1 : 0) + (priceChanged ? 1 : 0) + (ageChanged ? 1 : 0) + (city ? 1 : 0);
+  const total = attrs.size + (video ? 1 : 0) + (priceChanged ? 1 : 0) + (ageChanged ? 1 : 0) + (city ? 1 : 0);
 
   // chips de aplicados
   const applied: { key: string; label: string; remove: () => void }[] = [];
   if (city) applied.push({ key: "city", label: `${city.name}-${city.uf}`, remove: () => setCity(null) });
   if (priceChanged) applied.push({ key: "price", label: `R$ ${plo}–${phi >= PRICE_MAX ? PRICE_MAX + "+" : phi}`, remove: () => { setPlo(PRICE_MIN); setPhi(PRICE_MAX); } });
   if (ageChanged) applied.push({ key: "age", label: `${alo}–${ahi >= AGE_MAX ? AGE_MAX + "+" : ahi} anos`, remove: () => { setAlo(AGE_MIN); setAhi(AGE_MAX); } });
-  if (verified) applied.push({ key: "verified", label: "Fotos verificadas", remove: () => setVerified(false) });
   if (video) applied.push({ key: "video", label: "Com vídeo", remove: () => setVideo(false) });
   for (const slug of attrs) applied.push({ key: slug, label: labelOf(slug), remove: () => toggleAttr(slug) });
 
   function apply() { router.push(`/?${buildParams().toString()}`); onClose(); }
   function clearAll() {
-    setAttrs(new Set()); setVerified(false); setVideo(false);
+    setAttrs(new Set()); setVideo(false);
     setPlo(PRICE_MIN); setPhi(PRICE_MAX); setAlo(AGE_MIN); setAhi(AGE_MAX);
     setCity(null); setCityQuery(""); setCityResults([]); setNearby(true);
     router.push("/"); onClose();
   }
-
-  const contentAttrs = (byTitle.get("Conteúdo") ?? []).flatMap((g) => g.items);
 
   return (
     <>
@@ -244,7 +238,7 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
               </button>
             ))}
-            <button type="button" onClick={() => { setAttrs(new Set()); setVerified(false); setVideo(false); setPlo(PRICE_MIN); setPhi(PRICE_MAX); setAlo(AGE_MIN); setAhi(AGE_MAX); setCity(null); }} className="ml-auto text-xs font-semibold text-muted hover:text-accent">Limpar tudo</button>
+            <button type="button" onClick={() => { setAttrs(new Set()); setVideo(false); setPlo(PRICE_MIN); setPhi(PRICE_MAX); setAlo(AGE_MIN); setAhi(AGE_MAX); setCity(null); }} className="ml-auto text-xs font-semibold text-muted hover:text-accent">Limpar tudo</button>
           </div>
         )}
 
@@ -294,18 +288,10 @@ export default function FilterDrawer({ open, onClose, cityLabel }: { open: boole
             </div>
           </Section>
 
-          {/* Conteúdo */}
-          <Section title="Conteúdo" count={(verified ? 1 : 0) + (video ? 1 : 0) + attrsInTitle("Conteúdo")} open={openSecs.has("Conteúdo")} onToggle={() => toggleSec("Conteúdo")}>
-            <div className="space-y-2">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Toggle label="Fotos verificadas" on={verified} onClick={() => setVerified((v) => !v)} />
-                <Toggle label="Com vídeo" on={video} onClick={() => setVideo((v) => !v)} />
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {contentAttrs.map((it) => <Chip key={it.slug} label={it.label} active={attrs.has(it.slug)} onClick={() => toggleAttr(it.slug)} />)}
-              </div>
-            </div>
-          </Section>
+          {/* Com vídeo — standalone (fora do accordion) */}
+          <div className="border-b border-line/70 py-4">
+            <Toggle label="Só perfis com vídeo" on={video} onClick={() => setVideo((v) => !v)} />
+          </div>
 
           {/* demais grupos */}
           {[...byTitle.keys()].filter((t) => t !== "Conteúdo").map((title) => (
