@@ -100,7 +100,7 @@ export default function ProfileCard({
           <h3 className="truncate font-display text-[15px] font-bold text-ink">{p.name}</h3>
           {p.age > 0 && <span className="shrink-0 text-xs font-medium text-muted">· {p.age} anos</span>}
         </div>
-        <p className="line-clamp-2 min-h-[2.5rem] text-[13px] leading-snug text-muted">{p.description}</p>
+        <p className="line-clamp-3 min-h-[3.6rem] text-[13px] leading-snug text-muted">{p.description}</p>
         <div className="mt-auto flex items-center gap-1.5 pt-0.5">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="11" r="2.2" fill="currentColor" /></svg>
           <span className="truncate text-[12px] text-muted">{p.city}</span>

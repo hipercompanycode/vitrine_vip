@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const description = String(form.get("description") ?? "").trim();
   if (!title) return NextResponse.json({ error: "nome obrigatório" }, { status: 400 });
 
-  const headline = String(form.get("headline") ?? "").trim().slice(0, 240);
+  const headline = String(form.get("headline") ?? "").trim().slice(0, 120);
 
   const cityRaw = form.get("city_id");
   const cityIdNum = cityRaw ? Number(cityRaw) : null;

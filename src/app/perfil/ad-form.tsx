@@ -39,8 +39,8 @@ export function AdBasicsForm({ ad, defaultCity, next = "/meu-anuncio", cta = "Sa
       </div>
 
       <label className="block">
-        <span className={labelCls}>Chamada do card (até 240)</span>
-        <input name="headline" defaultValue={ad?.headline ?? ""} maxLength={240} placeholder="Frase curta que aparece no card" className={inputCls} />
+        <span className={labelCls}>Chamada do card (até 120)</span>
+        <input name="headline" defaultValue={ad?.headline ?? ""} maxLength={120} placeholder="Frase curta que aparece no card" className={inputCls} />
         <span className="mt-1 block text-[11px] text-muted">É o texto curto que aparece no card da listagem.</span>
       </label>
 
