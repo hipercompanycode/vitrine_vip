@@ -1,11 +1,16 @@
 import { REPORT_REASONS } from "@/lib/interactions";
 
-export default function ReportButton({ adId }: { adId: string }) {
+export default function ReportButton({ adId, loggedIn = true }: { adId: string; loggedIn?: boolean }) {
   return (
     <details className="rounded-card border border-line bg-surface p-3 shadow-card">
       <summary className="cursor-pointer list-none text-sm font-semibold text-muted hover:text-ink">
         ⚠ Denunciar anúncio
       </summary>
+      {!loggedIn ? (
+        <p className="mt-3 text-sm text-muted">
+          <a href="/login?next=/" className="text-accent underline">Entrar</a> para denunciar.
+        </p>
+      ) : (
       <form action="/api/report" method="post" className="mt-3 space-y-2">
         <input type="hidden" name="ad_id" value={adId} />
         <select name="reason" required
@@ -20,6 +25,7 @@ export default function ReportButton({ adId }: { adId: string }) {
           Enviar denúncia
         </button>
       </form>
+      )}
     </details>
   );
 }
