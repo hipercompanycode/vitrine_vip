@@ -6,6 +6,7 @@ import { PLANS, planBySlug, type PlanSlug } from "@/lib/plans";
 import { AdBasicsForm, AdAttributesForm, AdPricesForm } from "../perfil/ad-form";
 import MediaManager from "@/components/MediaManager";
 import { VIDEO_ENABLED } from "@/lib/media";
+import { availableActive } from "@/lib/ads";
 import BillingButton from "@/components/BillingButton";
 import PlanCards from "@/components/PlanCards";
 import VerificationUploader from "@/components/VerificationUploader";
@@ -105,6 +106,8 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
   const plan = sub?.plans as unknown as { slug?: string; allows_story?: boolean } | null;
   const active = isActive(sub as { status: string; current_period_end: string | null } | null, new Date());
+  const isTrial = active && (sub?.method as string | undefined) === "trial";
+  const trialEndLabel = sub?.current_period_end ? new Date(sub.current_period_end as string).toLocaleDateString("pt-BR") : "";
   const planLimits = plan?.slug && PLANS.some((x) => x.slug === plan.slug) ? planBySlug(plan.slug as PlanSlug) : PLANS[0];
   const verifStatus = (verif?.status as string | undefined) ?? null;
   const verifApproved = verifStatus === "approved";
@@ -162,10 +165,10 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                     </span>
                     <div>
                       <p className="text-sm font-bold text-ink">Seu anúncio está no ar 🎉</p>
-                      <p className="text-xs text-muted">Perfil verificado e visível na vitrine.</p>
+                      <p className="text-xs text-muted">{isTrial ? `Teste grátis — termina em ${trialEndLabel}. Assine para continuar depois.` : "Perfil verificado e visível na vitrine."}</p>
                     </div>
-                    <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill bg-[#12331f] px-2.5 py-1 text-[11px] font-bold text-[#43d17f]">
-                      <span className="dot-live h-1.5 w-1.5 rounded-full bg-[#43d17f]" />No ar
+                    <span className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill px-2.5 py-1 text-[11px] font-bold ${isTrial ? "bg-accent-soft text-accent" : "bg-[#12331f] text-[#43d17f]"}`}>
+                      <span className={`dot-live h-1.5 w-1.5 rounded-full ${isTrial ? "bg-accent" : "bg-[#43d17f]"}`} />{isTrial ? "Teste grátis" : "No ar"}
                     </span>
                   </>
                 )}
@@ -202,7 +205,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
               <section className={cardCls}>
                 <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>
-                <AdActions ad={{ id: ad.id as string, is_available: !!ad.is_available, bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
+                <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
               </section>
             </div>
           ) : (
@@ -360,7 +363,18 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
         {/* 5 — Plano */}
         {step === 5 && (
           <div className="space-y-6">
-            {active && (
+            {active && isTrial && (
+              <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card ring-1 ring-accent/20">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7S9 3 6.5 4.5 8 7 12 7zM12 7s3-4 5.5-2.5S16 7 12 7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+                </span>
+                <div>
+                  <p className="font-semibold text-ink">Teste grátis de 7 dias ativo 🎁</p>
+                  <p className="text-xs text-muted">Seu anúncio fica no ar até {trialEndLabel}. Depois, assine um plano para continuar.</p>
+                </div>
+              </section>
+            )}
+            {active && !isTrial && (
               <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card ring-1 ring-[#43d17f]/15">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 16l-2-9 5.5 4L12 5l3.5 6L21 7l-2 9H5zm0 2h14v2H5v-2z" /></svg>
@@ -372,8 +386,9 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 {sub?.method === "card" && sub?.stripe_customer_id && <div className="ml-auto"><BillingButton /></div>}
               </section>
             )}
-            {!active && <p className="text-sm text-muted">Escolha um plano pra deixar seu anúncio visível na vitrine.</p>}
-            <PlanCards currentSlug={active ? plan?.slug : undefined} />
+            {!active && <p className="text-sm text-muted">Ao ser aprovada, você ganha <strong className="text-ink">7 dias grátis</strong>. Depois, escolha um plano pra continuar no ar.</p>}
+            {isTrial && <p className="text-sm text-muted">Quer garantir depois do teste? Assine agora:</p>}
+            <PlanCards currentSlug={active && !isTrial ? plan?.slug : undefined} />
             <StepNav step={5} />
           </div>
         )}

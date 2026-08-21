@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createAdminClient, createServerClient } from "@/lib/supabase/server";
-import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
+import { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import { sanitizeAttrs, labelOf } from "@/lib/attributes";
 import { cityPath } from "@/lib/seo";
-import { userHasAd } from "@/lib/ads";
+import { userHasAd, availableActive } from "@/lib/ads";
+import { bumpBucket } from "@/lib/bump";
+import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,8 @@ type AdRow = {
   verified: boolean | null;
   is_available: boolean;
   created_at: string;
+  bumped_at: string | null;
+  available_since: string | null;
   profile_id: string;
   cities: CityEmbed | CityEmbed[] | null;
   profiles: ProfileEmbed | ProfileEmbed[] | null;
@@ -182,12 +186,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
     (stories.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
   }
 
-  const profiles: ProfileCardData[] = data.map((r) => {
+  const nowDate = new Date();
+  const nowMs = nowDate.getTime();
+  type Group = BumpGroup & { order: number };
+  const groupMap = new Map<string, Group>();
+  const profiles: ProfileCardData[] = [];
+  for (const r of data) {
     const city = (Array.isArray(r.cities) ? r.cities[0] : r.cities) ?? null;
     const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
     const vc = videoCount.get(r.id) ?? 0;
     const storyAt = story.get(r.id);
-    return {
+    const card: ProfileCardData = {
       id: r.id,
       name: profile?.name?.trim() || r.title,
       age: r.age ?? 0,
@@ -199,10 +208,21 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       hasVideo: vc > 0 || !!storyAt,
       recordedAt: storyAt ? hhmm(storyAt) : null,
       featured: planByProfile.get(r.profile_id) === "premium",
-      available: !!r.is_available,
+      available: availableActive(r.is_available, r.available_since, nowMs),
       hue: hueFromId(r.id),
     };
-  });
+    profiles.push(card);
+
+    const t = new Date(r.bumped_at || r.created_at).getTime();
+    const minutes = Math.max(0, (nowMs - t) / 60000);
+    const b = card.available
+      ? { key: "disp", label: "Disponível agora", order: -1000 }
+      : bumpBucket(minutes, nowDate);
+    let g = groupMap.get(b.key);
+    if (!g) { g = { key: b.key, label: b.label, order: b.order, items: [] }; groupMap.set(b.key, g); }
+    g.items.push(card);
+  }
+  const groups = Array.from(groupMap.values()).sort((a, b) => a.order - b.order);
 
   const hasFilters = !!(q || pmin || pmax || imin || imax || onlyVerified || onlyVideo || attrs.length || cityId);
 
@@ -267,11 +287,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
         {profiles.length === 0 ? (
           <EmptyState hasFilters={hasFilters} />
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {profiles.map((p) => (
-              <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />
-            ))}
-          </div>
+          <BumpedGrid groups={groups} />
         )}
         {cityId && nearbyCities.length > 0 && (
           <nav className="mt-14 border-t border-line/60 pt-8">

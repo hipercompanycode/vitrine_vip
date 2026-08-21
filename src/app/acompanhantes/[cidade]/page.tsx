@@ -1,12 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createAdminClient, createServerClient } from "@/lib/supabase/server";
-import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
+import { createAdminClient } from "@/lib/supabase/server";
+import { type ProfileCardData } from "@/components/ProfileCard";
+import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
+import { bumpBucket } from "@/lib/bump";
+import { availableActive } from "@/lib/ads";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+// Página de SEO: cacheada (ISR) e regenerada a cada 5 min — resposta rápida p/ buscadores.
+export const revalidate = 300;
 
 type City = { id: number; name: string; uf: string };
 
@@ -27,7 +31,7 @@ async function findCity(slug: string): Promise<City | null> {
   return ((data ?? []) as City[]).find((c) => citySlug(c.name, c.uf) === slug) ?? null;
 }
 
-async function visibleProfilesInCity(cityId: number): Promise<ProfileCardData[]> {
+async function visibleProfilesInCity(cityId: number): Promise<{ profiles: ProfileCardData[]; groups: BumpGroup[] }> {
   const admin = createAdminClient();
   const nowIso = new Date().toISOString();
   const { data: subs } = await admin
@@ -35,7 +39,7 @@ async function visibleProfilesInCity(cityId: number): Promise<ProfileCardData[]>
   const planByProfile = new Map<string, string>();
   (subs ?? []).forEach((s: any) => { const p = Array.isArray(s.plans) ? s.plans[0] : s.plans; if (p?.slug) planByProfile.set(s.profile_id, p.slug); });
   const pids = Array.from(planByProfile.keys());
-  if (!pids.length) return [];
+  if (!pids.length) return { profiles: [], groups: [] };
 
   const { data } = await admin
     .from("ads")
@@ -57,27 +61,41 @@ async function visibleProfilesInCity(cityId: number): Promise<ProfileCardData[]>
     (st.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
   }
 
-  return rows.map((r) => {
+  const nowDate = new Date();
+  const nowMs = nowDate.getTime();
+  const groupMap = new Map<string, BumpGroup & { order: number }>();
+  const profiles: ProfileCardData[] = [];
+  for (const r of rows) {
     const city = Array.isArray(r.cities) ? r.cities[0] : r.cities;
     const prof = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
     const vc = videoCount.get(r.id) ?? 0;
     const sa = story.get(r.id);
-    return {
+    const card: ProfileCardData = {
       id: r.id, name: prof?.name?.trim() || r.title, age: r.age ?? 0, city: city ? city.name : "",
       description: r.headline?.trim() || r.description,
       priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100).toLocaleString("pt-BR")}` : null,
       verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
       recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium",
-      available: !!r.is_available, hue: hueFromId(r.id),
+      available: availableActive(r.is_available, r.available_since, nowMs), hue: hueFromId(r.id),
     };
-  });
+    profiles.push(card);
+    const t = new Date(r.bumped_at || r.created_at).getTime();
+    const b = card.available
+      ? { key: "disp", label: "Disponível agora", order: -1000 }
+      : bumpBucket(Math.max(0, (nowMs - t) / 60000), nowDate);
+    let g = groupMap.get(b.key);
+    if (!g) { g = { key: b.key, label: b.label, order: b.order, items: [] }; groupMap.set(b.key, g); }
+    g.items.push(card);
+  }
+  const groups = Array.from(groupMap.values()).sort((a, b) => a.order - b.order);
+  return { profiles, groups };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ cidade: string }> }): Promise<Metadata> {
   const { cidade } = await params;
   const city = await findCity(cidade);
   if (!city) return { title: "Cidade não encontrada", robots: { index: false, follow: false } };
-  const n = (await visibleProfilesInCity(city.id)).length;
+  const n = (await visibleProfilesInCity(city.id)).profiles.length;
   const title = `Acompanhantes em ${city.name}-${city.uf}`;
   const description = n > 0
     ? `${n} acompanhante${n > 1 ? "s" : ""} verificada${n > 1 ? "s" : ""} em ${city.name}-${city.uf}. Fotos e vídeos reais, perfis atualizados e contato direto por WhatsApp.`
@@ -97,10 +115,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
   const city = await findCity(cidade);
   if (!city) notFound();
 
-  const profiles = await visibleProfilesInCity(city.id);
-
-  const ssr = await createServerClient();
-  const { data: { user } } = await ssr.auth.getUser();
+  const { profiles, groups } = await visibleProfilesInCity(city.id);
 
   // cidades próximas COM anúncio -> links internos
   const admin = createAdminClient();
@@ -129,7 +144,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
 
   return (
     <>
-      <VitrineTopBar cityLabel={`${city.name} - ${city.uf}`} loggedIn={!!user} />
+      <VitrineTopBar cityLabel={`${city.name} - ${city.uf}`} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 pb-16 sm:px-4">
         <nav className="pt-3 text-xs text-muted">
           <Link href="/" className="hover:text-accent">Início</Link> › <span className="text-ink">{city.name}-{city.uf}</span>
@@ -145,11 +160,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
           </p>
         </section>
 
-        {profiles.length > 0 && (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {profiles.map((p) => <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />)}
-          </div>
-        )}
+        {profiles.length > 0 && <BumpedGrid groups={groups} />}
 
         {nearbyLinks.length > 0 && (
           <section className="mt-8">
@@ -163,6 +174,22 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
             </div>
           </section>
         )}
+
+        {/* texto SEO — conteúdo único por cidade */}
+        <section className="mt-10 border-t border-line/60 pt-6">
+          <h2 className="mb-2 font-display text-base font-bold text-ink">Acompanhantes verificadas em {city.name}-{city.uf}</h2>
+          <div className="space-y-3 text-sm leading-relaxed text-muted">
+            <p>
+              Encontre <strong className="text-ink">acompanhantes em {city.name}</strong> ({city.uf}) com perfil verificado na {SITE_NAME}. Todos os anúncios passam por validação anti-fake — documento e fotos conferidos pela moderação — para garantir que a pessoa é real. Você fala direto por WhatsApp, Telegram ou ligação, sem intermediários.
+            </p>
+            <p>
+              Filtre por preço, idade e características, veja quem está <strong className="text-ink">disponível agora</strong> em {city.name} e confira os perfis atualizados ao longo do dia. {nearbyLinks.length > 0 ? `Não achou o que procura? Veja também acompanhantes nas cidades próximas.` : `Cadastre seu anúncio e apareça em ${city.name}.`}
+            </p>
+            <p className="text-xs text-muted/80">
+              A {SITE_NAME} é uma plataforma de publicidade para maiores de 18 anos. Os anúncios são de responsabilidade de cada anunciante; não intermediamos serviços entre as partes.
+            </p>
+          </div>
+        </section>
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(ld) }} />
       </main>

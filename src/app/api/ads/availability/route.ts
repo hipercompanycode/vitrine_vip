@@ -10,7 +10,10 @@ export async function POST(request: Request) {
   const value = available === true;
 
   const admin = createAdminClient();
-  const { error } = await admin.from("ads").update({ is_available: value }).eq("profile_id", user.id);
+  const { error } = await admin
+    .from("ads")
+    .update({ is_available: value, available_since: value ? new Date().toISOString() : null })
+    .eq("profile_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, is_available: value });
 }

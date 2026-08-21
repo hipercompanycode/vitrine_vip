@@ -32,6 +32,31 @@ export async function POST(request: Request) {
   // liga/desliga o selo "Verificada" do anúncio desse anunciante
   await admin.from("ads").update({ verified: approved }).eq("profile_id", profileId);
 
+  // Ao aprovar: concede 7 dias de teste grátis (uma vez), se ainda não tem plano pago ativo.
+  if (approved) {
+    const nowMs = Date.now();
+    const [{ data: prof }, { data: sub }] = await Promise.all([
+      admin.from("profiles").select("trial_used").eq("id", profileId).maybeSingle(),
+      admin.from("subscriptions").select("status, method, current_period_end").eq("profile_id", profileId).maybeSingle(),
+    ]);
+    const hasActivePaid = !!sub && sub.status === "active" && sub.method !== "trial"
+      && !!sub.current_period_end && new Date(sub.current_period_end as string).getTime() > nowMs;
+    if (!prof?.trial_used && !hasActivePaid) {
+      const { data: pro } = await admin.from("plans").select("id").eq("slug", "pro").maybeSingle();
+      if (pro?.id) {
+        await admin.from("subscriptions").upsert({
+          profile_id: profileId,
+          plan_id: pro.id,
+          status: "active",
+          method: "trial",
+          stripe_customer_id: null,
+          current_period_end: new Date(nowMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        }, { onConflict: "profile_id" });
+        await admin.from("profiles").update({ trial_used: true }).eq("id", profileId);
+      }
+    }
+  }
+
   const back = String(form.get("back") ?? "/admin/verificacoes");
   return NextResponse.redirect(new URL(back.startsWith("/admin") ? back : "/admin/verificacoes", request.url), { status: 303 });
 }

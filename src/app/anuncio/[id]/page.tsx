@@ -8,7 +8,7 @@ import { canInteract, type Role } from "@/lib/roles";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 import ReportButton from "@/components/ReportButton";
-import { userHasAd } from "@/lib/ads";
+import { userHasAd, availableActive } from "@/lib/ads";
 import ViewTracker from "@/components/ViewTracker";
 import { publicUrl } from "@/lib/storage";
 import type { GalleryItem } from "@/components/Gallery";
@@ -119,7 +119,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     title: (profile?.name?.trim() || (ad.title as string)) as string,
     description: ad.description as string,
     price_cents: ad.price_cents as number,
-    is_available: ad.is_available as boolean,
+    is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()),
     created_at: ad.created_at as string,
     city: city ? { name: city.name, uf: city.uf } : null,
     whatsapp: profile?.whatsapp ?? "",

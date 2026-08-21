@@ -1,13 +1,31 @@
 // TEMPORÁRIO — preview do layout de vitrine (dados fake). Fotos = placeholder.
 import PreviewNav from "@/components/PreviewNav";
 import VitrineTopBar from "@/components/VitrineTopBar";
-import ProfileCard from "@/components/ProfileCard";
+import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
+import { bumpBucket } from "@/lib/bump";
 import { getVitrineProfiles } from "./vitrine-mock";
 
 export const dynamic = "force-dynamic";
 
 export default function PreviewPage() {
   const profiles = getVitrineProfiles();
+  const now = new Date();
+
+  // tempos fake espalhados pra popular várias faixas de "Faz X"
+  const fakeMins = [1, 2, 3, 4, 7, 10, 13, 20, 30, 42, 50, 55, 58, 70, 95, 110, 140, 190];
+
+  const groupMap = new Map<string, BumpGroup & { order: number }>();
+  profiles.forEach((p, i) => {
+    const card = { ...p, available: i % 3 === 0 ? true : p.available };
+    const b = card.available
+      ? { key: "disp", label: "Disponível agora", order: -1000 }
+      : bumpBucket(fakeMins[i % fakeMins.length], now);
+    let g = groupMap.get(b.key);
+    if (!g) { g = { key: b.key, label: b.label, order: b.order, items: [] }; groupMap.set(b.key, g); }
+    g.items.push(card);
+  });
+  const groups = Array.from(groupMap.values()).sort((a, b) => a.order - b.order);
+
   return (
     <>
       <PreviewNav active="home" />
@@ -19,11 +37,7 @@ export default function PreviewPage() {
           </h1>
         </section>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {profiles.map((p) => (
-            <ProfileCard key={p.id} p={p} />
-          ))}
-        </div>
+        <BumpedGrid groups={groups} hrefBase="/preview/anuncio" />
       </main>
     </>
   );
