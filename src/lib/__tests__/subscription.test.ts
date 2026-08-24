@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { isActive, pixPeriodEndISO, extendPeriodISO, mapStripeStatus } from "../subscription";
+import { isActive, pixPeriodEndISO, extendPeriodISO } from "../subscription";
 
 const now = new Date("2026-08-09T12:00:00Z");
 
@@ -26,12 +26,3 @@ test("extendPeriodISO: parte de agora se já venceu ou não há período", () =>
   expect(extendPeriodISO(null, now)).toBe("2026-09-08T12:00:00.000Z");
 });
 
-test("mapStripeStatus: mapeia status do Stripe pros nossos", () => {
-  expect(mapStripeStatus("active")).toBe("active");
-  expect(mapStripeStatus("trialing")).toBe("active");
-  expect(mapStripeStatus("past_due")).toBe("past_due");
-  expect(mapStripeStatus("unpaid")).toBe("past_due");
-  expect(mapStripeStatus("canceled")).toBe("canceled");
-  expect(mapStripeStatus("incomplete_expired")).toBe("canceled");
-  expect(mapStripeStatus("incomplete")).toBe("expired");
-});

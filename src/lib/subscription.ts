@@ -21,18 +21,3 @@ export function extendPeriodISO(currentEnd: string | null, now: Date, days = 30)
   return new Date(base + days * DAY_MS).toISOString();
 }
 
-export function mapStripeStatus(s: string): SubStatus {
-  switch (s) {
-    case "active":
-    case "trialing":
-      return "active";
-    case "past_due":
-    case "unpaid":
-      return "past_due";
-    case "canceled":
-    case "incomplete_expired":
-      return "canceled";
-    default:
-      return "expired";
-  }
-}

@@ -7,7 +7,6 @@ import { AdBasicsForm, AdAttributesForm, AdPricesForm } from "../perfil/ad-form"
 import MediaManager from "@/components/MediaManager";
 import { VIDEO_ENABLED } from "@/lib/media";
 import { availableActive } from "@/lib/ads";
-import BillingButton from "@/components/BillingButton";
 import PlanCards from "@/components/PlanCards";
 import VerificationUploader from "@/components/VerificationUploader";
 import AdActions from "../perfil/ad-actions";
@@ -95,7 +94,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
   const [{ data: ad }, { data: sub }, { data: verif }, { data: prof }] = await Promise.all([
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
-    admin.from("subscriptions").select("status, method, current_period_end, stripe_customer_id, plans ( slug, allows_story )").eq("profile_id", user.id).maybeSingle(),
+    admin.from("subscriptions").select("status, method, current_period_end, plans ( slug, allows_story )").eq("profile_id", user.id).maybeSingle(),
     admin.from("verifications").select("status, doc_path, face_path, body_path, feedback").eq("profile_id", user.id).maybeSingle(),
     admin.from("profiles").select("whatsapp").eq("id", user.id).maybeSingle(),
   ]);
@@ -429,9 +428,8 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </span>
                 <div>
                   <p className="font-semibold text-ink">Plano {planLimits.name} ativo</p>
-                  <p className="text-xs text-muted">{sub?.method === "pix" ? "Pix" : "Cartão"} — até {new Date(sub!.current_period_end!).toLocaleDateString("pt-BR")}.</p>
+                  <p className="text-xs text-muted">Pix — até {new Date(sub!.current_period_end!).toLocaleDateString("pt-BR")}.</p>
                 </div>
-                {sub?.method === "card" && sub?.stripe_customer_id && <div className="ml-auto"><BillingButton /></div>}
               </section>
             )}
             {!active && <p className="text-sm text-muted">Ao ser aprovada, você ganha <strong className="text-ink">7 dias grátis</strong>. Depois, escolha um plano pra continuar no ar.</p>}

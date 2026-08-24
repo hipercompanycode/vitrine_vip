@@ -52,7 +52,6 @@ export async function POST(request: Request) {
           plan_id: pro.id,
           status: "active",
           method: "trial",
-          stripe_customer_id: null,
           current_period_end: new Date(nowMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
         }, { onConflict: "profile_id" });
         await admin.from("profiles").update({ trial_used: true }).eq("id", profileId);
