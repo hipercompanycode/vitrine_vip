@@ -25,10 +25,11 @@ export async function creditPaidPayment(admin: Admin, paymentId: string): Promis
   const now = new Date();
   const current_period_end = extendPeriodISO((sub?.current_period_end as string | null) ?? null, now, 30);
 
-  const { error } = await admin.from("subscriptions").upsert(
-    { profile_id: profileId, method: "pix", status: "active", current_period_end, asaas_paid_payment_id: paymentId },
-    { onConflict: "profile_id" }
-  );
+  // UPDATE (não upsert): a linha já existe (criada pela rota /api/asaas/pix/create com plan_id).
+  // Upsert faria um INSERT sem plan_id (NOT NULL) e falharia — por isso o crédito não persistia.
+  const { error } = await admin.from("subscriptions")
+    .update({ method: "pix", status: "active", current_period_end, asaas_paid_payment_id: paymentId })
+    .eq("profile_id", profileId);
   if (error) return { credited: false, reason: error.message };
   return { credited: true };
 }
