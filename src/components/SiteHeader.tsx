@@ -47,6 +47,21 @@ export default function SiteHeader({ loggedIn = false, hasAd = false }: { logged
           </Link>
         )}
 
+        {/* sair (só logado) */}
+        {loggedIn && (
+          <form action="/logout" method="post" className="shrink-0">
+            <button
+              aria-label="Sair"
+              className="inline-flex items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M15 12H3m0 0l4-4m-4 4l4 4M10 5V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="hidden sm:inline">Sair</span>
+            </button>
+          </form>
+        )}
+
         {/* anunciar / meu anúncio */}
         <Link
           href="/meu-anuncio"
