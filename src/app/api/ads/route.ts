@@ -4,33 +4,34 @@ import { parsePriceToCents } from "@/lib/price";
 import { sanitizeAttrs } from "@/lib/attributes";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { accountAccess } from "@/lib/access";
+import { flash, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
+  if (!user) return flash(request, "/login", "erro", "Entre na sua conta para continuar.");
 
   const rl = rateLimit(clientKey(request, user.id) + ":ads", 40, 60 * 1000);
-  if (!rl.ok) return NextResponse.json({ error: "Muitas alterações em pouco tempo. Aguarde." }, { status: 429 });
+  if (!rl.ok) return flash(request, "/meu-anuncio", "erro", "Muitas alterações em pouco tempo. Aguarde um instante.");
 
   const form = await request.formData();
   const admin = createAdminClient();
-
-  // Depois de aprovado, editar exige assinatura ativa (paywall). Antes da aprovação, é livre (montagem).
-  const { active, verifApproved } = await accountAccess(admin, user.id);
-  if (verifApproved && !active) {
-    return NextResponse.json({ error: "assinatura inativa" }, { status: 402 });
-  }
 
   const nextRaw = String(form.get("next") ?? "/meu-anuncio");
   const next = nextRaw.startsWith("/") ? nextRaw : "/meu-anuncio";
   const done = () => NextResponse.redirect(new URL(next, request.url), { status: 303 });
 
+  // Depois de aprovado, editar exige assinatura ativa (paywall). Antes da aprovação, é livre (montagem).
+  const { active, verifApproved } = await accountAccess(admin, user.id);
+  if (verifApproved && !active) {
+    return flash(request, "/meu-anuncio", "erro", "Sua assinatura está inativa. Renove para editar o anúncio.");
+  }
+
   // Modo "características": só atributos.
   if (form.get("has_attrs") != null) {
     const attributes = sanitizeAttrs(form.getAll("attr").map((v) => String(v)));
     const { error } = await admin.from("ads").update({ attributes, updated_at: new Date().toISOString() }).eq("profile_id", user.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return flash(request, next, "erro", GENERIC_ERROR, error);
     return done();
   }
 
@@ -45,21 +46,21 @@ export async function POST(request: Request) {
     }
     const price_cents = priceTable.length ? Math.min(...priceTable.map((r) => r.price_cents)) : 0;
     const { error } = await admin.from("ads").update({ price_table: priceTable, price_cents, updated_at: new Date().toISOString() }).eq("profile_id", user.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return flash(request, next, "erro", GENERIC_ERROR, error);
     return done();
   }
 
   // Modo "dados": dados básicos (não toca em preços nem atributos).
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
-  if (!title) return NextResponse.json({ error: "nome obrigatório" }, { status: 400 });
+  if (!title) return flash(request, next, "erro", "Informe o nome do anúncio.");
 
   const headline = String(form.get("headline") ?? "").trim().slice(0, 120);
 
   const cityRaw = form.get("city_id");
   const cityIdNum = cityRaw ? Number(cityRaw) : null;
   const cityId = cityIdNum !== null && !Number.isNaN(cityIdNum) ? cityIdNum : null;
-  if (cityId == null) return NextResponse.json({ error: "selecione estado e cidade" }, { status: 400 });
+  if (cityId == null) return flash(request, next, "erro", "Selecione o estado e a cidade de atendimento.");
 
   const ageRaw = String(form.get("age") ?? "").trim();
   const ageNum = ageRaw ? Number(ageRaw) : null;
@@ -81,6 +82,6 @@ export async function POST(request: Request) {
       { profile_id: user.id, title, description, headline, city_id: cityId, age, contact_whatsapp, contact_call, contact_telegram, updated_at: new Date().toISOString() },
       { onConflict: "profile_id" }
     );
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return flash(request, next, "erro", GENERIC_ERROR, error);
   return done();
 }

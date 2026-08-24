@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe";
+import { apiError, GENERIC_ERROR } from "@/lib/http";
 
 export const runtime = "nodejs";
 
@@ -50,7 +51,7 @@ export async function POST() {
 
   // 4) apagar o usuário — cascata (profiles -> subscriptions/ads/verifications; ads -> mídia/likes/favoritos/reviews/reports)
   const { error } = await admin.auth.admin.deleteUser(uid);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(GENERIC_ERROR, 500, error);
 
   // 5) encerrar sessão
   await supabase.auth.signOut();

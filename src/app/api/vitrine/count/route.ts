@@ -59,6 +59,6 @@ export async function GET(request: Request) {
   if (onlyVideo) query = query.in("id", videoAdIds!.length ? videoAdIds! : ["00000000-0000-0000-0000-000000000000"]);
 
   const { count, error } = await query;
-  if (error) return NextResponse.json({ count: 0, error: error.message });
+  if (error) { console.error("vitrine count:", error.message); return NextResponse.json({ count: 0 }); }
   return NextResponse.json({ count: count ?? 0 });
 }

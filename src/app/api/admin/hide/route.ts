@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
+import { flash, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -17,8 +18,9 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { error } = await admin.from("ads").update({ status }).eq("id", adId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   const back = String(form.get("back") ?? "/admin");
-  return NextResponse.redirect(new URL(back.startsWith("/admin") ? back : "/admin", request.url), { status: 303 });
+  const safeBack = back.startsWith("/admin") ? back : "/admin";
+  const { error } = await admin.from("ads").update({ status }).eq("id", adId);
+  if (error) return flash(request, safeBack, "erro", GENERIC_ERROR, error);
+  return NextResponse.redirect(new URL(safeBack, request.url), { status: 303 });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { accountAccess } from "@/lib/access";
+import { apiError, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -12,12 +13,12 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   const { active } = await accountAccess(admin, user.id);
-  if (!active) return NextResponse.json({ error: "assinatura inativa" }, { status: 402 });
+  if (!active) return apiError("Sua assinatura está inativa. Renove para usar esta ação.", 402);
 
   const { error } = await admin
     .from("ads")
     .update({ is_available: value, available_since: value ? new Date().toISOString() : null })
     .eq("profile_id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(GENERIC_ERROR, 500, error);
   return NextResponse.json({ ok: true, is_available: value });
 }

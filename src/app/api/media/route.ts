@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { remaining, type MediaKind } from "@/lib/media";
+import { apiError, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     .from("ad_media")
     .insert({ ad_id: adId, type, storage_path: storagePath, position, is_cover: isFirstPhoto })
     .select("id").single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(GENERIC_ERROR, 500, error);
 
   return NextResponse.json({ id: inserted.id });
 }

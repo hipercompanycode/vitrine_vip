@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { apiError, GENERIC_ERROR } from "@/lib/http";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,6 @@ export async function POST(request: Request) {
     { profile_id: user.id, doc_path: docPath, face_path: facePath, body_path: bodyPath, video_path: null, status: "pending", reviewed_at: null },
     { onConflict: "profile_id" }
   );
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(GENERIC_ERROR, 500, error);
   return NextResponse.json({ ok: true });
 }

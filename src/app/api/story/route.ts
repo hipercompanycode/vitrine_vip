@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
+import { apiError, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
   const { data: inserted, error } = await admin
     .from("stories").insert({ ad_id: adId, storage_path: storagePath }).select("id").single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(GENERIC_ERROR, 500, error);
 
   for (const o of olds ?? []) {
     const p = o.storage_path as string;

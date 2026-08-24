@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { canBump, nextBumpAt } from "@/lib/bump";
 import { accountAccess } from "@/lib/access";
+import { apiError, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   const { active } = await accountAccess(admin, user.id);
-  if (!active) return NextResponse.json({ error: "assinatura inativa" }, { status: 402 });
+  if (!active) return apiError("Sua assinatura está inativa. Renove para subir o anúncio.", 402);
 
   const { data: ad } = await admin.from("ads").select("id, bumped_at, profile_id").eq("profile_id", user.id).maybeSingle();
   if (!ad) return NextResponse.json({ error: "sem anúncio" }, { status: 404 });
@@ -32,6 +33,6 @@ export async function POST(request: Request) {
   }
 
   const { error } = await admin.rpc("bump_ad", { p_ad: ad.id });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(GENERIC_ERROR, 500, error);
   return NextResponse.json({ ok: true, cooldownMinutes: cooldown });
 }

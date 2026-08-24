@@ -1,15 +1,17 @@
-import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { sanitizeTags } from "@/lib/interactions";
+import { flash, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
 
   const form = await request.formData();
   const adId = String(form.get("ad_id") ?? "");
-  if (!adId) return NextResponse.json({ error: "ad_id obrigatório" }, { status: 400 });
+  const back = adId ? `/anuncio/${adId}` : "/";
+
+  if (!user) return flash(request, back, "erro", "Entre na sua conta para avaliar.");
+  if (!adId) return flash(request, "/", "erro", "Não foi possível identificar o anúncio.");
 
   const commentRaw = String(form.get("comment") ?? "").trim();
   const comment = commentRaw === "" ? null : commentRaw;
@@ -18,7 +20,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from("reviews").insert({
     ad_id: adId, user_id: user.id, comment, tags,
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 403 });
+  if (error) return flash(request, back, "erro", GENERIC_ERROR, error);
 
-  return NextResponse.redirect(new URL(`/anuncio/${adId}`, request.url), { status: 303 });
+  return flash(request, back, "ok", "Avaliação enviada. Obrigado!");
 }

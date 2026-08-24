@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
+import { flash, GENERIC_ERROR } from "@/lib/http";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -17,6 +18,8 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const back = String(form.get("back") ?? "/admin/verificacoes");
+  const safeBack = back.startsWith("/admin") ? back : "/admin/verificacoes";
   const approved = action === "approve";
   const feedback = String(form.get("feedback") ?? "").trim().slice(0, 500);
   const { error } = await admin
@@ -27,7 +30,7 @@ export async function POST(request: Request) {
       feedback: approved ? null : (feedback || null),
     })
     .eq("profile_id", profileId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return flash(request, safeBack, "erro", GENERIC_ERROR, error);
 
   // liga/desliga o selo "Verificada" do anúncio desse anunciante
   await admin.from("ads").update({ verified: approved }).eq("profile_id", profileId);
@@ -57,6 +60,5 @@ export async function POST(request: Request) {
     }
   }
 
-  const back = String(form.get("back") ?? "/admin/verificacoes");
-  return NextResponse.redirect(new URL(back.startsWith("/admin") ? back : "/admin/verificacoes", request.url), { status: 303 });
+  return NextResponse.redirect(new URL(safeBack, request.url), { status: 303 });
 }
