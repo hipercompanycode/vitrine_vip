@@ -22,26 +22,27 @@ async function videoTooLong(file: File): Promise<boolean> {
 }
 
 const WATERMARK_TEXT = "vitrinevip.com.br";
+const ACCENT = "#ff2e88"; // cor do nome do site (identidade visual)
 
-// Marca d'água tiled na diagonal (queimada na imagem) — protege contra roubo e divulga o site.
+// Marca d'água única e centrada (queimada na imagem), na cor da marca — protege e divulga.
 function drawWatermark(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  const fontSize = Math.max(16, Math.round(w * 0.035));
   ctx.save();
+  // dimensiona pra ocupar ~58% da largura da foto
+  ctx.font = "700 100px sans-serif";
+  const target = w * 0.58;
+  const fontSize = Math.max(14, (100 * target) / ctx.measureText(WATERMARK_TEXT).width);
   ctx.font = `700 ${fontSize}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.rotate(-Math.PI / 6); // -30°
-  const stepX = ctx.measureText(WATERMARK_TEXT).width + fontSize * 2.5;
-  const stepY = fontSize * 3.6;
-  for (let y = -h; y < h * 2; y += stepY) {
-    for (let x = -w; x < w * 2; x += stepX) {
-      ctx.lineWidth = Math.max(1, fontSize * 0.08);
-      ctx.strokeStyle = "rgba(0,0,0,0.18)";
-      ctx.strokeText(WATERMARK_TEXT, x, y);
-      ctx.fillStyle = "rgba(255,255,255,0.28)";
-      ctx.fillText(WATERMARK_TEXT, x, y);
-    }
-  }
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-Math.PI / 12); // leve inclinação (-15°)
+  // contorno escuro pra ler em qualquer fundo + preenchimento na cor da marca
+  ctx.lineWidth = Math.max(2, fontSize * 0.06);
+  ctx.strokeStyle = "rgba(0,0,0,0.35)";
+  ctx.strokeText(WATERMARK_TEXT, 0, 0);
+  ctx.fillStyle = ACCENT;
+  ctx.globalAlpha = 0.72;
+  ctx.fillText(WATERMARK_TEXT, 0, 0);
   ctx.restore();
 }
 
