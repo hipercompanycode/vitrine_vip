@@ -371,7 +371,7 @@ function SiteFooter() {
           </div>
         </div>
         <p className="mx-auto mt-4 max-w-3xl text-center text-[11px] leading-relaxed text-muted/80">
-          A vitrine é uma plataforma de <strong className="text-muted">publicidade</strong>. Os anúncios são de responsabilidade exclusiva de cada anunciante, maior de 18 anos, que divulga por conta própria seus serviços de acompanhante (festas, jantares, viagens etc.). <strong className="text-muted">Não intermediamos garotas de programa</strong> nem participamos de qualquer contato ou negociação entre as partes.
+          A vitrine é uma plataforma de <strong className="text-muted">publicidade</strong>. Os anúncios são de responsabilidade exclusiva de cada anunciante, maior de 18 anos, que divulga por conta própria seus serviços de acompanhante (festas, jantares, viagens etc.). <strong className="text-muted">Não intermediamos acompanhantes</strong> nem participamos de qualquer contato ou negociação entre as partes.
         </p>
       </div>
     </footer>
