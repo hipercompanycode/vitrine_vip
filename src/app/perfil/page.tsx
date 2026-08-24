@@ -63,11 +63,11 @@ export default async function PerfilPage() {
         {/* dados */}
         <section className={cardCls}>
           <h2 className="font-display text-base font-bold text-ink">Seus dados</h2>
-          <p className="mb-4 mt-0.5 text-xs text-muted">Como você aparece no site. O contato (WhatsApp) fica no seu anúncio.</p>
+          <p className="mb-4 mt-0.5 text-xs text-muted">Nome da sua conta — fica <strong className="text-ink">privado</strong>, não aparece na vitrine. O nome público você define no seu anúncio (passo 1).</p>
           <form action="/api/profile" method="post" className="space-y-3">
             <label className="block">
-              <span className={labelCls}>Seu nome</span>
-              <input name="name" defaultValue={profile?.name ?? ""} placeholder="Como você quer aparecer" className={inputCls} />
+              <span className={labelCls}>Seu nome (privado)</span>
+              <input name="name" defaultValue={profile?.name ?? ""} placeholder="Seu nome" className={inputCls} />
             </label>
             <button className={btnSecondary}>Salvar</button>
           </form>

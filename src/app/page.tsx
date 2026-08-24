@@ -196,12 +196,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   const profiles: ProfileCardData[] = [];
   for (const r of data) {
     const city = (Array.isArray(r.cities) ? r.cities[0] : r.cities) ?? null;
-    const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
     const vc = videoCount.get(r.id) ?? 0;
     const storyAt = story.get(r.id);
     const card: ProfileCardData = {
       id: r.id,
-      name: profile?.name?.trim() || r.title,
+      name: r.title?.trim() || "Acompanhante",
       age: r.age ?? 0,
       city: city ? `${city.name}` : "",
       description: r.headline?.trim() || r.description,

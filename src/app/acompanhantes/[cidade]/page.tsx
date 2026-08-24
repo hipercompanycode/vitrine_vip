@@ -70,11 +70,10 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
   const profiles: ProfileCardData[] = [];
   for (const r of rows) {
     const city = Array.isArray(r.cities) ? r.cities[0] : r.cities;
-    const prof = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
     const vc = videoCount.get(r.id) ?? 0;
     const sa = story.get(r.id);
     const card: ProfileCardData = {
-      id: r.id, name: prof?.name?.trim() || r.title, age: r.age ?? 0, city: city ? city.name : "",
+      id: r.id, name: r.title?.trim() || "Acompanhante", age: r.age ?? 0, city: city ? city.name : "",
       description: r.headline?.trim() || r.description,
       priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100).toLocaleString("pt-BR")}` : null,
       verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,

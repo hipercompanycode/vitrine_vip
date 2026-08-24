@@ -25,15 +25,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const admin = createAdminClient();
   const { data: ad } = await admin
     .from("ads")
-    .select("title, description, age, profile_id, cities ( name, uf ), profiles ( name )")
+    .select("title, description, age, profile_id, cities ( name, uf )")
     .eq("id", id).eq("status", "active").eq("verified", true).maybeSingle();
   if (!ad) return { title: "Anúncio não encontrado", robots: { index: false, follow: false } };
   const { data: sub } = await admin
     .from("subscriptions").select("id").eq("profile_id", ad.profile_id as string)
     .eq("status", "active").gt("current_period_end", new Date().toISOString()).maybeSingle();
   const city = (Array.isArray(ad.cities) ? ad.cities[0] : ad.cities) as CityEmbed | null;
-  const prof = Array.isArray(ad.profiles) ? ad.profiles[0] : (ad.profiles as { name?: string } | null);
-  const name = (prof?.name?.trim() || (ad.title as string)) as string;
+  const name = ((ad.title as string)?.trim() || "Acompanhante") as string;
   const loc = city ? ` em ${city.name}-${city.uf}` : "";
   const agePart = ad.age ? `, ${ad.age} anos` : "";
   const title = `${name}${agePart} — Acompanhante${loc}`;
@@ -116,7 +115,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
 
   const data: AdCardData = {
     id: ad.id as string,
-    title: (profile?.name?.trim() || (ad.title as string)) as string,
+    title: ((ad.title as string)?.trim() || "Acompanhante") as string,
     description: ad.description as string,
     price_cents: ad.price_cents as number,
     is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()),
@@ -169,8 +168,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
 
   const relCover = await coverUrlMap(admin, (relRows ?? []).map((r: any) => r.id));
   const related: ProfileCardData[] = (relRows ?? []).map((r: any) => {
-    const pn = Array.isArray(r.profiles) ? r.profiles[0]?.name : r.profiles?.name;
-    return { id: r.id, name: pn?.trim() || r.title, age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null, cover: relCover.get(r.id) ?? null } as ProfileCardData;
+    return { id: r.id, name: r.title?.trim() || "Acompanhante", age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null, cover: relCover.get(r.id) ?? null } as ProfileCardData;
   });
 
   return (
