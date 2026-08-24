@@ -36,9 +36,6 @@ function Feat({ ok, children }: { ok: boolean; children: React.ReactNode }) {
 function TrialCard({ href }: { href: string }) {
   return (
     <div className="relative flex min-h-[460px] flex-col rounded-2xl border border-[#43d17f]/45 bg-gradient-to-b from-[#12331f]/35 to-surface p-7 shadow-card">
-      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-pill bg-[#1b8a4e] px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-pop">
-        🎁 Sem cartão
-      </span>
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Experimente primeiro</p>
         <h3 className="mt-1 font-display text-2xl font-extrabold text-[#43d17f]">Teste grátis</h3>
@@ -61,7 +58,7 @@ function TrialCard({ href }: { href: string }) {
       <WizardNav
         href={href}
         label="Começar teste grátis"
-        className="mt-7 w-full rounded-input bg-[#1b8a4e] py-3.5 text-center text-sm font-bold text-white transition-all hover:bg-[#22a15c] active:scale-[0.98]"
+        className="mt-7 w-full rounded-input bg-[#43d17f] py-3.5 text-center text-sm font-extrabold text-[#06170e] transition-all hover:bg-[#5cdb90] active:scale-[0.98]"
       />
     </div>
   );
