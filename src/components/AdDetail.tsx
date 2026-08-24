@@ -103,7 +103,7 @@ export default function AdDetail({
       <div className="relative overflow-hidden rounded-card border border-line shadow-card">
         <StoryCover title={ad.title} coverUrl={coverUrl} storyUrl={storyUrl} className="aspect-[4/5] w-full sm:aspect-[16/11]" />
         {ad.is_available && <div className="absolute left-4 top-4"><AvailableBadge /></div>}
-        <span className="absolute right-4 top-4 rounded-pill bg-ink/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">{timeAgo(new Date(ad.created_at), now)}</span>
+        <span className="absolute right-4 top-4 rounded-pill bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">{timeAgo(new Date(ad.created_at), now)}</span>
       </div>
 
       <div className="mt-6">

@@ -35,7 +35,7 @@ export default function DeleteAccount() {
       </section>
 
       {open && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/85 px-4 backdrop-blur-sm" onClick={() => !busy && setOpen(false)}>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/85 px-4 backdrop-blur-sm" onClick={() => !busy && setOpen(false)}>
           <div className="w-full max-w-md rounded-2xl border border-red-500/40 bg-surface p-6 shadow-pop" onClick={(e) => e.stopPropagation()}>
             <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/15 text-red-300">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 9v4M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>

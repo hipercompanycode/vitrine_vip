@@ -58,7 +58,7 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
                 decoding="async"
                 className="h-auto w-full transition-transform duration-300 group-hover:scale-[1.02]"
               />
-              <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink/55 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+              <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -78,7 +78,7 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
 
       {lightbox != null && items[lightbox]?.type === "photo" && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 backdrop-blur-md"
           onClick={close}
           role="dialog"
           aria-modal="true"
