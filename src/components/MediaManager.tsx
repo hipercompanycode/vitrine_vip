@@ -21,7 +21,31 @@ async function videoTooLong(file: File): Promise<boolean> {
   });
 }
 
-// Redimensiona/comprime a foto no navegador antes de subir (menos peso, carrega mais rápido).
+const WATERMARK_TEXT = "vitrinevip.com.br";
+
+// Marca d'água tiled na diagonal (queimada na imagem) — protege contra roubo e divulga o site.
+function drawWatermark(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const fontSize = Math.max(16, Math.round(w * 0.035));
+  ctx.save();
+  ctx.font = `700 ${fontSize}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.rotate(-Math.PI / 6); // -30°
+  const stepX = ctx.measureText(WATERMARK_TEXT).width + fontSize * 2.5;
+  const stepY = fontSize * 3.6;
+  for (let y = -h; y < h * 2; y += stepY) {
+    for (let x = -w; x < w * 2; x += stepX) {
+      ctx.lineWidth = Math.max(1, fontSize * 0.08);
+      ctx.strokeStyle = "rgba(0,0,0,0.18)";
+      ctx.strokeText(WATERMARK_TEXT, x, y);
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      ctx.fillText(WATERMARK_TEXT, x, y);
+    }
+  }
+  ctx.restore();
+}
+
+// Redimensiona a foto + aplica a marca d'água no navegador antes de subir.
 async function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise<{ blob: Blob; ext: string; type: string }> {
   try {
     const img = await createImageBitmap(file);
@@ -36,13 +60,16 @@ async function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("no ctx");
     ctx.drawImage(img, 0, 0, width, height);
+    drawWatermark(ctx, width, height);
     const blob: Blob = await new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("toBlob"))), "image/jpeg", quality));
     img.close?.();
-    // usa a versão comprimida só se realmente ficou menor
-    if (blob.size < file.size) return { blob, ext: "jpg", type: "image/jpeg" };
-  } catch { /* fallback pro original */ }
-  const ext = file.name.split(".").pop() || "jpg";
-  return { blob: file, ext, type: file.type };
+    // sempre usa a versão com marca d'água (não é só compressão).
+    return { blob, ext: "jpg", type: "image/jpeg" };
+  } catch {
+    // fallback raro (falha ao processar): sobe o original sem marca.
+    const ext = file.name.split(".").pop() || "jpg";
+    return { blob: file, ext, type: file.type };
+  }
 }
 
 export default function MediaManager({
