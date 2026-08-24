@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { isActive, pixPeriodEndISO, mapStripeStatus } from "../subscription";
+import { isActive, pixPeriodEndISO, extendPeriodISO, mapStripeStatus } from "../subscription";
 
 const now = new Date("2026-08-09T12:00:00Z");
 
@@ -14,6 +14,16 @@ test("isActive: ativa só com status active e período no futuro", () => {
 test("pixPeriodEndISO: soma 30 dias por padrão", () => {
   expect(pixPeriodEndISO(now)).toBe("2026-09-08T12:00:00.000Z");
   expect(pixPeriodEndISO(now, 7)).toBe("2026-08-16T12:00:00.000Z");
+});
+
+test("extendPeriodISO: empilha nos dias restantes se ainda no futuro", () => {
+  // renova antes de vencer → soma 30 dias ao fim atual
+  expect(extendPeriodISO("2026-08-20T12:00:00Z", now)).toBe("2026-09-19T12:00:00.000Z");
+});
+
+test("extendPeriodISO: parte de agora se já venceu ou não há período", () => {
+  expect(extendPeriodISO("2026-08-01T12:00:00Z", now)).toBe("2026-09-08T12:00:00.000Z");
+  expect(extendPeriodISO(null, now)).toBe("2026-09-08T12:00:00.000Z");
 });
 
 test("mapStripeStatus: mapeia status do Stripe pros nossos", () => {

@@ -12,6 +12,15 @@ export function pixPeriodEndISO(now: Date, days = 30): string {
   return new Date(now.getTime() + days * DAY_MS).toISOString();
 }
 
+// Renovação: soma o período à data de fim atual se ela ainda estiver no futuro,
+// senão parte de agora. Assim pagar antes de vencer empilha os dias.
+export function extendPeriodISO(currentEnd: string | null, now: Date, days = 30): string {
+  const base = currentEnd && new Date(currentEnd).getTime() > now.getTime()
+    ? new Date(currentEnd).getTime()
+    : now.getTime();
+  return new Date(base + days * DAY_MS).toISOString();
+}
+
 export function mapStripeStatus(s: string): SubStatus {
   switch (s) {
     case "active":

@@ -1,16 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
+import CameraCapture from "@/components/CameraCapture";
 
 const MAX_IMG = 15 * 1024 * 1024; // 15 MB
 
 type Kind = "doc" | "face" | "body";
 
-function Slot({ label, hint, done, busy, onPick }: {
-  label: string; hint: string; done: boolean; busy: boolean; onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
+function Slot({ label, hint, done, busy, onPick, onCam }: {
+  label: string; hint: string; done: boolean; busy: boolean;
+  onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onCam: () => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <label className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-card border border-dashed px-4 py-6 text-center transition-colors ${done ? "border-[#1f6b3f] bg-[#0f2a1b]" : "border-line bg-surface-2/40 hover:border-accent/60"}`}>
+    <div className={`flex flex-col items-center justify-center gap-1 rounded-card border border-dashed px-4 py-5 text-center transition-colors ${done ? "border-[#1f6b3f] bg-[#0f2a1b]" : "border-line bg-surface-2/40"}`}>
       <span className={`flex h-10 w-10 items-center justify-center rounded-full ${done ? "bg-[#164a2c] text-[#7ee2a8]" : "bg-accent-soft text-accent"}`}>
         {done ? (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -20,8 +24,20 @@ function Slot({ label, hint, done, busy, onPick }: {
       </span>
       <span className="text-sm font-semibold text-ink">{busy ? "Enviando…" : done ? `${label} enviada` : label}</span>
       <span className="text-[11px] text-muted">{hint}</span>
-      <input type="file" accept="image/*" className="hidden" onChange={onPick} disabled={busy} />
-    </label>
+      <div className="mt-2 flex gap-2">
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
+          className="inline-flex items-center gap-1 rounded-input border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-accent hover:text-accent disabled:opacity-50">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V5M12 5l-4 4M12 5l4 4M5 19h14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Arquivo
+        </button>
+        <button type="button" onClick={onCam} disabled={busy}
+          className="inline-flex items-center gap-1 rounded-input border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-accent hover:text-accent disabled:opacity-50">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
+          Câmera
+        </button>
+      </div>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onPick} disabled={busy} />
+    </div>
   );
 }
 
@@ -35,10 +51,14 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
   const [status, setStatus] = useState<string | null>(initStatus);
   const [busy, setBusy] = useState<"" | Kind | "submit">("");
   const [msg, setMsg] = useState("");
+  const [cam, setCam] = useState<Kind | null>(null);
 
   const docDone = !!docPath || hasDoc;
   const faceDone = !!facePath || hasFace;
   const bodyDone = !!bodyPath || hasBody;
+
+  const setters: Record<Kind, (p: string) => void> = { doc: setDocPath, face: setFacePath, body: setBodyPath };
+  const facing: Record<Kind, "user" | "environment"> = { doc: "environment", face: "user", body: "user" };
 
   async function upload(file: File, kind: Kind): Promise<string | null> {
     setBusy(kind); setMsg("");
@@ -50,12 +70,18 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
     return path;
   }
 
-  function picker(kind: Kind, set: (p: string) => void) {
+  async function handleFile(f: File | undefined | null, kind: Kind) {
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { setMsg("Envie uma imagem (foto)."); return; }
+    if (f.size > MAX_IMG) { setMsg("Imagem acima de 15 MB."); return; }
+    const p = await upload(f, kind);
+    if (p) setters[kind](p);
+  }
+
+  function picker(kind: Kind) {
     return async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
-      if (!f.type.startsWith("image/")) { setMsg("Envie uma imagem (foto)."); return; }
-      if (f.size > MAX_IMG) { setMsg("Imagem acima de 15 MB."); return; }
-      const p = await upload(f, kind); if (p) set(p);
+      const f = e.target.files?.[0]; e.target.value = "";
+      await handleFile(f, kind);
     };
   }
 
@@ -102,13 +128,13 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
       )}
 
       <p className="text-xs text-muted">
-        Pra ganhar o selo <strong className="text-ink">Verificada</strong> (e mais confiança), envie: uma foto de um <strong className="text-ink">documento com foto</strong> (RG/CNH), uma <strong className="text-ink">foto do rosto</strong> e uma <strong className="text-ink">foto de corpo inteiro com o rosto visível</strong> (pra confirmar que é você). Arquivos <strong className="text-ink">privados</strong> — só a moderação vê, nunca aparecem no anúncio.
+        Pra ganhar o selo <strong className="text-ink">Verificada</strong> (e mais confiança), envie: uma foto de um <strong className="text-ink">documento com foto</strong> (RG/CNH), uma <strong className="text-ink">foto do rosto</strong> e uma <strong className="text-ink">foto de corpo inteiro com o rosto visível</strong> (pra confirmar que é você). Pode <strong className="text-ink">enviar do dispositivo ou tirar na hora pela câmera</strong>. Arquivos <strong className="text-ink">privados</strong> — só a moderação vê, nunca aparecem no anúncio.
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Slot label="Documento com foto" hint="RG ou CNH (imagem)" done={docDone} busy={busy === "doc"} onPick={picker("doc", setDocPath)} />
-        <Slot label="Foto do rosto" hint="Selfie nítida do rosto" done={faceDone} busy={busy === "face"} onPick={picker("face", setFacePath)} />
-        <Slot label="Foto de corpo + rosto" hint="Corpo inteiro com o rosto visível" done={bodyDone} busy={busy === "body"} onPick={picker("body", setBodyPath)} />
+        <Slot label="Documento com foto" hint="RG ou CNH (imagem)" done={docDone} busy={busy === "doc"} onPick={picker("doc")} onCam={() => setCam("doc")} />
+        <Slot label="Foto do rosto" hint="Selfie nítida do rosto" done={faceDone} busy={busy === "face"} onPick={picker("face")} onCam={() => setCam("face")} />
+        <Slot label="Foto de corpo + rosto" hint="Corpo inteiro com o rosto visível" done={bodyDone} busy={busy === "body"} onPick={picker("body")} onCam={() => setCam("body")} />
       </div>
 
       <button onClick={submit} disabled={busy === "submit" || !canSubmit}
@@ -116,6 +142,15 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
         {busy === "submit" ? "Enviando…" : "Enviar para verificação"}
       </button>
       {msg && <p className="text-sm text-red-400">{msg}</p>}
+
+      {cam && (
+        <CameraCapture
+          facingMode={facing[cam]}
+          namePrefix={cam}
+          onCapture={(file) => handleFile(file, cam)}
+          onClose={() => setCam(null)}
+        />
+      )}
     </div>
   );
 }

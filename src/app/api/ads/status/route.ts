@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
+import { accountAccess } from "@/lib/access";
 
 // Pausar / reativar o anúncio. status 'paused' some das listagens (que filtram 'active').
 export async function POST(request: Request) {
@@ -11,6 +12,9 @@ export async function POST(request: Request) {
   const next = status === "paused" ? "paused" : "active";
 
   const admin = createAdminClient();
+  const { active } = await accountAccess(admin, user.id);
+  if (!active) return NextResponse.json({ error: "assinatura inativa" }, { status: 402 });
+
   const { error } = await admin.from("ads").update({ status: next }).eq("profile_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, status: next });

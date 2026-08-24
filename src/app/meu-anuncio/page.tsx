@@ -12,6 +12,7 @@ import PlanCards from "@/components/PlanCards";
 import VerificationUploader from "@/components/VerificationUploader";
 import AdActions from "../perfil/ad-actions";
 import WizardSubmit from "@/components/WizardSubmit";
+import PixCheckout from "@/components/PixCheckout";
 import { cardCls } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -137,6 +138,42 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const showPanel = !!ad && complete && !editing;
   const paused = (ad?.status ?? "active") !== "active";
 
+  // Paywall: aprovado mas sem assinatura ativa (trial/pago venceu) → precisa pagar.
+  // Bloqueia gerenciar/editar o anúncio; /perfil (excluir conta) segue livre pela LGPD.
+  const needsPayment = !!ad && verifApproved && !active;
+  if (needsPayment && ad) {
+    const hadPeriod = !!sub?.current_period_end;
+    return (
+      <>
+        <AccountHeader />
+        <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
+          <div className="mb-6">
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Ative seu anúncio</h1>
+            <p className="mt-1 truncate text-sm text-muted">{(ad.title as string) || "Seu anúncio"}</p>
+          </div>
+
+          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent-soft px-4 py-3.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 10V8a6 6 0 1 1 12 0v2m-9 0h6a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+            </span>
+            <div>
+              <p className="text-sm font-bold text-ink">{hadPeriod ? "Seu período acabou" : "Falta pagar para aparecer"}</p>
+              <p className="text-xs text-muted">Seu perfil está aprovado, mas só volta à vitrine — e libera o gerenciamento — após o pagamento.</p>
+            </div>
+          </div>
+
+          <section className={cardCls}>
+            <PixCheckout plans={PLANS} redirectTo="/meu-anuncio" />
+          </section>
+
+          <p className="mt-4 text-center text-xs text-muted">
+            Precisa sair? <Link href="/perfil" className="text-accent underline-offset-2 hover:underline">Meu perfil / excluir conta</Link>
+          </p>
+        </main>
+      </>
+    );
+  }
+
   if (showPanel && ad) {
     return (
       <>
@@ -202,6 +239,17 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                   Ver meu anúncio público
                 </a>
               )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <Link href="/meu-anuncio?step=3" className="flex items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  Editar fotos
+                </Link>
+                <Link href="/meu-anuncio?step=1" className="flex items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  Alterar cidade
+                </Link>
+              </div>
 
               <section className={cardCls}>
                 <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>

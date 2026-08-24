@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { canBump, nextBumpAt } from "@/lib/bump";
+import { accountAccess } from "@/lib/access";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -8,6 +9,9 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
 
   const admin = createAdminClient();
+  const { active } = await accountAccess(admin, user.id);
+  if (!active) return NextResponse.json({ error: "assinatura inativa" }, { status: 402 });
+
   const { data: ad } = await admin.from("ads").select("id, bumped_at, profile_id").eq("profile_id", user.id).maybeSingle();
   if (!ad) return NextResponse.json({ error: "sem anúncio" }, { status: 404 });
 

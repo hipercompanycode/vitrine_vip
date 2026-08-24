@@ -3,6 +3,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { parsePriceToCents } from "@/lib/price";
 import { sanitizeAttrs } from "@/lib/attributes";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { accountAccess } from "@/lib/access";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -14,6 +15,12 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const admin = createAdminClient();
+
+  // Depois de aprovado, editar exige assinatura ativa (paywall). Antes da aprovação, é livre (montagem).
+  const { active, verifApproved } = await accountAccess(admin, user.id);
+  if (verifApproved && !active) {
+    return NextResponse.json({ error: "assinatura inativa" }, { status: 402 });
+  }
 
   const nextRaw = String(form.get("next") ?? "/meu-anuncio");
   const next = nextRaw.startsWith("/") ? nextRaw : "/meu-anuncio";

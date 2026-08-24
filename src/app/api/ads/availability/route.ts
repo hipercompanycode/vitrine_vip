@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
+import { accountAccess } from "@/lib/access";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -10,6 +11,9 @@ export async function POST(request: Request) {
   const value = available === true;
 
   const admin = createAdminClient();
+  const { active } = await accountAccess(admin, user.id);
+  if (!active) return NextResponse.json({ error: "assinatura inativa" }, { status: 402 });
+
   const { error } = await admin
     .from("ads")
     .update({ is_available: value, available_since: value ? new Date().toISOString() : null })

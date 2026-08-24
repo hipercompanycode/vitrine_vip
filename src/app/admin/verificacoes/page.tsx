@@ -4,6 +4,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import { timeAgo } from "@/lib/format";
 import AdminHeader from "@/components/AdminHeader";
+import AdminStats from "@/components/AdminStats";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +105,8 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
     <>
       <AdminHeader />
       <main className="mx-auto w-full max-w-[1760px] flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <AdminStats />
+
         <nav className="mb-6 flex items-center gap-2 text-sm">
           <Link href="/admin" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Denúncias</Link>
           <span className="rounded-pill bg-accent px-3 py-1.5 font-semibold text-white">Verificações</span>

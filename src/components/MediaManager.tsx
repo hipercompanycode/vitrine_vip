@@ -3,6 +3,7 @@ import { useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import { validateFile, MEDIA_LIMITS, VIDEO_ENABLED } from "@/lib/media";
 import { publicUrl } from "@/lib/storage";
+import CameraCapture from "@/components/CameraCapture";
 
 type Media = { id: string; type: "photo" | "video"; storage_path: string; is_cover: boolean };
 
@@ -52,6 +53,7 @@ export default function MediaManager({
   const [items, setItems] = useState<Media[]>(initial);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [camOpen, setCamOpen] = useState(false);
 
   const nPhotos = items.filter((m) => m.type === "photo").length;
   const nVideos = items.filter((m) => m.type === "video").length;
@@ -59,6 +61,10 @@ export default function MediaManager({
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    await handleFiles(files);
+  }
+
+  async function handleFiles(files: File[]) {
     if (!files.length) return;
     setMsg(""); setBusy(true);
 
@@ -125,6 +131,15 @@ export default function MediaManager({
           {busy ? "Enviando…" : "Adicionar fotos"}
           <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onPick} disabled={busy || nPhotos >= maxPhotos} />
         </label>
+        <button
+          type="button"
+          onClick={() => setCamOpen(true)}
+          disabled={busy || nPhotos >= maxPhotos}
+          className={`inline-flex items-center gap-2 rounded-input border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-soft ${nPhotos >= maxPhotos ? "pointer-events-none opacity-50" : ""}`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
+          Tirar foto
+        </button>
         {VIDEO_ENABLED && (
           <label className={`inline-flex cursor-pointer items-center gap-2 rounded-input border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-soft ${nVideos >= maxVideos ? "pointer-events-none opacity-50" : ""}`}>
             {busy ? "Enviando…" : "Adicionar vídeo"}
@@ -133,6 +148,15 @@ export default function MediaManager({
         )}
       </div>
       {msg && <p className="mt-2 text-sm text-red-400">{msg}</p>}
+
+      {camOpen && (
+        <CameraCapture
+          facingMode="environment"
+          namePrefix="foto"
+          onCapture={(file) => handleFiles([file])}
+          onClose={() => setCamOpen(false)}
+        />
+      )}
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {items.map((m) => (
@@ -159,7 +183,7 @@ export default function MediaManager({
               type="button"
               onClick={() => remove(m.id)}
               aria-label="Apagar foto"
-              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-ink/65 text-white backdrop-blur-sm transition-colors hover:bg-red-500"
+              className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/30 shadow-pop backdrop-blur-sm transition-colors hover:bg-red-500 hover:ring-red-300"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
@@ -169,7 +193,7 @@ export default function MediaManager({
               <button
                 type="button"
                 onClick={() => setCover(m.id)}
-                className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1.5 rounded-pill bg-ink/70 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-accent"
+                className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1.5 rounded-pill bg-black/65 py-1.5 text-xs font-semibold text-white ring-1 ring-white/25 shadow-pop backdrop-blur-sm transition-colors hover:bg-accent hover:ring-accent"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
                 Tornar capa

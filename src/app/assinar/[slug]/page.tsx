@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
-import SubscribeForm from "@/components/SubscribeForm";
+import PixCheckout from "@/components/PixCheckout";
 import { PLANS } from "@/lib/plans";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { userHasAd } from "@/lib/ads";
@@ -20,9 +20,9 @@ export default async function AssinarPage({ params }: { params: Promise<{ slug: 
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
         <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">Assinar {plan.name}</h1>
         <p className="mt-1 text-sm text-muted">
-          {(plan.priceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} — cartão (mensal) ou Pix (30 dias).
+          {(plan.priceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} via Pix — vale 30 dias.
         </p>
-        <div className="mt-6"><SubscribeForm slug={plan.slug} /></div>
+        <div className="mt-6"><PixCheckout plans={PLANS} fixedSlug={plan.slug} /></div>
       </main>
     </>
   );
