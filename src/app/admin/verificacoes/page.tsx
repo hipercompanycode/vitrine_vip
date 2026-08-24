@@ -5,6 +5,7 @@ import { isAdminUser } from "@/lib/admin";
 import { timeAgo } from "@/lib/format";
 import AdminHeader from "@/components/AdminHeader";
 import AdminStats from "@/components/AdminStats";
+import VerificationPhotos from "@/components/VerificationPhotos";
 
 export const dynamic = "force-dynamic";
 
@@ -22,22 +23,6 @@ function Stat({ label, value, tone }: { label: string; value: number; tone: "acc
     <div className="rounded-card border border-line bg-surface px-4 py-3 shadow-card">
       <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</div>
       <div className={`mt-0.5 font-display text-2xl font-extrabold ${color}`}>{value}</div>
-    </div>
-  );
-}
-
-function Photo({ label, url, alt }: { label: string; url: string | null; alt: string }) {
-  return (
-    <div>
-      <p className="mb-1 text-xs font-semibold text-muted">{label}</p>
-      {url ? (
-        <a href={url} target="_blank" rel="noreferrer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt={alt} className="h-40 w-full rounded-input border border-line object-cover transition-opacity hover:opacity-90" />
-        </a>
-      ) : (
-        <div className="flex h-40 w-full items-center justify-center rounded-input border border-dashed border-line text-xs text-muted">—</div>
-      )}
     </div>
   );
 }
@@ -173,10 +158,12 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                     </div>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-3 gap-3">
-                    <Photo label="Documento" url={signed[i].doc} alt="Documento" />
-                    <Photo label="Rosto" url={signed[i].face} alt="Rosto" />
-                    <Photo label="Corpo + rosto" url={signed[i].body} alt="Corpo e rosto" />
+                  <div className="mt-3">
+                    <VerificationPhotos photos={[
+                      { label: "Documento", url: signed[i].doc },
+                      { label: "Rosto", url: signed[i].face },
+                      { label: "Corpo + rosto", url: signed[i].body },
+                    ]} />
                   </div>
 
                   <div className="mt-4 space-y-2 border-t border-line/60 pt-3">

@@ -11,15 +11,17 @@ export async function POST(request: Request) {
   }
 
   const form = await request.formData();
+  const back = String(form.get("back") ?? "/admin");
+  const safeBack = back.startsWith("/admin") ? back : "/admin";
   const reportId = String(form.get("report_id") ?? "");
-  if (!reportId) return NextResponse.json({ error: "report_id obrigatório" }, { status: 400 });
+  const adId = String(form.get("ad_id") ?? "");
+  if (!reportId && !adId) return flash(request, safeBack, "erro", "Denúncia inválida.");
   const status = String(form.get("status") ?? "reviewed") === "open" ? "open" : "reviewed";
 
   const admin = createAdminClient();
-  // volta pra aba de onde veio (arquivar -> continua nas abertas; reabrir -> arquivadas)
-  const back = String(form.get("back") ?? "/admin");
-  const safeBack = back.startsWith("/admin") ? back : "/admin";
-  const { error } = await admin.from("reports").update({ status }).eq("id", reportId);
+  // ad_id = arquiva/reabre TODAS as denúncias do anúncio (cards agrupados). report_id = uma só (compat).
+  const q = admin.from("reports").update({ status });
+  const { error } = await (adId ? q.eq("ad_id", adId) : q.eq("id", reportId));
   if (error) return flash(request, safeBack, "erro", GENERIC_ERROR, error);
   return NextResponse.redirect(new URL(safeBack, request.url), { status: 303 });
 }
