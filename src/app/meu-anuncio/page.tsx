@@ -433,9 +433,9 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </div>
               </section>
             )}
-            {!active && <p className="text-sm text-muted">Ao ser aprovada, você ganha <strong className="text-ink">7 dias grátis</strong>. Depois, escolha um plano pra continuar no ar.</p>}
+            {!active && <p className="text-sm text-muted">Comece com <strong className="text-ink">7 dias grátis</strong> ou já assine um plano — você escolhe.</p>}
             {isTrial && <p className="text-sm text-muted">Quer garantir depois do teste? Assine agora:</p>}
-            <PlanCards currentSlug={active && !isTrial ? plan?.slug : undefined} />
+            <PlanCards currentSlug={active && !isTrial ? plan?.slug : undefined} trialHref={!active ? "/meu-anuncio?step=6" : undefined} />
             <StepNav step={5} />
           </div>
         )}

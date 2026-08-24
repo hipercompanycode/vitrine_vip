@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PLANS } from "@/lib/plans";
 import { VIDEO_ENABLED } from "@/lib/media";
+import WizardNav from "@/components/WizardNav";
 
 const HIGHLIGHT = "premium"; // mais vantajoso
 
@@ -30,9 +31,48 @@ function Feat({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   );
 }
 
-export default function PlanCards({ currentSlug }: { currentSlug?: string }) {
+// Card do teste grátis (7 dias) — mesma altura/estilo dos planos.
+// CTA só avança o wizard; a assinatura de teste é criada quando o perfil é aprovado.
+function TrialCard({ href }: { href: string }) {
   return (
-    <div className="mx-auto grid max-w-3xl grid-cols-1 items-stretch gap-6 sm:grid-cols-2">
+    <div className="relative flex min-h-[460px] flex-col rounded-2xl border border-[#43d17f]/45 bg-gradient-to-b from-[#12331f]/35 to-surface p-7 shadow-card">
+      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-pill bg-[#1b8a4e] px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-pop">
+        🎁 Sem cartão
+      </span>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Experimente primeiro</p>
+        <h3 className="mt-1 font-display text-2xl font-extrabold text-[#43d17f]">Teste grátis</h3>
+        <div className="mt-4 flex items-end gap-1">
+          <span className="font-display text-[2.75rem] font-extrabold leading-none text-ink">R$ 0</span>
+          <span className="pb-1 text-sm font-medium text-muted">/7 dias</span>
+        </div>
+        <p className="mt-1 text-xs text-muted">Aprovado o perfil, 7 dias no ar. Sem cobrança.</p>
+      </div>
+
+      <div className="my-6 h-px w-full bg-line/70" />
+
+      <ul className="flex-1 space-y-3.5">
+        <Feat ok>Anúncio completo no ar por 7 dias</Feat>
+        <Feat ok>12 fotos no anúncio</Feat>
+        <Feat ok>Story 24h na capa</Feat>
+        <Feat ok>Escolhe um plano só depois</Feat>
+      </ul>
+
+      <WizardNav
+        href={href}
+        label="Começar teste grátis"
+        className="mt-7 w-full rounded-input bg-[#1b8a4e] py-3.5 text-center text-sm font-bold text-white transition-all hover:bg-[#22a15c] active:scale-[0.98]"
+      />
+    </div>
+  );
+}
+
+export default function PlanCards({ currentSlug, trialHref }: { currentSlug?: string; trialHref?: string }) {
+  const cols = trialHref ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2";
+  const maxW = trialHref ? "max-w-5xl" : "max-w-3xl";
+  return (
+    <div className={`mx-auto grid ${maxW} grid-cols-1 items-stretch gap-6 ${cols}`}>
+      {trialHref && <TrialCard href={trialHref} />}
       {PLANS.map((p) => {
         const top = p.slug === HIGHLIGHT;
         const isCurrent = p.slug === currentSlug;
