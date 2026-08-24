@@ -14,10 +14,14 @@ function brl(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function Feat({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+function Feat({ ok, soon, children }: { ok?: boolean; soon?: boolean; children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2.5 text-sm">
-      {ok ? (
+      {soon ? (
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2c2410]">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-[#e0a83e]" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        </span>
+      ) : ok ? (
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#12331f]">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-[#43d17f]" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </span>
@@ -26,7 +30,7 @@ function Feat({ ok, children }: { ok: boolean; children: React.ReactNode }) {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-muted/50" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
         </span>
       )}
-      <span className={ok ? "text-ink" : "text-muted/60"}>{children}</span>
+      <span className={soon ? "text-muted" : ok ? "text-ink" : "text-muted/60"}>{children}</span>
     </li>
   );
 }
@@ -51,7 +55,7 @@ function TrialCard({ href }: { href: string }) {
       <ul className="flex-1 space-y-3.5">
         <Feat ok>Anúncio completo no ar por 7 dias</Feat>
         <Feat ok>12 fotos no anúncio</Feat>
-        <Feat ok>Story 24h na capa</Feat>
+        <Feat ok>Aparece na sua cidade</Feat>
         <Feat ok>Escolhe um plano só depois</Feat>
       </ul>
 
@@ -103,7 +107,7 @@ export default function PlanCards({ currentSlug, trialHref }: { currentSlug?: st
             <ul className="flex-1 space-y-3.5">
               <Feat ok>{p.maxPhotos} fotos no anúncio</Feat>
               {VIDEO_ENABLED && <Feat ok>{p.maxVideos} vídeo{p.maxVideos > 1 ? "s" : ""}</Feat>}
-              <Feat ok={p.allowsStory}>Story 24h na capa</Feat>
+              <Feat soon>Story 24h na capa <span className="text-[#e0a83e]">(em breve)</span></Feat>
               <Feat ok>{p.bumpCooldownMinutes === 0 ? "Subir ao topo a qualquer hora" : `Subir ao topo a cada ${p.bumpCooldownMinutes} min`}</Feat>
               <Feat ok={p.slug === "premium"}>Selo de destaque (TOP)</Feat>
             </ul>
