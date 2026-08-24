@@ -58,7 +58,7 @@ export default function PlanCards({ currentSlug }: { currentSlug?: string }) {
                 <span className="font-display text-[2.75rem] font-extrabold leading-none text-ink">{brl(p.priceCents)}</span>
                 <span className="pb-1 text-sm font-medium text-muted">/mês</span>
               </div>
-              <p className="mt-1 text-xs text-muted">Cartão (renova sozinho) ou Pix (30 dias).</p>
+              <p className="mt-1 text-xs text-muted">Pix — vale 30 dias (renovação manual).</p>
             </div>
 
             <div className="my-6 h-px w-full bg-line/70" />

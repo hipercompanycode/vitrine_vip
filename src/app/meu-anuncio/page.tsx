@@ -11,6 +11,7 @@ import PlanCards from "@/components/PlanCards";
 import VerificationUploader from "@/components/VerificationUploader";
 import AdActions from "../perfil/ad-actions";
 import WizardSubmit from "@/components/WizardSubmit";
+import WizardNav from "@/components/WizardNav";
 import PixCheckout from "@/components/PixCheckout";
 import { cardCls } from "@/components/ui";
 
@@ -75,10 +76,10 @@ function StepNav({ step, formId }: { step: number; formId?: string }) {
         formId ? (
           <WizardSubmit formId={formId} className={NEXT_CLS} />
         ) : (
-          <Link href={`/meu-anuncio?step=${step + 1}`} className={NEXT_CLS}>Próximo →</Link>
+          <WizardNav href={`/meu-anuncio?step=${step + 1}`} label="Próximo →" className={NEXT_CLS} />
         )
       ) : (
-        <Link href="/meu-anuncio" className={NEXT_CLS}>Concluir</Link>
+        <WizardNav href="/meu-anuncio" label="Concluir" className={NEXT_CLS} />
       )}
     </div>
   );
