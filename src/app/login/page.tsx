@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/browser";
+import PasswordInput from "@/components/PasswordInput";
 
 // destino após login (?next=/perfil), lido na hora do redirecionamento
 function proximoDestino(): string {
@@ -140,7 +141,7 @@ export default function LoginPage() {
                   <button type="button" onClick={esqueci} className="font-semibold text-accent hover:underline">Esqueci a senha</button>
                 )}
               </span>
-              <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
+              <PasswordInput value={senha} onChange={(e) => setSenha(e.target.value)}
                 autoComplete={criando ? "new-password" : "current-password"}
                 placeholder={criando ? "Crie uma senha (mín. 6 caracteres)" : "••••••••"} className={inputCls} />
             </label>
@@ -148,7 +149,7 @@ export default function LoginPage() {
             {criando && (
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-muted">Conferir senha</span>
-                <input type="password" value={confirmar} onChange={(e) => setConfirmar(e.target.value)}
+                <PasswordInput value={confirmar} onChange={(e) => setConfirmar(e.target.value)}
                   autoComplete="new-password" placeholder="Digite a senha de novo" className={inputCls} />
               </label>
             )}

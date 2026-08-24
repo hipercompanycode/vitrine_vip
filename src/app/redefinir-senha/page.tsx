@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/browser";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function RedefinirSenhaPage() {
   const supabase = createBrowserClient();
@@ -54,13 +55,13 @@ export default function RedefinirSenhaPage() {
             <form onSubmit={salvar} className="mt-6 space-y-3">
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-muted">Nova senha</span>
-                <input type="password" value={pw} onChange={(e) => setPw(e.target.value)}
+                <PasswordInput value={pw} onChange={(e) => setPw(e.target.value)}
                   autoComplete="new-password" placeholder="••••••••"
                   className="w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none" />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-muted">Confirmar senha</span>
-                <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)}
+                <PasswordInput value={pw2} onChange={(e) => setPw2(e.target.value)}
                   autoComplete="new-password" placeholder="••••••••"
                   className="w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none" />
               </label>
