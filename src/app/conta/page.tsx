@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/SiteHeader";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
-import { userHasAd, availableActive } from "@/lib/ads";
+import { userHasAd, availableActive, coverUrlMap } from "@/lib/ads";
 
 export const dynamic = "force-dynamic";
 
@@ -50,13 +50,16 @@ export default async function ContaPage() {
     const ids = visible.map((r) => r.id);
     const videoCount = new Map<string, number>();
     const story = new Map<string, string>();
+    let cover = new Map<string, string>();
     if (ids.length) {
-      const [v, st] = await Promise.all([
+      const [v, st, covers] = await Promise.all([
         admin.from("ad_media").select("ad_id").eq("type", "video").in("ad_id", ids),
         admin.from("stories").select("ad_id, created_at").in("ad_id", ids).gt("expires_at", nowIso),
+        coverUrlMap(admin, ids),
       ]);
       (v.data ?? []).forEach((r: any) => videoCount.set(r.ad_id, (videoCount.get(r.ad_id) ?? 0) + 1));
       (st.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
+      cover = covers;
     }
 
     const nowMs = new Date(nowIso).getTime();
@@ -72,6 +75,7 @@ export default async function ContaPage() {
         verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
         recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium",
         available: availableActive(r.is_available, r.available_since, nowMs), hue: hueFromId(r.id),
+        cover: cover.get(r.id) ?? null,
       };
     });
   }

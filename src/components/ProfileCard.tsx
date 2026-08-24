@@ -15,6 +15,7 @@ export type ProfileCardData = {
   available?: boolean; // "disponível agora" -> destaque verde
   priceLabel?: string | null;
   hue?: number;
+  cover?: string | null; // URL da foto de capa (se houver)
   ratio?: "tall" | "portrait" | "square"; // ignorado (cards uniformes) — compat
 };
 
@@ -46,9 +47,19 @@ export default function ProfileCard({
           className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]"
           style={{ background: `linear-gradient(150deg, hsl(${hue} 58% 27%), hsl(${(hue + 40) % 360} 48% 12%))` }}
         />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="select-none font-display text-6xl font-black text-white/10">{p.name.charAt(0)}</span>
-        </div>
+        {p.cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={p.cover}
+            alt={p.name}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="select-none font-display text-6xl font-black text-white/10">{p.name.charAt(0)}</span>
+          </div>
+        )}
 
         {/* topo-esquerda: Disponível + Verificada + gravada + contadores */}
         <div className="absolute left-2 top-2 z-[2] flex flex-col items-start gap-1">

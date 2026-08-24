@@ -8,7 +8,7 @@ import { canInteract, type Role } from "@/lib/roles";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 import ReportButton from "@/components/ReportButton";
-import { userHasAd, availableActive } from "@/lib/ads";
+import { userHasAd, availableActive, coverUrlMap } from "@/lib/ads";
 import ViewTracker from "@/components/ViewTracker";
 import { publicUrl } from "@/lib/storage";
 import type { GalleryItem } from "@/components/Gallery";
@@ -167,9 +167,10 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     stats: { dias, ultimaVerif, nFotos, nVideos, nAvaliacoes: reviews.length },
   };
 
+  const relCover = await coverUrlMap(admin, (relRows ?? []).map((r: any) => r.id));
   const related: ProfileCardData[] = (relRows ?? []).map((r: any) => {
     const pn = Array.isArray(r.profiles) ? r.profiles[0]?.name : r.profiles?.name;
-    return { id: r.id, name: pn?.trim() || r.title, age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null } as ProfileCardData;
+    return { id: r.id, name: pn?.trim() || r.title, age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null, cover: relCover.get(r.id) ?? null } as ProfileCardData;
   });
 
   return (
