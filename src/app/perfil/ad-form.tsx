@@ -2,6 +2,7 @@ import StateCityPicker from "@/components/StateCityPicker";
 import PriceTable from "@/components/PriceTable";
 import PhoneInput from "@/components/PhoneInput";
 import CharTextarea from "@/components/CharTextarea";
+import ReferralInput from "@/components/ReferralInput";
 import { inputCls, labelCls } from "@/components/ui";
 import { ATTRIBUTE_GROUPS } from "@/lib/attributes";
 
@@ -81,6 +82,8 @@ export function AdBasicsForm({ ad, defaultCity, defaultWhatsapp, defaultContact,
         <span className={labelCls}>Descrição completa</span>
         <textarea name="description" defaultValue={ad?.description ?? ""} placeholder="Texto completo — aparece na página do anúncio." className={`${inputCls} resize-none`} rows={5} />
       </label>
+
+      {!ad && <ReferralInput inputClassName={inputCls} />}
     </form>
   );
 }

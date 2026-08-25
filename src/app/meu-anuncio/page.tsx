@@ -12,6 +12,8 @@ import VerificationUploader from "@/components/VerificationUploader";
 import AdActions from "../perfil/ad-actions";
 import WizardSubmit from "@/components/WizardSubmit";
 import WizardNav from "@/components/WizardNav";
+import ReferralShare from "@/components/ReferralShare";
+import { ensureRefCode } from "@/lib/referral";
 import PixCheckout from "@/components/PixCheckout";
 import { cardCls } from "@/components/ui";
 
@@ -101,7 +103,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
     admin.from("subscriptions").select("status, method, current_period_end, plans ( slug, allows_story )").eq("profile_id", user.id).maybeSingle(),
     admin.from("verifications").select("status, doc_path, face_path, body_path, feedback, reverify_reason").eq("profile_id", user.id).maybeSingle(),
-    admin.from("profiles").select("whatsapp").eq("id", user.id).maybeSingle(),
+    admin.from("profiles").select("whatsapp, ref_code, referred_by").eq("id", user.id).maybeSingle(),
   ]);
 
   // só a cidade selecionada (não carrega as 5,5k cidades)
@@ -113,6 +115,17 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const active = isActive(sub as { status: string; current_period_end: string | null } | null, new Date());
   const isTrial = active && (sub?.method as string | undefined) === "trial";
   const isCortesia = (sub?.method as string | undefined) === "cortesia";
+
+  // indicação: garante o código do anunciante + conta quem ele indicou + quem o indicou
+  const refCode = ((prof?.ref_code as string | null) ?? (await ensureRefCode(admin, user.id))) ?? "";
+  const [{ count: refCount }, refByRes] = await Promise.all([
+    admin.from("profiles").select("id", { count: "exact", head: true }).eq("referred_by", user.id),
+    prof?.referred_by
+      ? admin.from("ads").select("title").eq("profile_id", prof.referred_by as string).maybeSingle()
+      : Promise.resolve({ data: null as { title?: string } | null }),
+  ]);
+  const referralCount = refCount ?? 0;
+  const referredByName = ((refByRes.data as { title?: string } | null)?.title ?? "").trim() || null;
   const trialEndLabel = sub?.current_period_end ? new Date(sub.current_period_end as string).toLocaleDateString("pt-BR") : "";
   const planLimits = plan?.slug && PLANS.some((x) => x.slug === plan.slug) ? planBySlug(plan.slug as PlanSlug) : PLANS[0];
   const verifStatus = (verif?.status as string | undefined) ?? null;
@@ -268,6 +281,8 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted transition-all group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </Link>
+
+              {refCode && <ReferralShare code={refCode} count={referralCount} referredBy={referredByName} />}
 
               <section className={cardCls}>
                 <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>

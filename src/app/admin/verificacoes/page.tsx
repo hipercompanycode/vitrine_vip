@@ -51,7 +51,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
 
   let query = admin
     .from("verifications")
-    .select("profile_id, doc_path, face_path, body_path, prev_face_path, cpf, liveness_code, face_hash, body_hash, reverify_reason, status, feedback, created_at, profiles ( name, last_country, geo_flag )")
+    .select("profile_id, doc_path, face_path, body_path, prev_face_path, cpf, liveness_code, face_hash, body_hash, reverify_reason, status, feedback, created_at, profiles ( name, last_country, geo_flag, referred_by )")
     .order("created_at", { ascending: false })
     .limit(200);
   if (f === "pendentes") query = query.eq("status", "pending");
@@ -84,6 +84,14 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
   if (linkPids.length) {
     const { data: ads } = await admin.from("ads").select("id, profile_id, title").in("profile_id", linkPids);
     (ads ?? []).forEach((a: any) => adByProfile.set(a.profile_id, { id: a.id, title: a.title }));
+  }
+
+  // quem indicou cada perfil (nome público = título do anúncio de quem indicou)
+  const referrerIds = Array.from(new Set(list.map((r) => (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.referred_by).filter(Boolean))) as string[];
+  const refNameByProfile = new Map<string, string>();
+  if (referrerIds.length) {
+    const { data: refAds } = await admin.from("ads").select("profile_id, title").in("profile_id", referrerIds);
+    (refAds ?? []).forEach((a: any) => refNameByProfile.set(a.profile_id, a.title));
   }
 
   // quem tem cortesia (acesso vitalício) ativa
@@ -192,6 +200,9 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                       )}
                       {geoFlag && (
                         <p className="mt-0.5 text-xs font-semibold text-amber-300">📍 {geoFlag}</p>
+                      )}
+                      {prof0?.referred_by && refNameByProfile.get(prof0.referred_by) && (
+                        <p className="mt-0.5 text-xs text-muted">Indicada por <span className="font-semibold text-ink">{refNameByProfile.get(prof0.referred_by)}</span></p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

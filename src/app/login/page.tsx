@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import PasswordInput from "@/components/PasswordInput";
+import ReferralInput from "@/components/ReferralInput";
 
 // destino após login (?next=/perfil), lido na hora do redirecionamento
 function proximoDestino(): string {
@@ -153,6 +154,8 @@ export default function LoginPage() {
                   autoComplete="new-password" placeholder="Digite a senha de novo" className={inputCls} />
               </label>
             )}
+
+            {criando && <ReferralInput inputClassName={inputCls} />}
 
             {criando && (
               <label className="flex cursor-pointer items-start gap-3 rounded-input border border-line bg-surface-2 p-3.5 text-sm text-muted transition-colors hover:border-accent/50">
