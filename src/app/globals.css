@@ -77,6 +77,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Atrito anti-cópia de fotos: sem arrastar-pra-salvar nem menu "segurar" no iOS.
+   É só fricção (print não dá pra impedir na web); a defesa real é a marca d'água. */
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 body {
   background: var(--canvas);
   color: var(--ink);

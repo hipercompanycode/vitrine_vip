@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import { flash, GENERIC_ERROR } from "@/lib/http";
+import { hashCpf } from "@/lib/cpf-block";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -34,6 +35,17 @@ export async function POST(request: Request) {
 
   // liga/desliga o selo "Verificada" do anúncio desse anunciante
   await admin.from("ads").update({ verified: approved }).eq("profile_id", profileId);
+
+  // Recusa marcando "bloquear CPF": guarda o hash na blocklist (anti-fake).
+  if (!approved && form.get("block_cpf") === "1") {
+    const { data: v } = await admin.from("verifications").select("cpf").eq("profile_id", profileId).maybeSingle();
+    if (v?.cpf) {
+      await admin.from("blocked_cpfs").upsert(
+        { cpf_hash: hashCpf(v.cpf as string), reason: feedback || "fake", blocked_by: user!.id },
+        { onConflict: "cpf_hash" }
+      );
+    }
+  }
 
   // Ao aprovar: concede 7 dias de teste grátis (uma vez), se ainda não tem plano pago ativo.
   if (approved) {

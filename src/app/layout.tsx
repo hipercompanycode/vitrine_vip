@@ -5,6 +5,7 @@ import "./globals.css";
 import AgeGate from "@/components/AgeGate";
 import CookieConsent from "@/components/CookieConsent";
 import FlashToast from "@/components/FlashToast";
+import ImageGuard from "@/components/ImageGuard";
 import { SITE_NAME, SITE_URL, ldWebSite, jsonLdScript } from "@/lib/seo";
 
 const display = Bricolage_Grotesque({
@@ -49,6 +50,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="pt-BR" className={`${display.variable} ${body.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
+        <ImageGuard />
         <FlashToast />
         {!ageOk && <AgeGate />}
         <CookieConsent />

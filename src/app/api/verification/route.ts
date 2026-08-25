@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { apiError, GENERIC_ERROR } from "@/lib/http";
+import { isValidCPF, onlyDigitsCpf } from "@/lib/cpf";
+import { hashCpf } from "@/lib/cpf-block";
 
 export const runtime = "nodejs";
 
@@ -23,11 +25,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "caminho inválido" }, { status: 400 });
   }
 
+  const cpf = onlyDigitsCpf(String(form.get("cpf") ?? ""));
+  if (!isValidCPF(cpf)) return NextResponse.json({ error: "Informe um CPF válido." }, { status: 400 });
+
   const admin = createAdminClient();
+
+  // CPF banido (anti-fake) — mensagem propositalmente vaga pra não entregar o motivo.
+  const { data: blocked } = await admin.from("blocked_cpfs").select("cpf_hash").eq("cpf_hash", hashCpf(cpf)).maybeSingle();
+  if (blocked) {
+    return NextResponse.json({ error: "Não foi possível concluir a verificação com esses dados. Se achar que é engano, fale com o suporte." }, { status: 403 });
+  }
+
+  // CPF já vinculado a OUTRA conta.
+  const { data: other } = await admin.from("verifications").select("profile_id").eq("cpf", cpf).neq("profile_id", user.id).maybeSingle();
+  if (other) {
+    return NextResponse.json({ error: "Esse CPF já está vinculado a outra conta." }, { status: 409 });
+  }
+
   const { error } = await admin.from("verifications").upsert(
-    { profile_id: user.id, doc_path: docPath, face_path: facePath, body_path: bodyPath, video_path: null, status: "pending", reviewed_at: null },
+    { profile_id: user.id, doc_path: docPath, face_path: facePath, body_path: bodyPath, cpf, video_path: null, status: "pending", reviewed_at: null },
     { onConflict: "profile_id" }
   );
-  if (error) return apiError(GENERIC_ERROR, 500, error);
+  if (error) {
+    // corrida na unicidade do CPF cai aqui → mensagem amigável
+    if (error.code === "23505") return NextResponse.json({ error: "Esse CPF já está vinculado a outra conta." }, { status: 409 });
+    return apiError(GENERIC_ERROR, 500, error);
+  }
   return NextResponse.json({ ok: true });
 }

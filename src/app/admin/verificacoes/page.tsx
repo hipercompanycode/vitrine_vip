@@ -6,6 +6,7 @@ import { timeAgo } from "@/lib/format";
 import AdminHeader from "@/components/AdminHeader";
 import AdminStats from "@/components/AdminStats";
 import VerificationPhotos from "@/components/VerificationPhotos";
+import { maskCpf } from "@/lib/cpf";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
 
   let query = admin
     .from("verifications")
-    .select("profile_id, doc_path, face_path, body_path, status, feedback, created_at, profiles ( name )")
+    .select("profile_id, doc_path, face_path, body_path, cpf, status, feedback, created_at, profiles ( name )")
     .order("created_at", { ascending: false })
     .limit(200);
   if (f === "pendentes") query = query.eq("status", "pending");
@@ -148,6 +149,9 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                       ) : (
                         <p className="text-sm text-muted">(sem anúncio)</p>
                       )}
+                      {r.cpf && (
+                        <p className="mt-0.5 font-mono text-xs text-muted">CPF: {maskCpf(r.cpf as string)}</p>
+                      )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className={`inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-xs font-semibold ${st.cls}`}>
@@ -196,6 +200,12 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                           placeholder="Motivo da recusa (o anunciante vê). Ex.: documento ilegível, foto de rosto não confere."
                           className="w-full resize-none rounded-input border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none"
                         />
+                        {r.cpf && (
+                          <label className="flex items-start gap-2 rounded-input border border-red-500/30 bg-red-500/5 px-3 py-2 text-xs text-muted">
+                            <input type="checkbox" name="block_cpf" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-red-500" />
+                            <span><strong className="text-red-300">Bloquear este CPF</strong> — impede novas verificações/contas com este CPF. Use para fake confirmado.</span>
+                          </label>
+                        )}
                         <button className="w-full rounded-input bg-red-500/90 py-2 text-sm font-bold text-white transition-colors hover:bg-red-500">Confirmar recusa</button>
                       </form>
                     </details>
