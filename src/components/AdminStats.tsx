@@ -24,9 +24,11 @@ export default async function AdminStats() {
   const subs = (data ?? []) as SubRow[];
   const planSlug = (s: SubRow) => { const p = Array.isArray(s.plans) ? s.plans[0] : s.plans; return p?.slug; };
   const activeTotal = subs.length;
+  const paid = (s: SubRow) => s.method !== "trial" && s.method !== "cortesia"; // conta como receita
   const trialCount = subs.filter((s) => s.method === "trial").length;
-  const proCount = subs.filter((s) => s.method !== "trial" && planSlug(s) === "pro").length;
-  const premiumCount = subs.filter((s) => s.method !== "trial" && planSlug(s) === "premium").length;
+  const cortesiaCount = subs.filter((s) => s.method === "cortesia").length;
+  const proCount = subs.filter((s) => paid(s) && planSlug(s) === "pro").length;
+  const premiumCount = subs.filter((s) => paid(s) && planSlug(s) === "premium").length;
 
   // Receita recorrente estimada/mês = assinaturas pagas ativas × preço do plano (trial = R$0).
   const priceOf = (slug: string) => PLANS.find((p) => p.slug === slug)?.priceCents ?? 0;
@@ -36,11 +38,12 @@ export default async function AdminStats() {
   return (
     <section className="mb-6">
       <h2 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-muted">Assinaturas ativas</h2>
-      <div className="grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid max-w-5xl grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Contas ativas" value={activeTotal} tone="green" />
         <Stat label="Plano Pro" value={proCount} tone="accent" />
         <Stat label="Plano Premium" value={premiumCount} tone="accent" />
         <Stat label="Teste grátis" value={trialCount} tone="muted" />
+        <Stat label="Cortesias" value={cortesiaCount} tone="muted" />
         <Stat label="Receita/mês (est.)" value={mrr} tone="green" />
       </div>
     </section>

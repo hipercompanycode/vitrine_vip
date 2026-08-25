@@ -86,6 +86,13 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
     (ads ?? []).forEach((a: any) => adByProfile.set(a.profile_id, { id: a.id, title: a.title }));
   }
 
+  // quem tem cortesia (acesso vitalício) ativa
+  const cortesiaSet = new Set<string>();
+  if (pids.length) {
+    const { data: subs } = await admin.from("subscriptions").select("profile_id, method, status").in("profile_id", pids);
+    (subs ?? []).forEach((s: any) => { if (s.method === "cortesia" && s.status === "active") cortesiaSet.add(s.profile_id); });
+  }
+
   const sign = async (p: string | null) => (p ? (await admin.storage.from("verifications").createSignedUrl(p, 600)).data?.signedUrl ?? null : null);
   const signed = await Promise.all(list.map(async (r) => ({
     doc: await sign(r.doc_path), face: await sign(r.face_path), body: await sign(r.body_path), prev: await sign(r.prev_face_path),
@@ -160,6 +167,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
               const geoFlag = prof0?.geo_flag as string | null | undefined;
               const ad = adByProfile.get(r.profile_id);
               const dup = dupMap.get(r.profile_id) ?? [];
+              const cortesia = cortesiaSet.has(r.profile_id);
               return (
                 <li key={r.profile_id} className="rounded-2xl border border-line bg-surface p-4 shadow-card transition-colors hover:border-accent/40 sm:p-5">
                   <div className="flex items-start justify-between gap-2">
@@ -262,6 +270,15 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                         <button className="w-full rounded-input bg-red-500/90 py-2 text-sm font-bold text-white transition-colors hover:bg-red-500">Confirmar recusa</button>
                       </form>
                     </details>
+
+                    <form action="/api/admin/cortesia" method="post">
+                      <input type="hidden" name="profile_id" value={r.profile_id} />
+                      <input type="hidden" name="action" value={cortesia ? "revoke" : "grant"} />
+                      <input type="hidden" name="back" value={backHref} />
+                      <button className={`w-full rounded-input py-2 text-sm font-semibold transition-colors ${cortesia ? "border border-line bg-surface-2 text-muted hover:text-ink" : "border border-accent/40 bg-accent-soft/50 text-accent hover:bg-accent-soft"}`}>
+                        {cortesia ? "🎁 Remover acesso vitalício" : "🎁 Conceder acesso vitalício (cortesia)"}
+                      </button>
+                    </form>
                   </div>
                 </li>
               );

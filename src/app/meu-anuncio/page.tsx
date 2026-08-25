@@ -112,6 +112,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const plan = sub?.plans as unknown as { slug?: string; allows_story?: boolean } | null;
   const active = isActive(sub as { status: string; current_period_end: string | null } | null, new Date());
   const isTrial = active && (sub?.method as string | undefined) === "trial";
+  const isCortesia = (sub?.method as string | undefined) === "cortesia";
   const trialEndLabel = sub?.current_period_end ? new Date(sub.current_period_end as string).toLocaleDateString("pt-BR") : "";
   const planLimits = plan?.slug && PLANS.some((x) => x.slug === plan.slug) ? planBySlug(plan.slug as PlanSlug) : PLANS[0];
   const verifStatus = (verif?.status as string | undefined) ?? null;
@@ -499,8 +500,8 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 16l-2-9 5.5 4L12 5l3.5 6L21 7l-2 9H5zm0 2h14v2H5v-2z" /></svg>
                 </span>
                 <div>
-                  <p className="font-semibold text-ink">Plano {planLimits.name} ativo</p>
-                  <p className="text-xs text-muted">Pix — até {new Date(sub!.current_period_end!).toLocaleDateString("pt-BR")}.</p>
+                  <p className="font-semibold text-ink">{isCortesia ? "Acesso vitalício 🎁" : `Plano ${planLimits.name} ativo`}</p>
+                  <p className="text-xs text-muted">{isCortesia ? "Cortesia — não expira. Aproveite!" : `Pix — até ${new Date(sub!.current_period_end!).toLocaleDateString("pt-BR")}.`}</p>
                 </div>
               </section>
             )}
