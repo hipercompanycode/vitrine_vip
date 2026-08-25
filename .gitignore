@@ -45,3 +45,4 @@ build.log
 
 # Supabase CLI temp
 supabase/.temp/
+set-admin-pw.mjs
