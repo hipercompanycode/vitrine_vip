@@ -19,6 +19,10 @@ const STATUS_LABEL: Record<string, { txt: string; cls: string }> = {
   rejected: { txt: "Recusado", cls: "bg-red-500/15 text-red-300" },
 };
 
+// rótulos curtos p/ o resumo por motivo no topo
+const SHORT_CATEGORY: Record<string, string> = { golpe: "golpe", agressao: "agressão", desrespeito: "desrespeito", outro: "outro" };
+const SEVERE_CATEGORY = new Set(["golpe", "agressao"]);
+
 export default async function SegurancaPage({ searchParams }: { searchParams: Promise<{ tel?: string }> }) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +59,8 @@ export default async function SegurancaPage({ searchParams }: { searchParams: Pr
   const searched = rawTel && isValidPhone(rawTel) ? normalizePhone(rawTel) : null;
 
   // Consulta: só relatos APROVADOS, e só campos seguros (sem foto, sem quem relatou).
-  let result: { level: ReturnType<typeof alertLevel>; reports: { category: string; description: string; created_at: string }[] } | null = null;
+  type Report = { category: string; description: string; created_at: string };
+  let result: { level: ReturnType<typeof alertLevel>; reports: Report[]; breakdown: { label: string; count: number; severe: boolean }[] } | null = null;
   let searchedButInvalid = !!rawTel && !searched;
   if (searched) {
     const { data } = await admin
@@ -63,8 +68,14 @@ export default async function SegurancaPage({ searchParams }: { searchParams: Pr
       .select("category, description, created_at")
       .eq("phone", searched).eq("status", "approved")
       .order("created_at", { ascending: false });
-    const reports = (data ?? []) as { category: string; description: string; created_at: string }[];
-    result = { level: alertLevel(reports), reports };
+    const reports = (data ?? []) as Report[];
+    // contagem por motivo (ex.: "2 golpe · 1 agressão")
+    const counts = new Map<string, number>();
+    reports.forEach((r) => counts.set(r.category, (counts.get(r.category) ?? 0) + 1));
+    const breakdown = [...counts.entries()]
+      .map(([cat, count]) => ({ label: SHORT_CATEGORY[cat] ?? cat, count, severe: SEVERE_CATEGORY.has(cat) }))
+      .sort((a, b) => b.count - a.count);
+    result = { level: alertLevel(reports), reports, breakdown };
   }
 
   // Meus relatos (do próprio anunciante) + status.
@@ -106,7 +117,14 @@ export default async function SegurancaPage({ searchParams }: { searchParams: Pr
                 <p className={`text-sm font-bold ${result.level === "vermelho" ? "text-red-300" : "text-amber-300"}`}>
                   {result.level === "vermelho" ? "🔴 Alerta alto" : "🟡 Atenção"} — {maskPhone(searched!)} tem {result.reports.length} relato{result.reports.length > 1 ? "s" : ""} confirmado{result.reports.length > 1 ? "s" : ""}
                 </p>
-                <ul className="mt-2 space-y-2">
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {result.breakdown.map((b) => (
+                    <span key={b.label} className={`inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-xs font-bold ${b.severe ? "bg-red-500/20 text-red-200" : "bg-amber-500/20 text-amber-200"}`}>
+                      <span className="tabular-nums">{b.count}</span> {b.label}
+                    </span>
+                  ))}
+                </div>
+                <ul className="mt-3 space-y-2">
                   {result.reports.map((r, i) => (
                     <li key={i} className="rounded-md bg-black/20 px-3 py-2 text-sm">
                       <span className="font-semibold text-ink">{CATEGORY_LABEL[r.category] ?? r.category}</span>
