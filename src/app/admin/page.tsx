@@ -85,6 +85,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <nav className="mb-6 flex items-center gap-2 text-sm">
           <span className="rounded-pill bg-accent px-3 py-1.5 font-semibold text-white">Denúncias</span>
           <Link href="/admin/verificacoes" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Verificações</Link>
+          <Link href="/admin/clientes" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Clientes</Link>
         </nav>
 
         <h1 className="mb-4 font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Denúncias</h1>
