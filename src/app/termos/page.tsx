@@ -39,19 +39,25 @@ export default function TermosPage() {
       <H>6. Conteúdo proibido</H>
       <P>É terminantemente proibido publicar conteúdo envolvendo menores de 18 anos, exploração sexual, tráfico de pessoas, conteúdo não consensual, ou qualquer atividade ilegal. Também são proibidos conteúdo de terceiros sem autorização, fraude, spam e dados falsos. Violações resultam em remoção imediata e podem ser comunicadas às autoridades.</P>
 
-      <H>7. Planos e pagamentos</H>
+      <H>7. Padrão das fotos</H>
+      <P>As fotos do anúncio devem seguir o padrão da plataforma. São <strong className="text-ink">permitidas</strong> fotos sensuais, de lingerie e de nudez sensual/artística. <strong className="text-ink">Não são permitidas</strong> imagens de sexo explícito, penetração, masturbação ou órgãos genitais em ato sexual. Fotos fora desse padrão são removidas pela moderação e podem levar à reprovação do anúncio ou à suspensão da conta, a nosso critério.</P>
+
+      <H>8. Rede de segurança e relatos de clientes</H>
+      <P>A plataforma oferece a anunciantes verificados um canal <strong className="text-ink">restrito</strong> para relatar clientes (identificados por telefone) que tenham praticado golpe, agressão, desrespeito ou conduta similar. Ao usar esse canal, você concorda que: (a) os relatos devem descrever <strong className="text-ink">apenas fatos</strong>, de forma objetiva e sem ofensas; (b) todo relato passa por <strong className="text-ink">moderação</strong> antes de ficar visível; (c) quando aprovado, é exibido a outros anunciantes verificados <strong className="text-ink">apenas como alerta</strong> (motivo e descrição moderada), sem expor a foto enviada nem a identidade de quem relatou; (d) o autor do relato é identificado internamente e é <strong className="text-ink">responsável pela veracidade</strong> — relatos falsos, difamatórios ou de má-fé podem ser removidos e sujeitam o autor às responsabilidades civis e criminais cabíveis. A plataforma apenas hospeda e modera os relatos, não os endossa. A pessoa relatada pode solicitar revisão ou remoção pelo canal de contato (ver Política de Privacidade).</P>
+
+      <H>9. Planos e pagamentos</H>
       <P>A visibilidade dos anúncios depende de assinatura ativa. Os pagamentos são processados por provedores externos (cartão e Pix). Os valores e condições de cada plano são exibidos na página de planos. Cancelamentos interrompem a renovação; períodos já pagos não são reembolsados proporcionalmente, salvo exigência legal.</P>
 
-      <H>8. Moderação e denúncias</H>
+      <H>10. Moderação e denúncias</H>
       <P>Podemos revisar, ocultar ou remover anúncios, e suspender contas, a nosso critério, especialmente diante de denúncias. Qualquer usuário pode denunciar um anúncio suspeito pela própria plataforma.</P>
 
-      <H>9. Limitação de responsabilidade</H>
+      <H>11. Limitação de responsabilidade</H>
       <P>A plataforma é fornecida “no estado em que se encontra”. Não garantimos disponibilidade ininterrupta nem a veracidade do conteúdo de anúncios. Na máxima extensão permitida em lei, não nos responsabilizamos por danos decorrentes do uso da plataforma ou de interações entre usuários e anunciantes.</P>
 
-      <H>10. Alterações</H>
+      <H>12. Alterações</H>
       <P>Podemos atualizar estes Termos a qualquer momento. O uso continuado após alterações representa concordância com a versão vigente.</P>
 
-      <H>11. Contato</H>
+      <H>13. Contato</H>
       <P>Dúvidas sobre estes Termos podem ser enviadas pelo canal de contato indicado na plataforma.</P>
 
       <div className="mt-10 border-t border-line/60 pt-4 text-sm text-muted">
