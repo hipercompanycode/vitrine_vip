@@ -189,6 +189,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
     cover = covers;
   }
 
+  const favSet = new Set<string>();
+  if (user && ids.length > 0) {
+    const { data: favs } = await admin.from("favorites").select("ad_id").eq("user_id", user.id).in("ad_id", ids);
+    (favs ?? []).forEach((f: { ad_id: string }) => favSet.add(f.ad_id));
+  }
+
   const nowDate = new Date();
   const nowMs = nowDate.getTime();
   type Group = BumpGroup & { order: number };
@@ -213,6 +219,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       available: availableActive(r.is_available, r.available_since, nowMs),
       hue: hueFromId(r.id),
       cover: cover.get(r.id) ?? null,
+      favorited: favSet.has(r.id),
     };
     profiles.push(card);
 

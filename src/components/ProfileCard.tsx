@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CardFavoriteHeart from "@/components/CardFavoriteHeart";
 
 export type ProfileCardData = {
   id: string;
@@ -16,6 +17,7 @@ export type ProfileCardData = {
   priceLabel?: string | null;
   hue?: number;
   cover?: string | null; // URL da foto de capa (se houver)
+  favorited?: boolean; // já está nos favoritos do usuário logado
   ratio?: "tall" | "portrait" | "square"; // ignorado (cards uniformes) — compat
 };
 
@@ -96,9 +98,7 @@ export default function ProfileCard({
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>TOP
             </span>
           )}
-          <button type="button" aria-label="Favoritar" className="flex h-7 w-7 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:text-accent">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20s-6.5-4.2-9-8C1.2 8.5 3 5 6.3 5 8.2 5 9.4 6.1 12 8.3 14.6 6.1 15.8 5 17.7 5 21 5 22.8 8.5 21 12c-2.5 3.8-9 8-9 8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
-          </button>
+          <CardFavoriteHeart adId={p.id} initialFavorited={p.favorited} />
         </div>
 
         {/* play central */}

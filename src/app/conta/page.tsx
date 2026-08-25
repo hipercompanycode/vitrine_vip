@@ -74,7 +74,7 @@ export default async function ContaPage() {
         verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
         recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium",
         available: availableActive(r.is_available, r.available_since, nowMs), hue: hueFromId(r.id),
-        cover: cover.get(r.id) ?? null,
+        cover: cover.get(r.id) ?? null, favorited: true,
       };
     });
   }
