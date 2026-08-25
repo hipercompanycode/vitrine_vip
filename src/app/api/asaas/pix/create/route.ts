@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { ensureCustomer, createPixCharge } from "@/lib/asaas";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { geoFromRequest, recordGeoAndFlag } from "@/lib/geo-ip";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,9 @@ export async function POST(request: Request) {
 
   const { data: prof } = await admin.from("profiles").select("name").eq("id", user.id).maybeSingle();
   const name = (prof?.name as string | null)?.trim() || user.email?.split("@")[0] || "Anunciante";
+
+  // sinal de geo por IP no pagamento (anti-handoff; não bloqueia)
+  try { await recordGeoAndFlag(admin, user.id, geoFromRequest(request)); } catch (e) { console.error("geo pix:", e); }
 
   try {
     const customer = await ensureCustomer({

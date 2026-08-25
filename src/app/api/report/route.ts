@@ -1,7 +1,8 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isValidReason } from "@/lib/interactions";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { flash, GENERIC_ERROR } from "@/lib/http";
+import { maybeReverifyFromReports } from "@/lib/reverify";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -27,6 +28,9 @@ export async function POST(request: Request) {
     ad_id: adId, user_id: user.id, reason, details,
   });
   if (error) return flash(request, back, "erro", GENERIC_ERROR, error);
+
+  // gatilho anti-fake: muitas denúncias no anúncio força reverificação do dono
+  try { await maybeReverifyFromReports(createAdminClient(), adId); } catch (e) { console.error("reverify trigger:", e); }
 
   return flash(request, back, "ok", "Denúncia enviada. Obrigado por ajudar a manter o site seguro!");
 }

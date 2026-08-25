@@ -3,6 +3,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import { flash, GENERIC_ERROR } from "@/lib/http";
 import { hashCpf } from "@/lib/cpf-block";
+import { reverifyDueISO } from "@/lib/reverify";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -23,12 +24,15 @@ export async function POST(request: Request) {
   const safeBack = back.startsWith("/admin") ? back : "/admin/verificacoes";
   const approved = action === "approve";
   const feedback = String(form.get("feedback") ?? "").trim().slice(0, 500);
+  const nowIso = new Date().toISOString();
   const { error } = await admin
     .from("verifications")
     .update({
       status: approved ? "approved" : "rejected",
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: nowIso,
       feedback: approved ? null : (feedback || null),
+      // ao aprovar, reinicia o ciclo de reverificação (30 dias) e limpa gatilhos
+      ...(approved ? { verified_at: nowIso, reverify_due: reverifyDueISO(nowIso), reverify_forced: false, reverify_reason: null } : {}),
     })
     .eq("profile_id", profileId);
   if (error) return flash(request, safeBack, "erro", GENERIC_ERROR, error);

@@ -5,6 +5,7 @@ import { apiError, GENERIC_ERROR } from "@/lib/http";
 import { isValidCPF, onlyDigitsCpf } from "@/lib/cpf";
 import { hashCpf } from "@/lib/cpf-block";
 import { dHash } from "@/lib/phash";
+import { geoFromRequest, recordGeoAndFlag } from "@/lib/geo-ip";
 
 export const runtime = "nodejs";
 
@@ -46,6 +47,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Esse CPF já está vinculado a outra conta." }, { status: 409 });
   }
 
+  // guarda a selfie anterior (pra moderação comparar rosto antigo × novo)
+  const { data: prevV } = await admin.from("verifications").select("face_path").eq("profile_id", user.id).maybeSingle();
+  const prevFacePath = (prevV?.face_path as string | null) ?? null;
+
   // "impressão digital" das fotos (best-effort — nunca bloqueia o envio se falhar).
   let faceHash: string | null = null;
   let bodyHash: string | null = null;
@@ -64,7 +69,7 @@ export async function POST(request: Request) {
     {
       profile_id: user.id, doc_path: docPath, face_path: facePath, body_path: bodyPath,
       cpf, liveness_code: livenessCode, face_hash: faceHash, body_hash: bodyHash,
-      video_path: null, status: "pending", reviewed_at: null,
+      prev_face_path: prevFacePath, video_path: null, status: "pending", reviewed_at: null,
     },
     { onConflict: "profile_id" }
   );
@@ -73,5 +78,9 @@ export async function POST(request: Request) {
     if (error.code === "23505") return NextResponse.json({ error: "Esse CPF já está vinculado a outra conta." }, { status: 409 });
     return apiError(GENERIC_ERROR, 500, error);
   }
+
+  // registra o país por IP (sinal anti-handoff; não bloqueia)
+  try { await recordGeoAndFlag(admin, user.id, geoFromRequest(request)); } catch (e) { console.error("geo verif:", e); }
+
   return NextResponse.json({ ok: true });
 }

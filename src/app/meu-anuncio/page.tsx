@@ -96,7 +96,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const [{ data: ad }, { data: sub }, { data: verif }, { data: prof }] = await Promise.all([
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
     admin.from("subscriptions").select("status, method, current_period_end, plans ( slug, allows_story )").eq("profile_id", user.id).maybeSingle(),
-    admin.from("verifications").select("status, doc_path, face_path, body_path, feedback").eq("profile_id", user.id).maybeSingle(),
+    admin.from("verifications").select("status, doc_path, face_path, body_path, feedback, reverify_reason").eq("profile_id", user.id).maybeSingle(),
     admin.from("profiles").select("whatsapp").eq("id", user.id).maybeSingle(),
   ]);
 
@@ -113,8 +113,10 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const verifStatus = (verif?.status as string | undefined) ?? null;
   const verifApproved = verifStatus === "approved";
   const verifRejected = verifStatus === "rejected";
+  const verifReverify = verifStatus === "reverify"; // precisa refazer a selfie (30d/gatilho)
+  const verifReason = (verif?.reverify_reason as string | null) ?? null;
   const verifFeedback = (verif?.feedback as string | null) ?? null;
-  const verifSubmitted = verif != null; // enviou (pending | approved | rejected)
+  const verifSubmitted = verif != null && !verifReverify; // envio válido (pending|approved|rejected)
   const visible = active && verifApproved;
 
   const media = ad ? (await admin.from("ad_media").select("id, type, storage_path, is_cover").eq("ad_id", ad.id).order("position")).data ?? [] : [];
@@ -334,13 +336,24 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
               )}
             </span>
             <p className="text-sm font-semibold text-ink">
-              {visible ? "Seu anúncio está no ar." : !active ? "Falta assinar um plano (passo 5)." : verifRejected ? "Comprovação recusada — reenvie no passo 6." : !verifSubmitted ? "Falta enviar as comprovações (passo 6)." : "Comprovações em análise — você aparece assim que aprovarmos."}
+              {visible ? "Seu anúncio está no ar." : !active ? "Falta assinar um plano (passo 5)." : verifReverify ? "Reverificação necessária — refaça a selfie no passo 6." : verifRejected ? "Comprovação recusada — reenvie no passo 6." : !verifSubmitted ? "Falta enviar as comprovações (passo 6)." : "Comprovações em análise — você aparece assim que aprovarmos."}
             </p>
             {visible && (
               <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill bg-[#12331f] px-2.5 py-1 text-[11px] font-bold text-[#43d17f]">
                 <span className="dot-live h-1.5 w-1.5 rounded-full bg-[#43d17f]" />No ar
               </span>
             )}
+          </div>
+        )}
+
+        {verifReverify && step !== 6 && (
+          <div className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+            <p className="font-semibold text-amber-200">🔐 Reverificação de segurança necessária</p>
+            <p className="mt-1 text-sm text-amber-100/80">
+              Pra garantir que é você mesma operando o perfil (anti-golpe/anti-revenda), refaça a selfie com o novo código.
+              {verifReason && <> Motivo: <strong className="text-amber-100">{verifReason}</strong>.</>} Seu anúncio fica pausado até refazer.
+            </p>
+            <Link href="/meu-anuncio?step=6" className="mt-3 inline-flex rounded-pill bg-amber-500 px-4 py-2 text-sm font-bold text-[#231a06] transition-colors hover:bg-amber-400">Refazer selfie agora</Link>
           </div>
         )}
 
@@ -471,10 +484,11 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
               <VerificationUploader
                 userId={user.id}
                 status={verifStatus}
-                hasDoc={!!verif?.doc_path}
-                hasFace={!!verif?.face_path}
-                hasBody={!!verif?.body_path}
+                hasDoc={verifReverify ? false : !!verif?.doc_path}
+                hasFace={verifReverify ? false : !!verif?.face_path}
+                hasBody={verifReverify ? false : !!verif?.body_path}
                 feedback={verifFeedback}
+                reverifyReason={verifReason}
               />
             </section>
             <StepNav step={6} />

@@ -42,8 +42,8 @@ function Slot({ label, hint, done, busy, onPick, onCam }: {
   );
 }
 
-export default function VerificationUploader({ userId, status: initStatus, hasDoc, hasFace, hasBody, feedback }: {
-  userId: string; status: string | null; hasDoc: boolean; hasFace: boolean; hasBody: boolean; feedback?: string | null;
+export default function VerificationUploader({ userId, status: initStatus, hasDoc, hasFace, hasBody, feedback, reverifyReason }: {
+  userId: string; status: string | null; hasDoc: boolean; hasFace: boolean; hasBody: boolean; feedback?: string | null; reverifyReason?: string | null;
 }) {
   const supabase = createBrowserClient();
   const [docPath, setDocPath] = useState<string | null>(null);
@@ -142,6 +142,12 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
         <div className="rounded-card border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           <p className="font-semibold">Comprovação recusada. Reenvie o documento e as fotos nítidas.</p>
           {feedback && <p className="mt-1 text-red-200/90"><span className="font-semibold">Motivo:</span> {feedback}</p>}
+        </div>
+      )}
+      {status === "reverify" && (
+        <div className="rounded-card border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          <p className="font-semibold">🔐 Reverificação necessária — refaça o documento e a selfie com o novo código abaixo.</p>
+          <p className="mt-1 text-amber-100/80">É pra confirmar que é você mesma operando o perfil (anti-golpe/anti-revenda). Seu anúncio fica pausado até refazer.{reverifyReason && <> Motivo: <span className="font-semibold">{reverifyReason}</span>.</>}</p>
         </div>
       )}
 

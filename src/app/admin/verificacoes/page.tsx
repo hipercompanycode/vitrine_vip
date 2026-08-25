@@ -51,7 +51,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
 
   let query = admin
     .from("verifications")
-    .select("profile_id, doc_path, face_path, body_path, cpf, liveness_code, face_hash, body_hash, status, feedback, created_at, profiles ( name )")
+    .select("profile_id, doc_path, face_path, body_path, prev_face_path, cpf, liveness_code, face_hash, body_hash, reverify_reason, status, feedback, created_at, profiles ( name, last_country )")
     .order("created_at", { ascending: false })
     .limit(200);
   if (f === "pendentes") query = query.eq("status", "pending");
@@ -88,7 +88,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
 
   const sign = async (p: string | null) => (p ? (await admin.storage.from("verifications").createSignedUrl(p, 600)).data?.signedUrl ?? null : null);
   const signed = await Promise.all(list.map(async (r) => ({
-    doc: await sign(r.doc_path), face: await sign(r.face_path), body: await sign(r.body_path),
+    doc: await sign(r.doc_path), face: await sign(r.face_path), body: await sign(r.body_path), prev: await sign(r.prev_face_path),
   })));
 
   const now = new Date();
@@ -154,7 +154,9 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
           <ul className="grid gap-4 xl:grid-cols-2">
             {list.map((r, i) => {
               const st = STATUS[r.status] ?? { label: r.status, cls: "bg-surface-2 text-muted", dot: "bg-muted" };
-              const name = (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name || "(sem nome)";
+              const prof0 = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+              const name = prof0?.name || "(sem nome)";
+              const country = prof0?.last_country as string | null | undefined;
               const ad = adByProfile.get(r.profile_id);
               const dup = dupMap.get(r.profile_id) ?? [];
               return (
@@ -172,6 +174,12 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                       )}
                       {r.cpf && (
                         <p className="mt-0.5 font-mono text-xs text-muted">CPF: {maskCpf(r.cpf as string)}</p>
+                      )}
+                      {r.reverify_reason && (
+                        <p className="mt-0.5 text-xs font-semibold text-amber-300">🔐 Reverificação — {r.reverify_reason}</p>
+                      )}
+                      {country && (
+                        <p className="mt-0.5 text-xs text-muted">País (IP): <span className="font-semibold text-ink">{country}</span></p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -205,7 +213,8 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                   <div className="mt-3">
                     <VerificationPhotos photos={[
                       { label: "Documento", url: signed[i].doc },
-                      { label: "Selfie c/ papel", url: signed[i].face },
+                      ...(signed[i].prev ? [{ label: "Selfie ANTERIOR", url: signed[i].prev }] : []),
+                      { label: signed[i].prev ? "Selfie NOVA" : "Selfie c/ papel", url: signed[i].face },
                       { label: "Corpo + rosto", url: signed[i].body },
                     ]} />
                   </div>
