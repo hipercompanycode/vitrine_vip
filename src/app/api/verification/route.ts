@@ -4,6 +4,7 @@ import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { apiError, GENERIC_ERROR } from "@/lib/http";
 import { isValidCPF, onlyDigitsCpf } from "@/lib/cpf";
 import { hashCpf } from "@/lib/cpf-block";
+import { dHash } from "@/lib/phash";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,9 @@ export async function POST(request: Request) {
   const cpf = onlyDigitsCpf(String(form.get("cpf") ?? ""));
   if (!isValidCPF(cpf)) return NextResponse.json({ error: "Informe um CPF válido." }, { status: 400 });
 
+  const livenessCode = String(form.get("liveness_code") ?? "").trim().toUpperCase().slice(0, 12).replace(/[^A-Z0-9]/g, "");
+  if (livenessCode.length < 4) return NextResponse.json({ error: "Refaça a selfie com o código do papel." }, { status: 400 });
+
   const admin = createAdminClient();
 
   // CPF banido (anti-fake) — mensagem propositalmente vaga pra não entregar o motivo.
@@ -42,8 +46,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Esse CPF já está vinculado a outra conta." }, { status: 409 });
   }
 
+  // "impressão digital" das fotos (best-effort — nunca bloqueia o envio se falhar).
+  let faceHash: string | null = null;
+  let bodyHash: string | null = null;
+  try {
+    const [fd, bd] = await Promise.all([
+      admin.storage.from("verifications").download(facePath),
+      admin.storage.from("verifications").download(bodyPath),
+    ]);
+    if (fd.data) faceHash = await dHash(Buffer.from(await fd.data.arrayBuffer()));
+    if (bd.data) bodyHash = await dHash(Buffer.from(await bd.data.arrayBuffer()));
+  } catch (e) {
+    console.error("phash verification:", e);
+  }
+
   const { error } = await admin.from("verifications").upsert(
-    { profile_id: user.id, doc_path: docPath, face_path: facePath, body_path: bodyPath, cpf, video_path: null, status: "pending", reviewed_at: null },
+    {
+      profile_id: user.id, doc_path: docPath, face_path: facePath, body_path: bodyPath,
+      cpf, liveness_code: livenessCode, face_hash: faceHash, body_hash: bodyHash,
+      video_path: null, status: "pending", reviewed_at: null,
+    },
     { onConflict: "profile_id" }
   );
   if (error) {

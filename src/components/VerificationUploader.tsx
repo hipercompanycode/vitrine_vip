@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import CameraCapture from "@/components/CameraCapture";
 import { maskCpf, isValidCPF } from "@/lib/cpf";
@@ -54,6 +54,18 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
   const [msg, setMsg] = useState("");
   const [cam, setCam] = useState<Kind | null>(null);
   const [cpf, setCpf] = useState("");
+  const [code, setCode] = useState("");
+  const [today, setToday] = useState("");
+
+  // código aleatório do desafio de vivacidade (papel na selfie) — gerado no mount
+  // (fora do render, pra não quebrar a regra de pureza do React).
+  useEffect(() => {
+    const alphabet = "ACDEFGHJKLMNPQRSTUVWXYZ2345679";
+    const arr = new Uint32Array(6);
+    crypto.getRandomValues(arr);
+    setCode(Array.from(arr, (n) => alphabet[n % alphabet.length]).join(""));
+    setToday(new Date().toLocaleDateString("pt-BR"));
+  }, []);
 
   const docDone = !!docPath || hasDoc;
   const faceDone = !!facePath || hasFace;
@@ -90,10 +102,12 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
   async function submit() {
     if (!docPath || !facePath || !bodyPath) { setMsg("Envie o documento, a foto do rosto e a foto de corpo antes de enviar."); return; }
     if (!isValidCPF(cpf)) { setMsg("Informe um CPF válido."); return; }
+    if (!code) { setMsg("Aguarde o código do desafio carregar."); return; }
     setBusy("submit");
     const body = new FormData();
     body.set("doc_path", docPath); body.set("face_path", facePath); body.set("body_path", bodyPath);
     body.set("cpf", cpf);
+    body.set("liveness_code", code);
     const res = await fetch("/api/verification", { method: "POST", body });
     setBusy("");
     if (!res.ok) { const j = await res.json().catch(() => ({})); setMsg(j.error ?? "Falha ao enviar."); return; }
@@ -132,8 +146,20 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
       )}
 
       <p className="text-xs text-muted">
-        Pra ganhar o selo <strong className="text-ink">Verificada</strong> (e mais confiança), envie: uma foto de um <strong className="text-ink">documento com foto</strong> (RG/CNH), uma <strong className="text-ink">foto do rosto</strong> e uma <strong className="text-ink">foto de corpo inteiro com o rosto visível</strong> (pra confirmar que é você). Pode <strong className="text-ink">enviar do dispositivo ou tirar na hora pela câmera</strong>. Arquivos <strong className="text-ink">privados</strong> — só a moderação vê, nunca aparecem no anúncio.
+        Pra ganhar o selo <strong className="text-ink">Verificada</strong> (e mais confiança), envie: uma foto de um <strong className="text-ink">documento com foto</strong> (RG/CNH), a <strong className="text-ink">selfie segurando o papel com o código</strong> (abaixo) e uma <strong className="text-ink">foto de corpo inteiro com o rosto visível</strong>. Pode <strong className="text-ink">enviar do dispositivo ou tirar na hora pela câmera</strong>. Arquivos <strong className="text-ink">privados</strong> — só a moderação vê, nunca aparecem no anúncio.
       </p>
+
+      <div className="rounded-card border border-accent/40 bg-accent-soft/60 p-3.5">
+        <p className="text-sm font-semibold text-ink">🔒 Prova de que é você (anti-fake / anti-IA)</p>
+        <p className="mt-1 text-xs text-muted">
+          Escreva num papel <strong className="text-ink">exatamente</strong> isto e tire a <strong className="text-ink">selfie segurando o papel</strong>, com o rosto visível:
+        </p>
+        <div className="mt-2 rounded-input border border-line bg-surface px-3 py-2 text-center font-mono text-lg font-extrabold tracking-widest text-accent">
+          {code ? `VITRINE ${code}` : "gerando código…"}
+        </div>
+        <p className="mt-1.5 text-center text-xs text-muted">+ a data de hoje: <strong className="text-ink">{today || "…"}</strong></p>
+        <p className="mt-2 text-[11px] text-muted/80">Esse código é único e muda a cada envio. É assim que garantimos que a foto é real e recente — foto de IA ou roubada não passa.</p>
+      </div>
 
       <label className="block">
         <span className="mb-1 block text-xs font-medium text-muted">Seu CPF <span className="text-muted/70">(confere com o documento — privado, só a moderação vê)</span></span>
@@ -148,7 +174,7 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Slot label="Documento com foto" hint="RG ou CNH (imagem)" done={docDone} busy={busy === "doc"} onPick={picker("doc")} onCam={() => setCam("doc")} />
-        <Slot label="Foto do rosto" hint="Selfie nítida do rosto" done={faceDone} busy={busy === "face"} onPick={picker("face")} onCam={() => setCam("face")} />
+        <Slot label="Selfie com o papel" hint="Segurando o papel com o código, rosto visível" done={faceDone} busy={busy === "face"} onPick={picker("face")} onCam={() => setCam("face")} />
         <Slot label="Foto de corpo + rosto" hint="Corpo inteiro com o rosto visível" done={bodyDone} busy={busy === "body"} onPick={picker("body")} onCam={() => setCam("body")} />
       </div>
 

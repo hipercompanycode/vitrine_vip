@@ -445,7 +445,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
           <div className="space-y-6">
             <section className={cardCls}>
               <h2 className="mb-1 font-display text-base font-bold text-ink">Comprovação (obrigatória)</h2>
-              <p className="mb-4 text-xs text-muted">Anti-fake: seu perfil <strong className="text-ink">só aparece após validação</strong>. Envie um documento com foto, uma foto do rosto e uma foto de corpo com o rosto visível — privados, só a moderação vê.</p>
+              <p className="mb-4 text-xs text-muted">Anti-fake: seu perfil <strong className="text-ink">só aparece após validação</strong>. Envie o documento, a selfie segurando o papel com o código e uma foto de corpo com o rosto visível — privados, só a moderação vê.</p>
               <VerificationUploader
                 userId={user.id}
                 status={verifStatus}

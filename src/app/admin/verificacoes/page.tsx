@@ -7,6 +7,7 @@ import AdminHeader from "@/components/AdminHeader";
 import AdminStats from "@/components/AdminStats";
 import VerificationPhotos from "@/components/VerificationPhotos";
 import { maskCpf } from "@/lib/cpf";
+import { hamming, DUP_THRESHOLD } from "@/lib/phash";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
 
   let query = admin
     .from("verifications")
-    .select("profile_id, doc_path, face_path, body_path, cpf, status, feedback, created_at, profiles ( name )")
+    .select("profile_id, doc_path, face_path, body_path, cpf, liveness_code, face_hash, body_hash, status, feedback, created_at, profiles ( name )")
     .order("created_at", { ascending: false })
     .limit(200);
   if (f === "pendentes") query = query.eq("status", "pending");
@@ -59,11 +60,29 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
   const { data: rows } = await query;
   const list = (rows ?? []) as any[];
 
-  // título + id do anúncio p/ link
   const pids = list.map((r) => r.profile_id);
+
+  // Detecção de foto duplicada (pHash): compara as fotos de cada verificação
+  // com TODAS as outras. Se a mesma imagem aparece em outro perfil -> sinaliza.
+  const { data: allH } = await admin.from("verifications").select("profile_id, face_hash, body_hash");
+  const allHashes = (allH ?? []) as { profile_id: string; face_hash: string | null; body_hash: string | null }[];
+  const dupMap = new Map<string, string[]>();
+  for (const r of list) {
+    const hits = new Set<string>();
+    for (const o of allHashes) {
+      if (o.profile_id === r.profile_id) continue;
+      if (hamming(r.face_hash, o.face_hash) <= DUP_THRESHOLD || hamming(r.body_hash, o.body_hash) <= DUP_THRESHOLD) {
+        hits.add(o.profile_id);
+      }
+    }
+    if (hits.size) dupMap.set(r.profile_id, [...hits]);
+  }
+
+  // título + id do anúncio p/ link (dos listados + dos perfis batidos como duplicata)
+  const linkPids = Array.from(new Set([...pids, ...[...dupMap.values()].flat()]));
   const adByProfile = new Map<string, { id: string; title: string }>();
-  if (pids.length) {
-    const { data: ads } = await admin.from("ads").select("id, profile_id, title").in("profile_id", pids);
+  if (linkPids.length) {
+    const { data: ads } = await admin.from("ads").select("id, profile_id, title").in("profile_id", linkPids);
     (ads ?? []).forEach((a: any) => adByProfile.set(a.profile_id, { id: a.id, title: a.title }));
   }
 
@@ -136,6 +155,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
               const st = STATUS[r.status] ?? { label: r.status, cls: "bg-surface-2 text-muted", dot: "bg-muted" };
               const name = (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name || "(sem nome)";
               const ad = adByProfile.get(r.profile_id);
+              const dup = dupMap.get(r.profile_id) ?? [];
               return (
                 <li key={r.profile_id} className="rounded-2xl border border-line bg-surface p-4 shadow-card transition-colors hover:border-accent/40 sm:p-5">
                   <div className="flex items-start justify-between gap-2">
@@ -162,10 +182,29 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                     </div>
                   </div>
 
+                  {dup.length > 0 && (
+                    <div className="mt-3 rounded-input border border-red-500/50 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                      <span className="font-bold text-red-300">⚠️ Foto duplicada:</span> a mesma imagem aparece em {dup.length} outro(s) perfil(is)
+                      {dup.some((p) => adByProfile.get(p)) && (
+                        <> — {dup.map((p) => adByProfile.get(p)).filter(Boolean).map((a, k) => (
+                          <span key={a!.id}>{k > 0 ? ", " : " "}<Link href={`/anuncio/${a!.id}`} className="underline hover:text-red-100">{a!.title}</Link></span>
+                        ))}</>
+                      )}. Forte sinal de fake/foto roubada.
+                    </div>
+                  )}
+
+                  {r.liveness_code && (
+                    <div className="mt-3 rounded-input border border-accent/40 bg-accent-soft/50 px-3 py-2 text-xs">
+                      <span className="text-muted">Código que deve aparecer no papel da selfie:</span>{" "}
+                      <span className="font-mono text-sm font-extrabold tracking-widest text-accent">VITRINE {r.liveness_code}</span>
+                      <span className="text-muted"> · data ~ {timeAgo(new Date(r.created_at), now)}</span>
+                    </div>
+                  )}
+
                   <div className="mt-3">
                     <VerificationPhotos photos={[
                       { label: "Documento", url: signed[i].doc },
-                      { label: "Rosto", url: signed[i].face },
+                      { label: "Selfie c/ papel", url: signed[i].face },
                       { label: "Corpo + rosto", url: signed[i].body },
                     ]} />
                   </div>
