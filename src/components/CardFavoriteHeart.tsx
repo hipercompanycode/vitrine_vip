@@ -1,6 +1,7 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ensureFavorites, subscribeFavorites, getFavoritesCache, markFavorite } from "@/lib/favorites-client";
 
 // Coração do card: mostra preenchido quando favoritado e adiciona/remove com
 // feedback visual (pop + rótulo "Salvo/Removido"). Fica acima do link do card.
@@ -10,7 +11,21 @@ export default function CardFavoriteHeart({ adId, initialFavorited }: { adId: st
   const [flash, setFlash] = useState<null | "add" | "remove">(null);
   const [pop, setPop] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const touched = useRef(false); // se o usuário já clicou, o sync não sobrescreve
   const router = useRouter();
+
+  // Sincroniza o estado inicial em páginas cacheadas (cidade): busca os favoritos
+  // do usuário (1 chamada compartilhada) e marca o coração.
+  useEffect(() => {
+    let on = true;
+    const apply = () => {
+      const c = getFavoritesCache();
+      if (c && on && !touched.current) setActive(c.has(adId));
+    };
+    ensureFavorites().then(apply);
+    const unsub = subscribeFavorites(apply);
+    return () => { on = false; unsub(); };
+  }, [adId]);
 
   function showFeedback(kind: "add" | "remove") {
     timers.current.forEach(clearTimeout);
@@ -26,17 +41,19 @@ export default function CardFavoriteHeart({ adId, initialFavorited }: { adId: st
     e.preventDefault();
     e.stopPropagation();
     if (busy) return;
+    touched.current = true;
     setBusy(true);
     const prev = active;
     const next = !prev;
     setActive(next);
+    markFavorite(adId, next);
     showFeedback(next ? "add" : "remove");
 
     const body = new FormData();
     body.set("ad_id", adId);
     const res = await fetch("/api/favorite", { method: "POST", body });
     if (res.status === 401) { window.location.href = "/login?next=/conta"; return; }
-    if (!res.ok) { setActive(prev); setFlash(null); setPop(false); }
+    if (!res.ok) { setActive(prev); markFavorite(adId, prev); setFlash(null); setPop(false); }
     else { router.refresh(); } // sincroniza listas (ex.: remove o card em /conta)
     setBusy(false);
   }
