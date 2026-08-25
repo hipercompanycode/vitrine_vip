@@ -56,6 +56,7 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
   const [cpf, setCpf] = useState("");
   const [code, setCode] = useState("");
   const [today, setToday] = useState("");
+  const [showForm, setShowForm] = useState(false); // aprovada: revelar o form pra atualizar
 
   // código aleatório do desafio de vivacidade (papel na selfie) — gerado no mount
   // (fora do render, pra não quebrar a regra de pureza do React).
@@ -114,19 +115,50 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
     setStatus("pending"); setMsg("");
   }
 
-  if (status === "approved") {
+  if (status === "approved" && !showForm) {
+    const items = [
+      { ok: hasDoc, label: "Documento com foto" },
+      { ok: hasFace, label: "Selfie de vivacidade (com o código)" },
+      { ok: hasBody, label: "Foto de corpo com o rosto" },
+      { ok: true, label: "CPF cadastrado" },
+    ];
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-4 shadow-card ring-1 ring-[#43d17f]/15">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </span>
-        <div>
-          <p className="font-semibold text-ink">Verificação aprovada</p>
-          <p className="text-xs text-muted">Seu selo “Verificada” está ativo.</p>
+      <div className="space-y-3">
+        {/* status */}
+        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-4 shadow-card ring-1 ring-[#43d17f]/15">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </span>
+          <div>
+            <p className="font-semibold text-ink">Verificação aprovada</p>
+            <p className="text-xs text-muted">Seu selo “Verificada” está ativo.</p>
+          </div>
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill bg-[#12331f] px-2.5 py-1 text-[11px] font-bold text-[#43d17f]">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>Verificada
+          </span>
         </div>
-        <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill bg-[#12331f] px-2.5 py-1 text-[11px] font-bold text-[#43d17f]">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>Verificada
-        </span>
+
+        {/* informações (o que está registrado) */}
+        <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
+          <p className="mb-2.5 text-sm font-semibold text-ink">O que está registrado no seu perfil</p>
+          <ul className="space-y-2 text-sm text-ink/85">
+            {items.map((it) => (
+              <li key={it.label} className="flex items-start gap-2">
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+                {it.label}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted">Esses arquivos são <strong className="text-ink">privados</strong> — só a moderação vê, nunca aparecem no anúncio. De tempos em tempos (ou por segurança) pedimos uma selfie nova.</p>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-input border border-line bg-surface-2 px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Atualizar comprovação
+          </button>
+        </div>
       </div>
     );
   }
@@ -135,6 +167,12 @@ export default function VerificationUploader({ userId, status: initStatus, hasDo
 
   return (
     <div className="space-y-3">
+      {status === "approved" && (
+        <div className="flex items-center justify-between gap-2 rounded-card border border-[#43d17f]/40 bg-[#12331f]/40 px-4 py-3 text-sm text-[#7ee2a8]">
+          <span>Você já está <strong className="text-[#a9edc4]">aprovada</strong>. Reenvie só se precisar atualizar.</span>
+          <button type="button" onClick={() => setShowForm(false)} className="shrink-0 rounded-pill border border-[#43d17f]/40 px-3 py-1 text-xs font-semibold transition-colors hover:bg-[#12331f]">Cancelar</button>
+        </div>
+      )}
       {status === "pending" && (
         <div className="rounded-card border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-accent">Comprovação enviada — em análise. Você recebe o selo assim que aprovarmos.</div>
       )}

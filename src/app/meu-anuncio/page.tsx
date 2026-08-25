@@ -29,6 +29,10 @@ function AccountHeader() {
           <span className="h-2 w-2 rounded-full bg-accent" />
         </Link>
         <nav className="flex items-center gap-1">
+          <Link href="/seguranca" className="inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-accent-soft hover:text-accent">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" /></svg>
+            <span className="hidden sm:inline">Segurança</span>
+          </Link>
           <Link href="/perfil" className="rounded-pill px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-accent-soft hover:text-accent">Meu perfil</Link>
           <form action="/logout" method="post"><button className="rounded-pill px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-accent-soft hover:text-accent">Sair</button></form>
         </nav>
@@ -395,27 +399,48 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                   ? `Seu plano (${planLimits.name}): até ${planLimits.maxPhotos} fotos e ${planLimits.maxVideos} vídeo(s). A 1ª foto vira a capa.`
                   : `Seu plano (${planLimits.name}): até ${planLimits.maxPhotos} fotos. A 1ª foto vira a capa.`}
               </p>
-              <div className="mb-4 rounded-card border border-accent/30 bg-accent-soft/40 p-3.5 text-xs">
-                <p className="font-semibold text-ink">📸 Regras das fotos (pra manter o padrão do site)</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-md bg-[#0f2a1b]/50 p-2.5">
-                    <p className="mb-1 font-semibold text-[#7ee2a8]">✅ Pode</p>
-                    <ul className="space-y-0.5 text-muted">
-                      <li>Fotos sensuais e de lingerie</li>
-                      <li>Nudez sensual / artística</li>
-                      <li>Poses provocantes</li>
+              <div className="mb-4 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+                <div className="flex items-center gap-2.5 border-b border-line/70 px-4 py-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  </span>
+                  <div>
+                    <p className="font-display text-sm font-bold text-ink">Regras das fotos</p>
+                    <p className="text-[11px] text-muted">Pra manter o padrão do site</p>
+                  </div>
+                </div>
+                <div className="grid gap-px bg-line/60 sm:grid-cols-2">
+                  <div className="bg-surface p-4">
+                    <span className="mb-3 inline-flex items-center gap-1.5 rounded-pill bg-[#12331f] px-2.5 py-1 text-xs font-bold text-[#43d17f]">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>Pode
+                    </span>
+                    <ul className="space-y-2 text-sm text-ink/85">
+                      {["Fotos sensuais e de lingerie", "Nudez sensual / artística", "Poses provocantes"].map((t) => (
+                        <li key={t} className="flex items-start gap-2">
+                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+                          {t}
+                        </li>
+                      ))}
                     </ul>
                   </div>
-                  <div className="rounded-md bg-red-500/10 p-2.5">
-                    <p className="mb-1 font-semibold text-red-300">🚫 Não pode</p>
-                    <ul className="space-y-0.5 text-muted">
-                      <li>Sexo explícito / penetração</li>
-                      <li>Masturbação / órgãos em ato</li>
-                      <li>Qualquer ato sexual explícito</li>
+                  <div className="bg-surface p-4">
+                    <span className="mb-3 inline-flex items-center gap-1.5 rounded-pill bg-red-500/15 px-2.5 py-1 text-xs font-bold text-red-300">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg>Não pode
+                    </span>
+                    <ul className="space-y-2 text-sm text-ink/85">
+                      {["Sexo explícito / penetração", "Masturbação / órgãos em ato", "Qualquer ato sexual explícito"].map((t) => (
+                        <li key={t} className="flex items-start gap-2">
+                          <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-300"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg></span>
+                          {t}
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
-                <p className="mt-2 text-[11px] text-muted/80">Fotos fora da regra são removidas na moderação e podem reprovar o anúncio.</p>
+                <div className="flex items-start gap-2 border-t border-line/70 bg-surface-2/40 px-4 py-2.5 text-[11px] text-muted">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mt-px shrink-0 text-muted" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 11v5M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                  Fotos fora da regra são removidas na moderação e podem reprovar o anúncio.
+                </div>
               </div>
               {ad ? (
                 <MediaManager adId={ad.id} userId={user.id} initial={media} maxPhotos={planLimits.maxPhotos} maxVideos={planLimits.maxVideos} />
