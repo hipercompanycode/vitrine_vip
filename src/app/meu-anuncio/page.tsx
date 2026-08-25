@@ -257,6 +257,17 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </Link>
               </div>
 
+              <Link href="/seguranca" className="group flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card transition-colors hover:border-accent/60">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-display text-sm font-bold text-ink">Segurança — clientes</span>
+                  <span className="block text-xs text-muted">Consulte um número antes de atender ou relate um cliente</span>
+                </span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted transition-all group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Link>
+
               <section className={cardCls}>
                 <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>
                 <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
