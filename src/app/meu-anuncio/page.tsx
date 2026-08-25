@@ -382,6 +382,28 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                   ? `Seu plano (${planLimits.name}): até ${planLimits.maxPhotos} fotos e ${planLimits.maxVideos} vídeo(s). A 1ª foto vira a capa.`
                   : `Seu plano (${planLimits.name}): até ${planLimits.maxPhotos} fotos. A 1ª foto vira a capa.`}
               </p>
+              <div className="mb-4 rounded-card border border-accent/30 bg-accent-soft/40 p-3.5 text-xs">
+                <p className="font-semibold text-ink">📸 Regras das fotos (pra manter o padrão do site)</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-md bg-[#0f2a1b]/50 p-2.5">
+                    <p className="mb-1 font-semibold text-[#7ee2a8]">✅ Pode</p>
+                    <ul className="space-y-0.5 text-muted">
+                      <li>Fotos sensuais e de lingerie</li>
+                      <li>Nudez sensual / artística</li>
+                      <li>Poses provocantes</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-md bg-red-500/10 p-2.5">
+                    <p className="mb-1 font-semibold text-red-300">🚫 Não pode</p>
+                    <ul className="space-y-0.5 text-muted">
+                      <li>Sexo explícito / penetração</li>
+                      <li>Masturbação / órgãos em ato</li>
+                      <li>Qualquer ato sexual explícito</li>
+                    </ul>
+                  </div>
+                </div>
+                <p className="mt-2 text-[11px] text-muted/80">Fotos fora da regra são removidas na moderação e podem reprovar o anúncio.</p>
+              </div>
               {ad ? (
                 <MediaManager adId={ad.id} userId={user.id} initial={media} maxPhotos={planLimits.maxPhotos} maxVideos={planLimits.maxVideos} />
               ) : (
