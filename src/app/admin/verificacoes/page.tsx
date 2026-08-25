@@ -51,7 +51,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
 
   let query = admin
     .from("verifications")
-    .select("profile_id, doc_path, face_path, body_path, prev_face_path, cpf, liveness_code, face_hash, body_hash, reverify_reason, status, feedback, created_at, profiles ( name, last_country )")
+    .select("profile_id, doc_path, face_path, body_path, prev_face_path, cpf, liveness_code, face_hash, body_hash, reverify_reason, status, feedback, created_at, profiles ( name, last_country, geo_flag )")
     .order("created_at", { ascending: false })
     .limit(200);
   if (f === "pendentes") query = query.eq("status", "pending");
@@ -157,6 +157,7 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
               const prof0 = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
               const name = prof0?.name || "(sem nome)";
               const country = prof0?.last_country as string | null | undefined;
+              const geoFlag = prof0?.geo_flag as string | null | undefined;
               const ad = adByProfile.get(r.profile_id);
               const dup = dupMap.get(r.profile_id) ?? [];
               return (
@@ -180,6 +181,9 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                       )}
                       {country && (
                         <p className="mt-0.5 text-xs text-muted">País (IP): <span className="font-semibold text-ink">{country}</span></p>
+                      )}
+                      {geoFlag && (
+                        <p className="mt-0.5 text-xs font-semibold text-amber-300">📍 {geoFlag}</p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

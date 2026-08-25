@@ -5,6 +5,7 @@ import { sanitizeAttrs } from "@/lib/attributes";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { accountAccess } from "@/lib/access";
 import { flash, GENERIC_ERROR } from "@/lib/http";
+import { geoFromRequest, recordGeoAndFlag } from "@/lib/geo-ip";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -83,5 +84,12 @@ export async function POST(request: Request) {
       { onConflict: "profile_id" }
     );
   if (error) return flash(request, next, "erro", GENERIC_ERROR, error);
+
+  // sinal de geo por IP (UF do acesso × UF do anúncio) ao salvar os dados
+  try {
+    const { data: c } = await admin.from("cities").select("uf").eq("id", cityId).maybeSingle();
+    await recordGeoAndFlag(admin, user.id, geoFromRequest(request), (c?.uf as string | null) ?? null);
+  } catch (e) { console.error("geo ads:", e); }
+
   return done();
 }
