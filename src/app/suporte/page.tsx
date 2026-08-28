@@ -77,7 +77,7 @@ export default async function SuportePage({ searchParams }: { searchParams: Prom
           <p className="mt-1 text-sm text-muted">Precisa de ajuda? Escolha como quer falar com a gente.</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4">
           {/* enviar mensagem */}
           <form action="/api/support/create" method="post" className="flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-card">
             <input type="hidden" name="kind" value="mensagem" />
@@ -85,25 +85,27 @@ export default async function SuportePage({ searchParams }: { searchParams: Prom
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft text-accent">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16v11H7l-3 3V5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
               </span>
-              <div><p className="font-display text-sm font-bold text-ink">Enviar uma mensagem</p><p className="text-[11px] text-muted">Respondemos assim que der</p></div>
+              <div><p className="font-display text-sm font-bold text-ink">Enviar uma mensagem</p></div>
             </div>
             <input name="subject" placeholder="Assunto (opcional)" className={`${inputCls} mb-2`} />
             <textarea name="message" rows={3} required placeholder="Como podemos ajudar?" className={`${inputCls} resize-none`} />
             <button className="mt-3 rounded-input bg-accent py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-strong">Enviar mensagem</button>
           </form>
 
-          {/* abrir chat */}
-          <form action="/api/support/create" method="post" className="flex flex-col rounded-2xl border border-accent/40 bg-accent-soft/25 p-5 shadow-card">
-            <input type="hidden" name="kind" value="chat" />
-            <div className="mb-3 flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 21 12z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
-              </span>
-              <div><p className="font-display text-sm font-bold text-ink">Abrir um chat</p><p className="text-[11px] text-muted">Conversa de ida e volta</p></div>
-            </div>
-            <textarea name="message" rows={3} required placeholder="Comece a conversa…" className={`${inputCls} resize-none`} />
-            <button className="mt-3 rounded-input bg-accent py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-strong">Abrir chat</button>
-          </form>
+          {/* abrir chat — oculto por enquanto (trocar false por true pra reativar) */}
+          {false && (
+            <form action="/api/support/create" method="post" className="flex flex-col rounded-2xl border border-accent/40 bg-accent-soft/25 p-5 shadow-card">
+              <input type="hidden" name="kind" value="chat" />
+              <div className="mb-3 flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 21 12z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+                </span>
+                <div><p className="font-display text-sm font-bold text-ink">Abrir um chat</p><p className="text-[11px] text-muted">Conversa de ida e volta</p></div>
+              </div>
+              <textarea name="message" rows={3} required placeholder="Comece a conversa…" className={`${inputCls} resize-none`} />
+              <button className="mt-3 rounded-input bg-accent py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-strong">Abrir chat</button>
+            </form>
+          )}
         </div>
 
         {tickets.length > 0 && (
