@@ -6,8 +6,10 @@ import { makeBlur, deleteBlur } from "@/lib/blur";
 export const runtime = "nodejs";
 
 // Alterna "ocultar para não logados" (nudez) de UMA foto do próprio anúncio.
-//  - ligar : review = 'nudez'   + gera a cópia borrada (anônimo vê borrada)
-//  - desligar: review = 'pendente' + remove a cópia borrada (volta pra aprovação)
+// A foto NÃO aparece (nem borrada) até o admin aprovar — pré-moderação (ECA).
+//  - ligar : review = 'nudez_rev' (nudez aguardando) + gera a cópia borrada
+//            (fica escondida do público; admin aprova como 'nudez' -> vai ao ar borrada)
+//  - desligar: review = 'pendente' + remove a cópia borrada (volta pra fila normal)
 export async function POST(request: Request) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -29,17 +31,17 @@ export async function POST(request: Request) {
   const { data: ad } = await admin.from("ads").select("profile_id").eq("id", m.ad_id).maybeSingle();
   if (!ad || ad.profile_id !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
 
-  if (m.review === "nudez") {
-    // desligar: volta pra fila de aprovação, sem a versão borrada
+  // já está marcada como nudez (aguardando ou aprovada)? desliga -> volta pra fila normal
+  if (m.review === "nudez" || m.review === "nudez_rev") {
     await deleteBlur(admin, m.blur_path as string | null);
     const { error } = await admin.from("ad_media").update({ review: "pendente", blur_path: null }).eq("id", mediaId);
     if (error) return apiError(GENERIC_ERROR, 500, error);
     return NextResponse.json({ review: "pendente" });
   }
 
-  // ligar: gera (ou reaproveita) a cópia borrada e marca nudez
+  // ligar: gera (ou reaproveita) a cópia borrada e marca 'nudez_rev' (aguardando admin)
   const blurPath = (m.blur_path as string | null) ?? (await makeBlur(admin, m.storage_path as string));
-  const { error } = await admin.from("ad_media").update({ review: "nudez", blur_path: blurPath }).eq("id", mediaId);
+  const { error } = await admin.from("ad_media").update({ review: "nudez_rev", blur_path: blurPath }).eq("id", mediaId);
   if (error) return apiError(GENERIC_ERROR, 500, error);
-  return NextResponse.json({ review: "nudez" });
+  return NextResponse.json({ review: "nudez_rev" });
 }

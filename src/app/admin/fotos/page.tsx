@@ -22,7 +22,7 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
   const admin = createAdminClient();
 
   const [pC, nC] = await Promise.all([
-    admin.from("ad_media").select("id", { count: "exact", head: true }).eq("type", "photo").eq("review", "pendente"),
+    admin.from("ad_media").select("id", { count: "exact", head: true }).eq("type", "photo").in("review", ["pendente", "nudez_rev"]),
     admin.from("ad_media").select("id", { count: "exact", head: true }).eq("type", "photo").eq("review", "nudez"),
   ]);
   const pendentes = pC.count ?? 0;
@@ -33,9 +33,9 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
     .select("id, ad_id, storage_path, review, is_cover, ads ( title )")
     .eq("type", "photo")
     .limit(300);
-  if (f === "pendentes") q = q.eq("review", "pendente");
+  if (f === "pendentes") q = q.in("review", ["pendente", "nudez_rev"]);
   else if (f === "nudez") q = q.eq("review", "nudez");
-  else q = q.in("review", ["pendente", "nudez"]);
+  else q = q.in("review", ["pendente", "nudez_rev", "nudez"]);
   const { data: rows } = await q;
   const list = (rows ?? []) as any[];
 
@@ -61,7 +61,7 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
         </nav>
 
         <h1 className="mb-1 font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Revisão de fotos</h1>
-        <p className="mb-4 max-w-2xl text-sm text-muted"><strong className="text-ink">Liberar</strong> = nítida pra todos. <strong className="text-ink">Nudez</strong> = borrada pra quem não está logado (ECA). <strong className="text-ink">Excluir</strong> = sexo explícito / fora das regras. Pendentes não aparecem no anúncio até você decidir.</p>
+        <p className="mb-4 max-w-2xl text-sm text-muted"><strong className="text-ink">Liberar</strong> = nítida pra todos. <strong className="text-ink">Nudez</strong> = borrada pra quem não está logado (ECA). <strong className="text-ink">Excluir</strong> = sexo explícito / fora das regras. Nada aparece no anúncio até você decidir — inclusive as marcadas como <strong className="text-ink">Nudez · revisar</strong> pela anunciante.</p>
 
         <div className="mb-5 inline-flex flex-wrap rounded-pill border border-line bg-surface p-1">
           {TABS.map((t) => {
@@ -89,8 +89,8 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
                   <div className="relative">
                     {/* admin vê a original */}
                     <img src={publicUrl(base, "ad-media", r.storage_path)} alt="" className="aspect-[3/4] w-full object-cover" />
-                    <span className={`absolute left-2 top-2 rounded-pill px-2 py-0.5 text-[10px] font-bold ${r.review === "nudez" ? "bg-amber-500/90 text-[#231a06]" : "bg-black/70 text-white"}`}>
-                      {r.review === "nudez" ? "🔞 Nudez" : "⏳ Pendente"}
+                    <span className={`absolute left-2 top-2 rounded-pill px-2 py-0.5 text-[10px] font-bold ${r.review === "nudez" || r.review === "nudez_rev" ? "bg-amber-500/90 text-[#231a06]" : "bg-black/70 text-white"}`}>
+                      {r.review === "nudez" ? "🔞 Nudez" : r.review === "nudez_rev" ? "🔞 Nudez · revisar" : "⏳ Pendente"}
                     </span>
                     {r.is_cover && <span className="absolute right-2 top-2 rounded-pill bg-accent px-2 py-0.5 text-[10px] font-bold text-white">Capa</span>}
                   </div>

@@ -189,7 +189,7 @@ export default function MediaManager({
         <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-2.2 3M6.1 6.1A17 17 0 0 0 2 12s4 7 10 7a9.4 9.4 0 0 0 3.9-.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </span>
-        <span className="text-muted">Tem <strong className="text-ink">nudez total</strong>? Toque em <strong className="text-ink">Ocultar</strong> na foto: ela aparece <strong className="text-ink">borrada</strong> pra quem não está logado (exigência legal, ECA). As demais passam por <strong className="text-ink">aprovação</strong> antes de aparecer no anúncio.</span>
+        <span className="text-muted">Tem <strong className="text-ink">nudez total</strong>? Toque em <strong className="text-ink">Ocultar</strong> na foto. <strong className="text-ink">Toda foto passa por aprovação</strong> do nosso time antes de aparecer no anúncio — a marcada como nudez, depois de aprovada, aparece <strong className="text-ink">borrada</strong> pra quem não está logado (exigência legal, ECA).</span>
       </div>
       {msg && <p className="mt-2 text-sm text-red-400">{msg}</p>}
 
@@ -219,11 +219,11 @@ export default function MediaManager({
               <button
                 type="button"
                 onClick={() => toggleNudez(m.id)}
-                aria-label={m.review === "nudez" ? "Mostrar para quem não está logado" : "Ocultar para quem não está logado"}
-                title={m.review === "nudez" ? "Oculta pra não logados — toque para mostrar" : "Ocultar pra não logados (borrar)"}
-                className={`absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full shadow-pop backdrop-blur-sm ring-1 transition-colors ${m.review === "nudez" ? "bg-amber-500 text-[#231a06] ring-amber-300 hover:bg-amber-400" : "bg-black/55 text-white ring-white/30 hover:bg-black/75"}`}
+                aria-label={m.review === "nudez" || m.review === "nudez_rev" ? "Mostrar para quem não está logado" : "Ocultar para quem não está logado"}
+                title={m.review === "nudez" || m.review === "nudez_rev" ? "Marcada como nudez — toque para desmarcar" : "Ocultar pra não logados (borrar)"}
+                className={`absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full shadow-pop backdrop-blur-sm ring-1 transition-colors ${m.review === "nudez" || m.review === "nudez_rev" ? "bg-amber-500 text-[#231a06] ring-amber-300 hover:bg-amber-400" : "bg-black/55 text-white ring-white/30 hover:bg-black/75"}`}
               >
-                {m.review === "nudez" ? (
+                {m.review === "nudez" || m.review === "nudez_rev" ? (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-2.2 3M6.1 6.1A17 17 0 0 0 2 12s4 7 10 7a9.4 9.4 0 0 0 3.9-.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 ) : (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" /></svg>
@@ -243,8 +243,8 @@ export default function MediaManager({
 
             {/* estado de moderação — topo, centralizado entre os botões */}
             {m.type === "photo" && m.review && m.review !== "liberada" && (
-              <span className={`absolute left-1/2 top-2 inline-flex -translate-x-1/2 items-center gap-1 rounded-pill px-2 py-1 text-[10px] font-bold shadow-sm ${m.review === "nudez" ? "bg-amber-500/90 text-[#231a06]" : "bg-black/70 text-white ring-1 ring-white/20"}`}>
-                {m.review === "nudez" ? "🔞 Oculta" : "⏳ Em análise"}
+              <span className={`absolute left-1/2 top-2 inline-flex -translate-x-1/2 items-center gap-1 rounded-pill px-2 py-1 text-[10px] font-bold shadow-sm ${m.review === "nudez" || m.review === "nudez_rev" ? "bg-amber-500/90 text-[#231a06]" : "bg-black/70 text-white ring-1 ring-white/20"}`}>
+                {m.review === "nudez" ? "🔞 Oculta" : m.review === "nudez_rev" ? "🔞 Em análise" : "⏳ Em análise"}
               </span>
             )}
 

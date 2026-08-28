@@ -25,7 +25,8 @@ export async function coverUrlMap(admin: SupabaseClient, ids: string[], loggedIn
 
   const toCover = (r: { storage_path: string; review: string | null; blur_path: string | null }): Cover | null => {
     const review = r.review ?? "liberada";
-    if (review === "pendente") return null; // não aparece pro público
+    // só 'liberada' e 'nudez' (aprovada) aparecem; 'pendente' e 'nudez_rev' ficam escondidas até o admin aprovar
+    if (review !== "liberada" && review !== "nudez") return null;
     if (review === "nudez" && !loggedIn) {
       if (!r.blur_path) return { url: "", blurred: true }; // sem cópia borrada → placeholder
       return { url: publicUrl(base, "ad-media", r.blur_path), blurred: true };

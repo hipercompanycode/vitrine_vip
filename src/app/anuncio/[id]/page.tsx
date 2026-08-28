@@ -150,7 +150,8 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
   const loggedIn = !!user;
   const asItem = (m: any): GalleryItem | null => {
     const review = (m.review as string | null) ?? "liberada";
-    if (m.type === "photo" && review === "pendente") return null;
+    // só 'liberada' e 'nudez' (aprovada) aparecem; 'pendente' e 'nudez_rev' ficam escondidas até o admin aprovar
+    if (m.type === "photo" && review !== "liberada" && review !== "nudez") return null;
     if (m.type === "photo" && review === "nudez" && !loggedIn) {
       if (!m.blur_path) return { url: "", type: "photo", blurred: true };
       return { url: publicUrl(base, "ad-media", m.blur_path), type: "photo", blurred: true };
@@ -158,8 +159,9 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     return { url: publicUrl(base, "ad-media", m.storage_path), type: m.type };
   };
   const media: GalleryItem[] = (mediaRows ?? []).map(asItem).filter(Boolean) as GalleryItem[];
-  const coverRow = (mediaRows ?? []).find((m: any) => m.is_cover && m.type === "photo" && (m.review ?? "liberada") !== "pendente")
-    ?? (mediaRows ?? []).find((m: any) => m.type === "photo" && (m.review ?? "liberada") !== "pendente");
+  const isPublicPhoto = (m: any) => ["liberada", "nudez"].includes((m.review ?? "liberada") as string);
+  const coverRow = (mediaRows ?? []).find((m: any) => m.is_cover && m.type === "photo" && isPublicPhoto(m))
+    ?? (mediaRows ?? []).find((m: any) => m.type === "photo" && isPublicPhoto(m));
   const coverItem = coverRow ? asItem(coverRow) : null;
   const coverUrl = coverItem?.url || null;
   const coverBlurred = !!coverItem?.blurred;
