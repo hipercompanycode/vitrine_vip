@@ -15,6 +15,18 @@ export async function POST(request: Request) {
   const form = await request.formData();
   const profileId = String(form.get("profile_id") ?? "");
   const action = String(form.get("action") ?? "");
+  const backRaw = String(form.get("back") ?? "/admin/verificacoes");
+  const safeBackTop = backRaw.startsWith("/admin") ? backRaw : "/admin/verificacoes";
+
+  // alterna o selo "sem rosto" no anúncio (informativo, fora do fluxo approve/reject)
+  if (action === "face") {
+    if (!profileId) return NextResponse.json({ error: "parâmetros inválidos" }, { status: 400 });
+    const admin = createAdminClient();
+    const hidden = String(form.get("hidden") ?? "") === "1";
+    await admin.from("ads").update({ face_hidden: hidden }).eq("profile_id", profileId);
+    return NextResponse.redirect(new URL(safeBackTop, request.url), { status: 303 });
+  }
+
   if (!profileId || (action !== "approve" && action !== "reject")) {
     return NextResponse.json({ error: "parâmetros inválidos" }, { status: 400 });
   }

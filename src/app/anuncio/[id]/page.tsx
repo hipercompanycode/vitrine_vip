@@ -178,6 +178,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
   const extra = {
     age: (ad.age as number | null) ?? null,
     verified: !!ad.verified,
+    faceHidden: !!ad.face_hidden,
     attributes: (ad.attributes as string[] | null) ?? [],
     priceTable: (ad.price_table as { label: string; price_cents: number }[] | null) ?? [],
     contact: {

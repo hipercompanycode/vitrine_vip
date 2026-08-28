@@ -80,10 +80,10 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
 
   // título + id do anúncio p/ link (dos listados + dos perfis batidos como duplicata)
   const linkPids = Array.from(new Set([...pids, ...[...dupMap.values()].flat()]));
-  const adByProfile = new Map<string, { id: string; title: string }>();
+  const adByProfile = new Map<string, { id: string; title: string; face_hidden: boolean }>();
   if (linkPids.length) {
-    const { data: ads } = await admin.from("ads").select("id, profile_id, title").in("profile_id", linkPids);
-    (ads ?? []).forEach((a: any) => adByProfile.set(a.profile_id, { id: a.id, title: a.title }));
+    const { data: ads } = await admin.from("ads").select("id, profile_id, title, face_hidden").in("profile_id", linkPids);
+    (ads ?? []).forEach((a: any) => adByProfile.set(a.profile_id, { id: a.id, title: a.title, face_hidden: !!a.face_hidden }));
   }
 
   // quem indicou cada perfil (nome público = título do anúncio de quem indicou)
@@ -284,6 +284,18 @@ export default async function AdminVerifPage({ searchParams }: { searchParams: P
                         <button className="w-full rounded-input bg-red-500/90 py-2 text-sm font-bold text-white transition-colors hover:bg-red-500">Confirmar recusa</button>
                       </form>
                     </details>
+
+                    {ad && (
+                      <form action="/api/admin/verify" method="post">
+                        <input type="hidden" name="profile_id" value={r.profile_id} />
+                        <input type="hidden" name="action" value="face" />
+                        <input type="hidden" name="hidden" value={ad.face_hidden ? "0" : "1"} />
+                        <input type="hidden" name="back" value={backHref} />
+                        <button className={`w-full rounded-input py-2 text-sm font-semibold transition-colors ${ad.face_hidden ? "border border-amber-500/50 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25" : "border border-line bg-surface-2 text-muted hover:text-ink"}`}>
+                          {ad.face_hidden ? "🙈 “Sem rosto” marcado — desmarcar" : "🙈 Marcar “sem rosto”"}
+                        </button>
+                      </form>
+                    )}
 
                     <form action="/api/admin/cortesia" method="post">
                       <input type="hidden" name="profile_id" value={r.profile_id} />
