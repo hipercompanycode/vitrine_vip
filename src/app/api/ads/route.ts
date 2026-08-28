@@ -51,6 +51,21 @@ export async function POST(request: Request) {
     return done();
   }
 
+  // Modo "só cidade": atalho rápido — troca apenas a cidade de atendimento.
+  if (form.get("has_city") != null) {
+    const cityRaw = form.get("city_id");
+    const cityIdNum = cityRaw ? Number(cityRaw) : null;
+    const cityId = cityIdNum !== null && !Number.isNaN(cityIdNum) ? cityIdNum : null;
+    if (cityId == null) return flash(request, next, "erro", "Selecione o estado e a cidade de atendimento.");
+    const { error } = await admin.from("ads").update({ city_id: cityId, updated_at: new Date().toISOString() }).eq("profile_id", user.id);
+    if (error) return flash(request, next, "erro", GENERIC_ERROR, error);
+    try {
+      const { data: c } = await admin.from("cities").select("uf").eq("id", cityId).maybeSingle();
+      await recordGeoAndFlag(admin, user.id, geoFromRequest(request), (c?.uf as string | null) ?? null);
+    } catch (e) { console.error("geo cidade:", e); }
+    return flash(request, next, "ok", "Cidade atualizada.");
+  }
+
   // Modo "dados": dados básicos (não toca em preços nem atributos).
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
