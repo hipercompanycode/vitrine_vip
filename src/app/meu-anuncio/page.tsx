@@ -14,6 +14,7 @@ import WizardSubmit from "@/components/WizardSubmit";
 import WizardNav from "@/components/WizardNav";
 import ReferralShare from "@/components/ReferralShare";
 import { ensureRefCode } from "@/lib/referral";
+import ReviewRespond, { type PendingReview } from "@/components/ReviewRespond";
 import PixCheckout from "@/components/PixCheckout";
 import { cardCls } from "@/components/ui";
 
@@ -139,6 +140,14 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
   const media = ad ? (await admin.from("ad_media").select("id, type, storage_path, is_cover, review").eq("ad_id", ad.id).order("position")).data ?? [] : [];
 
+  // avaliações aguardando ação da anunciante (responder / aprovar / moderar)
+  const pendingReviews: PendingReview[] = ad
+    ? (((await admin.from("reviews").select("id, comment, tags, due_at, profiles ( name )").eq("ad_id", ad.id).eq("status", "aguardando").order("created_at", { ascending: false })).data ?? []) as any[]).map((r) => ({
+        id: r.id, comment: r.comment, tags: r.tags ?? [], dueAt: r.due_at ?? null,
+        authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
+      }))
+    : [];
+
   const sp = await searchParams;
   const step = Math.min(N, Math.max(1, Number(sp.step ?? "1") || 1));
 
@@ -258,6 +267,16 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                   </svg>
                   Ver meu anúncio público
                 </a>
+              )}
+
+              {pendingReviews.length > 0 && (
+                <section className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 shadow-card">
+                  <h2 className="mb-1 font-display text-base font-bold text-ink">Avaliações a responder ({pendingReviews.length})</h2>
+                  <p className="mb-3 text-xs text-muted">Ficam <strong className="text-ink">ocultas</strong> até você responder/publicar ou passar 7 dias. Se for difamação falsa, envie à moderação — o admin analisa e pode excluir.</p>
+                  <ul className="space-y-3">
+                    {pendingReviews.map((rv) => <ReviewRespond key={rv.id} review={rv} />)}
+                  </ul>
+                </section>
               )}
 
               <div className="grid grid-cols-2 gap-3">

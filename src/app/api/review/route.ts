@@ -17,10 +17,11 @@ export async function POST(request: Request) {
   const comment = commentRaw === "" ? null : commentRaw;
   const tags = sanitizeTags(form.getAll("tags").map((t) => String(t)));
 
+  const dueAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 dias
   const { error } = await supabase.from("reviews").insert({
-    ad_id: adId, user_id: user.id, comment, tags,
+    ad_id: adId, user_id: user.id, comment, tags, status: "aguardando", due_at: dueAt,
   });
   if (error) return flash(request, back, "erro", GENERIC_ERROR, error);
 
-  return flash(request, back, "ok", "Avaliação enviada. Obrigado!");
+  return flash(request, back, "ok", "Avaliação enviada! Ela aparece após a anunciante responder ou em até 7 dias.");
 }

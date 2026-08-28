@@ -100,7 +100,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     admin.from("subscriptions").select("id").eq("profile_id", pid).eq("status", "active").gt("current_period_end", nowIso).maybeSingle(),
     admin.from("likes").select("*", { count: "exact", head: true }).eq("ad_id", id),
     userStateFn(),
-    admin.from("reviews").select("id, user_id, comment, tags, created_at, profiles ( name )").eq("ad_id", id).order("created_at", { ascending: false }),
+    admin.from("reviews").select("id, user_id, comment, tags, created_at, status, reply, reply_at, due_at, profiles ( name )").eq("ad_id", id).order("created_at", { ascending: false }),
     admin.from("ad_media").select("type, storage_path, is_cover, review, blur_path").eq("ad_id", id).order("position"),
     admin.from("stories").select("storage_path").eq("ad_id", id).gt("expires_at", nowIso).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     admin.from("verifications").select("reviewed_at").eq("profile_id", pid).maybeSingle(),
@@ -133,11 +133,17 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
   };
   const hasAd = userState.hasAd;
 
-  const reviews: ReviewItem[] = (reviewRows ?? []).map((r: any) => ({
-    id: r.id, user_id: r.user_id, comment: r.comment, tags: r.tags ?? [],
-    created_at: r.created_at,
-    authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
-  }));
+  // visível = publicada OU (aguardando e o prazo de 7 dias já venceu). 'moderacao'
+  // e 'aguardando' dentro do prazo ficam ocultas.
+  const nowRev = Date.now();
+  const reviews: ReviewItem[] = (reviewRows ?? [])
+    .filter((r: any) => r.status === "publicada" || (r.status === "aguardando" && r.due_at && new Date(r.due_at).getTime() < nowRev))
+    .map((r: any) => ({
+      id: r.id, user_id: r.user_id, comment: r.comment, tags: r.tags ?? [],
+      created_at: r.created_at,
+      authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
+      reply: (r.reply as string | null) ?? null,
+    }));
 
   // Moderação por foto (ECA): 'pendente' não aparece ao público; 'nudez' aparece
   // borrada pro anônimo e nítida pro logado.

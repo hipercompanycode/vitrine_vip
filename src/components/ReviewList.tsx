@@ -8,6 +8,7 @@ export type ReviewItem = {
   tags: string[];
   created_at: string;
   authorName: string;
+  reply?: string | null; // resposta da anunciante
 };
 
 export default function ReviewList({
@@ -32,6 +33,12 @@ export default function ReviewList({
             <span className="shrink-0 whitespace-nowrap text-xs text-muted">{timeAgo(new Date(r.created_at), now)}</span>
           </div>
           {r.comment && <p className="mt-2 whitespace-pre-line text-sm text-ink/90">{r.comment}</p>}
+          {r.reply && (
+            <div className="mt-3 rounded-input border-l-2 border-accent bg-accent-soft/30 px-3 py-2">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-accent">Resposta da anunciante</p>
+              <p className="mt-0.5 whitespace-pre-line text-sm text-ink/90">{r.reply}</p>
+            </div>
+          )}
           {currentUserId === r.user_id && (
             <form action="/api/review/delete" method="post" className="mt-2">
               <input type="hidden" name="review_id" value={r.id} />
