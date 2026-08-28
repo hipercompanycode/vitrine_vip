@@ -14,7 +14,7 @@ import WizardSubmit from "@/components/WizardSubmit";
 import WizardNav from "@/components/WizardNav";
 import ReferralShare from "@/components/ReferralShare";
 import { ensureRefCode } from "@/lib/referral";
-import ReviewRespond, { type PendingReview } from "@/components/ReviewRespond";
+import { type PendingReview } from "@/components/ReviewRespond";
 import PixCheckout from "@/components/PixCheckout";
 import { cardCls } from "@/components/ui";
 
@@ -275,19 +275,17 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
                     Editar fotos
                   </Link>
+                  <Link href="/meu-anuncio/avaliacoes" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+                    Avaliações
+                    {pendingReviews.length > 0 && (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold text-white">{pendingReviews.length}</span>
+                    )}
+                  </Link>
                 </div>
                 <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
               </section>
 
-              {pendingReviews.length > 0 && (
-                <section className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 shadow-card">
-                  <h2 className="mb-1 font-display text-base font-bold text-ink">Avaliações a responder ({pendingReviews.length})</h2>
-                  <p className="mb-3 text-xs text-muted">Ficam <strong className="text-ink">ocultas</strong> até você responder/publicar ou passar 7 dias. Se for difamação falsa, envie à moderação — o admin analisa e pode excluir.</p>
-                  <ul className="space-y-3">
-                    {pendingReviews.map((rv) => <ReviewRespond key={rv.id} review={rv} />)}
-                  </ul>
-                </section>
-              )}
 
               <Link href="/seguranca" className="group flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card transition-colors hover:border-accent/60">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
