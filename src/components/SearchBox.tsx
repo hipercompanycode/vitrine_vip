@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 type City = { id: number; name: string; uf: string };
 
-export default function SearchBox({ defaultQuery = "" }: { defaultQuery?: string }) {
+export default function SearchBox({ defaultQuery = "", wrapClassName }: { defaultQuery?: string; wrapClassName?: string }) {
   const router = useRouter();
   const [value, setValue] = useState(defaultQuery);
   const [cities, setCities] = useState<City[]>([]);
@@ -62,7 +62,7 @@ export default function SearchBox({ defaultQuery = "" }: { defaultQuery?: string
   const showDropdown = open && value.trim().length >= 2;
 
   return (
-    <div ref={boxRef} className="relative order-3 w-full min-w-0 sm:order-none sm:w-56 md:w-72">
+    <div ref={boxRef} className={wrapClassName ?? "relative order-3 w-full min-w-0 sm:order-none sm:w-56 md:w-72"}>
       <div className="group flex items-center gap-2.5 rounded-full border border-line bg-surface-2/70 px-4 py-2.5 transition-colors duration-200 focus-within:border-ink/25 focus-within:bg-surface-2">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted" aria-hidden="true">
           <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />

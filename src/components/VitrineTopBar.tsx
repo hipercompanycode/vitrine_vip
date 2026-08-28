@@ -28,18 +28,27 @@ export default function VitrineTopBar({
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-2 gap-y-2 px-3 py-2 sm:gap-x-3 sm:px-4 sm:py-3">
           {/* marca */}
           <Link href="/" className="group inline-flex shrink-0 items-baseline gap-0.5">
             <span className="font-display text-xl font-extrabold tracking-tight text-ink">vitrine<span className="text-accent">vip</span></span>
             <span className="h-2 w-2 translate-y-[-1px] rounded-full bg-accent transition-transform group-hover:scale-125" />
           </Link>
 
-          {/* busca por cidade (autocomplete) */}
-          <SearchBox defaultQuery={defaultQuery} />
-
-          {/* empurra o grupo da direita */}
-          <div className="hidden flex-1 sm:block" aria-hidden="true" />
+          {/* busca + filtros: linha própria no mobile, inline no desktop */}
+          <div className="order-3 flex w-full items-center gap-2 sm:order-none sm:w-auto sm:flex-1">
+            <SearchBox defaultQuery={defaultQuery} wrapClassName="relative min-w-0 flex-1 sm:max-w-xs" />
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent sm:py-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 5h18M6 12h12M10 19h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Filtros
+            </button>
+          </div>
 
           {/* cidade selecionada (clique = limpar) */}
           {cityLabel && (
@@ -57,23 +66,11 @@ export default function VitrineTopBar({
             </Link>
           )}
 
-          {/* filtros */}
-          <button
-            type="button"
-            onClick={() => setFiltersOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M3 5h18M6 12h12M10 19h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            Filtros
-          </button>
-
           {/* favoritos */}
           <Link
             href="/conta"
             aria-label="Favoritos"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+            className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent sm:ml-0"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 20s-6.5-4.2-9-8C1.2 8.5 3 5 6.3 5 8.2 5 9.4 6.1 12 8.3 14.6 6.1 15.8 5 17.7 5 21 5 22.8 8.5 21 12c-2.5 3.8-9 8-9 8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
