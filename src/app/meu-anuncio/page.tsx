@@ -261,7 +261,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
               )}
 
               <section className={cardCls}>
-                <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>
+                <h2 className="mb-4 text-center font-display text-base font-bold text-ink">Ações do anúncio</h2>
                 <div className="mb-3 space-y-2">
                   <Link href="/meu-anuncio?step=1" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8" /></svg>

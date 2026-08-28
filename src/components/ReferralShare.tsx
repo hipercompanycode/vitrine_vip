@@ -42,7 +42,7 @@ export default function ReferralShare({ code, count, referredBy }: { code: strin
         Compartilhar no WhatsApp
       </a>
 
-      <p className="mt-2.5 text-xs text-muted">Você já indicou <strong className="text-ink">{count}</strong> {count === 1 ? "pessoa" : "pessoas"}.</p>
+      <p className="mt-2.5 text-center text-xs text-muted">Você já indicou <strong className="text-ink">{count}</strong> {count === 1 ? "pessoa" : "pessoas"}.</p>
     </div>
   );
 }
