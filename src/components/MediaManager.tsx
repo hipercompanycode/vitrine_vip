@@ -79,7 +79,6 @@ export default function MediaManager({
   const supabase = createBrowserClient();
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const [items, setItems] = useState<Media[]>(initial);
-  const [nudezMode, setNudezMode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [camOpen, setCamOpen] = useState(false);
@@ -119,7 +118,6 @@ export default function MediaManager({
 
       const body = new FormData();
       body.set("ad_id", adId); body.set("storage_path", path); body.set("type", v.kind);
-      if (v.kind === "photo" && nudezMode) body.set("nudez", "1");
       const res = await fetch("/api/media", { method: "POST", body });
       if (!res.ok) {
         await supabase.storage.from("ad-media").remove([path]); // remove órfão
@@ -150,6 +148,16 @@ export default function MediaManager({
     if (res.ok) setItems((cur) => cur.filter((m) => m.id !== id));
   }
 
+  // liga/desliga "ocultar para não logados" (nudez → borrada) de uma foto
+  async function toggleNudez(id: string) {
+    const body = new FormData(); body.set("media_id", id);
+    const res = await fetch("/api/media/nudez", { method: "POST", body });
+    if (res.ok) {
+      const { review } = await res.json();
+      setItems((cur) => cur.map((m) => (m.id === id ? { ...m, review } : m)));
+    }
+  }
+
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
@@ -177,10 +185,12 @@ export default function MediaManager({
           </label>
         )}
       </div>
-      <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-input border border-line bg-surface-2/40 px-3 py-2.5 text-xs">
-        <input type="checkbox" checked={nudezMode} onChange={(e) => setNudezMode(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]" />
-        <span className="text-muted">Marcar as próximas fotos como <strong className="text-ink">nudez total</strong> — aparecem <strong className="text-ink">borradas</strong> pra quem não está logado (exigência legal, ECA). Sem marcar, a foto passa por <strong className="text-ink">aprovação</strong> antes de aparecer no anúncio.</span>
-      </label>
+      <div className="mt-3 flex items-start gap-2.5 rounded-input border border-line bg-surface-2/40 px-3 py-2.5 text-xs">
+        <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-2.2 3M6.1 6.1A17 17 0 0 0 2 12s4 7 10 7a9.4 9.4 0 0 0 3.9-.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </span>
+        <span className="text-muted">Tem <strong className="text-ink">nudez total</strong>? Toque em <strong className="text-ink">Ocultar</strong> na foto: ela aparece <strong className="text-ink">borrada</strong> pra quem não está logado (exigência legal, ECA). As demais passam por <strong className="text-ink">aprovação</strong> antes de aparecer no anúncio.</span>
+      </div>
       {msg && <p className="mt-2 text-sm text-red-400">{msg}</p>}
 
       {camOpen && (
@@ -204,22 +214,24 @@ export default function MediaManager({
               <video src={publicUrl(base, "ad-media", m.storage_path)} className="aspect-[3/4] w-full object-cover" muted />
             )}
 
-            {/* badge capa */}
-            {m.is_cover && (
-              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-pill bg-accent px-2 py-0.5 text-[11px] font-bold text-white shadow-pop">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>
-                Capa
-              </span>
+            {/* ocultar p/ não logados (nudez → borrada) — topo esquerdo, igual o excluir */}
+            {m.type === "photo" && (
+              <button
+                type="button"
+                onClick={() => toggleNudez(m.id)}
+                aria-label={m.review === "nudez" ? "Mostrar para quem não está logado" : "Ocultar para quem não está logado"}
+                title={m.review === "nudez" ? "Oculta pra não logados — toque para mostrar" : "Ocultar pra não logados (borrar)"}
+                className={`absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full shadow-pop backdrop-blur-sm ring-1 transition-colors ${m.review === "nudez" ? "bg-amber-500 text-[#231a06] ring-amber-300 hover:bg-amber-400" : "bg-black/55 text-white ring-white/30 hover:bg-black/75"}`}
+              >
+                {m.review === "nudez" ? (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-2.2 3M6.1 6.1A17 17 0 0 0 2 12s4 7 10 7a9.4 9.4 0 0 0 3.9-.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                ) : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" /></svg>
+                )}
+              </button>
             )}
 
-            {/* estado de moderação da foto */}
-            {m.type === "photo" && m.review && m.review !== "liberada" && (
-              <span className={`absolute left-2 ${m.is_cover ? "top-9" : "top-2"} inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[10px] font-bold shadow-sm ${m.review === "nudez" ? "bg-amber-500/90 text-[#231a06]" : "bg-black/70 text-white ring-1 ring-white/20"}`}>
-                {m.review === "nudez" ? "🔞 Nudez · borrada" : "⏳ Em análise"}
-              </span>
-            )}
-
-            {/* apagar */}
+            {/* apagar — topo direito */}
             <button
               type="button"
               onClick={() => remove(m.id)}
@@ -229,8 +241,20 @@ export default function MediaManager({
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
 
-            {/* tornar capa (hover) */}
-            {m.type === "photo" && !m.is_cover && (
+            {/* estado de moderação — topo, centralizado entre os botões */}
+            {m.type === "photo" && m.review && m.review !== "liberada" && (
+              <span className={`absolute left-1/2 top-2 inline-flex -translate-x-1/2 items-center gap-1 rounded-pill px-2 py-1 text-[10px] font-bold shadow-sm ${m.review === "nudez" ? "bg-amber-500/90 text-[#231a06]" : "bg-black/70 text-white ring-1 ring-white/20"}`}>
+                {m.review === "nudez" ? "🔞 Oculta" : "⏳ Em análise"}
+              </span>
+            )}
+
+            {/* rodapé: capa (estático) ou tornar capa */}
+            {m.type === "photo" && (m.is_cover ? (
+              <span className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1.5 rounded-pill bg-accent py-1.5 text-xs font-bold text-white shadow-pop">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>
+                Capa
+              </span>
+            ) : (
               <button
                 type="button"
                 onClick={() => setCover(m.id)}
@@ -239,7 +263,7 @@ export default function MediaManager({
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
                 Tornar capa
               </button>
-            )}
+            ))}
           </div>
         ))}
       </div>
