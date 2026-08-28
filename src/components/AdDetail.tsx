@@ -137,15 +137,15 @@ export default function AdDetail({
           {extra?.age ? <span className="rounded-pill bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">{extra.age} anos</span> : null}
         </div>
 
-        {/* rosto oculto — o admin marcou; tranquiliza que perfil + fotos foram verificados */}
+        {/* rosto oculto — foco na verificação (o "sem rosto" é secundário) */}
         {extra?.faceHidden && (
-          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-accent/30 bg-accent-soft/40 px-4 py-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s4-7 10-7c1.6 0 3 .4 4.3 1M22 12s-1.3 2.3-3.6 4.1M3 3l18 18M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#2a7d4f]/40 bg-[#12331f]/40 px-4 py-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6l7-3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </span>
             <div>
-              <p className="text-sm font-bold text-ink">Rosto oculto por opção da acompanhante</p>
-              <p className="mt-0.5 text-xs text-muted">Ela prefere não mostrar o rosto — mas o <strong className="text-ink">perfil e as fotos foram verificados</strong> pela nossa equipe.</p>
+              <p className="text-sm font-bold text-ink">Perfil e fotos verificados pela nossa equipe</p>
+              <p className="mt-0.5 text-xs text-muted">Confirmamos a identidade da acompanhante. Ela optou por não exibir o rosto nas fotos.</p>
             </div>
           </div>
         )}
