@@ -264,6 +264,21 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </a>
               )}
 
+              <section className={cardCls}>
+                <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>
+                <div className="mb-3 space-y-2">
+                  <Link href="/meu-anuncio?step=1" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8" /></svg>
+                    Alterar cidade
+                  </Link>
+                  <Link href="/meu-anuncio?step=3" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
+                    Editar fotos
+                  </Link>
+                </div>
+                <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
+              </section>
+
               {pendingReviews.length > 0 && (
                 <section className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 shadow-card">
                   <h2 className="mb-1 font-display text-base font-bold text-ink">Avaliações a responder ({pendingReviews.length})</h2>
@@ -273,17 +288,6 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                   </ul>
                 </section>
               )}
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Link href="/meu-anuncio?step=3" className="flex items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
-                  Editar fotos
-                </Link>
-                <Link href="/meu-anuncio?step=1" className="flex items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8" /></svg>
-                  Alterar cidade
-                </Link>
-              </div>
 
               <Link href="/seguranca" className="group flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card transition-colors hover:border-accent/60">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
@@ -295,11 +299,6 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted transition-all group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </Link>
-
-              <section className={cardCls}>
-                <h2 className="mb-4 font-display text-base font-bold text-ink">Ações do anúncio</h2>
-                <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
-              </section>
 
               {refCode && <ReferralShare code={refCode} count={referralCount} referredBy={referredByName} />}
             </div>
