@@ -10,6 +10,7 @@ import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 import ReportButton from "@/components/ReportButton";
 import { userHasAd, availableActive, coverUrlMap } from "@/lib/ads";
 import { isAdult } from "@/lib/age";
+import SiteFooter from "@/components/SiteFooter";
 import ViewTracker from "@/components/ViewTracker";
 import { publicUrl } from "@/lib/storage";
 import type { GalleryItem } from "@/components/Gallery";
@@ -243,6 +244,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 sm:pb-16">
         <ReportButton adId={data.id} loggedIn={interactions.loggedIn} />
       </section>
+      <SiteFooter />
     </>
   );
 }

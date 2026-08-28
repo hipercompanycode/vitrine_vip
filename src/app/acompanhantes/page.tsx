@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/server";
 import VitrineTopBar from "@/components/VitrineTopBar";
+import SiteFooter from "@/components/SiteFooter";
 import {
   TARGET_CITIES, isTargetCity, cityPath, citySlug, absUrl, SITE_URL, SITE_NAME,
   ldBreadcrumb, ldItemList, jsonLdScript,
@@ -115,6 +116,7 @@ export default async function AcompanhantesHubPage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
     </>
   );
 }

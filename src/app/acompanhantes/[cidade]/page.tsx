@@ -7,6 +7,7 @@ import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
 import { bumpBucket } from "@/lib/bump";
 import { availableActive, coverUrlMap, type Cover } from "@/lib/ads";
 import VitrineTopBar from "@/components/VitrineTopBar";
+import SiteFooter from "@/components/SiteFooter";
 import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript, isTargetCity } from "@/lib/seo";
 
 // Página de SEO: cacheada (ISR) e regenerada a cada 5 min — resposta rápida p/ buscadores.
@@ -197,6 +198,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(ld) }} />
       </main>
+      <SiteFooter />
     </>
   );
 }
