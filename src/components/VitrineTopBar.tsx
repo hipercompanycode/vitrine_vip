@@ -35,8 +35,8 @@ export default function VitrineTopBar({
             <span className="h-2 w-2 translate-y-[-1px] rounded-full bg-accent transition-transform group-hover:scale-125" />
           </Link>
 
-          {/* busca + filtros: linha própria no mobile, inline no desktop */}
-          <div className="order-3 flex w-full items-center gap-2 sm:order-none sm:w-auto sm:flex-1">
+          {/* busca + filtros: inline só no desktop; no mobile vai pra baixo do header */}
+          <div className="hidden w-auto items-center gap-2 sm:flex sm:flex-1">
             <SearchBox defaultQuery={defaultQuery} wrapClassName="relative min-w-0 flex-1 sm:max-w-xs" />
             <button
               type="button"
@@ -66,17 +66,21 @@ export default function VitrineTopBar({
             </Link>
           )}
 
-          {/* favoritos */}
+          {/* ações — empurradas pra direita */}
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          {/* favoritos — escondido pra anunciante logada */}
+          {!(logged && hasAd) && (
           <Link
             href="/conta"
             aria-label="Favoritos"
-            className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent sm:ml-0"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 20s-6.5-4.2-9-8C1.2 8.5 3 5 6.3 5 8.2 5 9.4 6.1 12 8.3 14.6 6.1 15.8 5 17.7 5 21 5 22.8 8.5 21 12c-2.5 3.8-9 8-9 8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
             </svg>
             <span className="hidden sm:inline">Favoritos</span>
           </Link>
+          )}
 
           {/* entrar / avatar */}
           {logged ? (
@@ -134,8 +138,26 @@ export default function VitrineTopBar({
               </>
             )}
           </Link>
+          </div>
         </div>
       </header>
+
+      {/* busca + filtros no mobile — abaixo do navbar (fora do sticky) */}
+      <div className="border-b border-line/70 bg-canvas px-3 py-2.5 sm:hidden">
+        <div className="flex items-center gap-2">
+          <SearchBox defaultQuery={defaultQuery} wrapClassName="relative min-w-0 flex-1" />
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-pill border border-line bg-surface px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 5h18M6 12h12M10 19h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Filtros
+          </button>
+        </div>
+      </div>
 
       <FilterDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} cityLabel={cityLabel} />
     </>
