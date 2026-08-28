@@ -12,7 +12,9 @@ export type Cover = { url: string; blurred: boolean };
  *  - 'nudez' → nítida pro logado; pro anônimo, a cópia BORRADA (blurred=true).
  * Capa = is_cover entre as visíveis; senão a de menor position.
  */
-export async function coverUrlMap(admin: SupabaseClient, ids: string[], loggedIn: boolean): Promise<Map<string, Cover>> {
+// `adult`: viewer logado E com 18+ confirmado (data de nascimento). Só ele vê a
+// foto de nudez nítida; anônimo, menor de 18 ou sem data => recebe a cópia borrada.
+export async function coverUrlMap(admin: SupabaseClient, ids: string[], adult: boolean): Promise<Map<string, Cover>> {
   const map = new Map<string, Cover>();
   if (!ids.length) return map;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -27,7 +29,7 @@ export async function coverUrlMap(admin: SupabaseClient, ids: string[], loggedIn
     const review = r.review ?? "liberada";
     // só 'liberada' e 'nudez' (aprovada) aparecem; 'pendente' e 'nudez_rev' ficam escondidas até o admin aprovar
     if (review !== "liberada" && review !== "nudez") return null;
-    if (review === "nudez" && !loggedIn) {
+    if (review === "nudez" && !adult) {
       if (!r.blur_path) return { url: "", blurred: true }; // sem cópia borrada → placeholder
       return { url: publicUrl(base, "ad-media", r.blur_path), blurred: true };
     }

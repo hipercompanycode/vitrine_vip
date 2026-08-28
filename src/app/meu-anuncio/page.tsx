@@ -14,6 +14,7 @@ import WizardSubmit from "@/components/WizardSubmit";
 import WizardNav from "@/components/WizardNav";
 import ReferralShare from "@/components/ReferralShare";
 import { ensureRefCode } from "@/lib/referral";
+import { isAdult } from "@/lib/age";
 import { type PendingReview } from "@/components/ReviewRespond";
 import PixCheckout from "@/components/PixCheckout";
 import { cardCls } from "@/components/ui";
@@ -104,7 +105,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),
     admin.from("subscriptions").select("status, method, current_period_end, plans ( slug, allows_story )").eq("profile_id", user.id).maybeSingle(),
     admin.from("verifications").select("status, doc_path, face_path, body_path, feedback, reverify_reason").eq("profile_id", user.id).maybeSingle(),
-    admin.from("profiles").select("whatsapp, ref_code, referred_by").eq("id", user.id).maybeSingle(),
+    admin.from("profiles").select("whatsapp, ref_code, referred_by, birthdate").eq("id", user.id).maybeSingle(),
   ]);
 
   // só a cidade selecionada (não carrega as 5,5k cidades)
@@ -166,6 +167,33 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const editing = sp.step != null;
   const showPanel = !!ad && complete && !editing;
   const paused = (ad?.status ?? "active") !== "active";
+
+  // Idade (autodeclarada): menor de 18 ou sem data não pode anunciar. Bloqueia o
+  // painel/wizard e manda preencher no perfil (documento é verificado no anúncio).
+  const adult = isAdult((prof?.birthdate as string | null) ?? null);
+  if (!adult) {
+    return (
+      <>
+        <AccountHeader />
+        <main className="mx-auto w-full max-w-lg flex-1 px-4 py-10">
+          <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-6 text-center shadow-card">
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20 text-amber-300">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </span>
+            <h1 className="font-display text-xl font-extrabold text-ink">Confirme sua idade para anunciar</h1>
+            <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted">
+              {prof?.birthdate
+                ? "Sua conta consta como menor de 18 anos — não é possível criar um anúncio."
+                : "Para anunciar você precisa ter 18 anos ou mais. Informe sua data de nascimento no seu perfil."}
+            </p>
+            <Link href="/perfil" className="mt-4 inline-flex items-center justify-center gap-2 rounded-input bg-accent px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-strong">
+              Ir para o perfil
+            </Link>
+          </section>
+        </main>
+      </>
+    );
+  }
 
   // Paywall: aprovado mas sem assinatura ativa (trial/pago venceu) → precisa pagar.
   // Bloqueia gerenciar/editar o anúncio; /perfil (excluir conta) segue livre pela LGPD.

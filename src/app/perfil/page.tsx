@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { inputCls, labelCls, cardCls, btnSecondary } from "@/components/ui";
 import { userHasAd } from "@/lib/ads";
+import { isAdult } from "@/lib/age";
 import DeleteAccount from "@/components/DeleteAccount";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,8 @@ export default async function PerfilPage() {
   if (!user) redirect("/login?next=/perfil");
 
   const admin = createAdminClient();
-  const { data: profile } = await admin.from("profiles").select("name, whatsapp").eq("id", user.id).maybeSingle();
+  const { data: profile } = await admin.from("profiles").select("name, whatsapp, birthdate").eq("id", user.id).maybeSingle();
+  const adult = isAdult((profile?.birthdate as string | null) ?? null);
   const initial = (profile?.name?.trim() || user.email || "?").charAt(0).toUpperCase();
   const hasAd = await userHasAd(admin, user.id);
 
@@ -71,6 +73,16 @@ export default async function PerfilPage() {
               <span className={labelCls}>Seu nome (privado)</span>
               <input name="name" defaultValue={profile?.name ?? ""} placeholder="Seu nome" className={inputCls} />
             </label>
+            <label className="block">
+              <span className={labelCls}>Data de nascimento</span>
+              <input type="date" name="birthdate" defaultValue={(profile?.birthdate as string | null) ?? ""} max="2099-12-31" className={inputCls} />
+              <span className="mt-1 block text-[11px] text-muted">Confirma que você é 18+ (para anunciar e ver conteúdo sensível). Privada, não aparece na vitrine.</span>
+            </label>
+            {!adult && (
+              <p className="rounded-input border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                {profile?.birthdate ? "Sua conta consta como menor de 18 — não é possível anunciar nem ver conteúdo +18." : "Informe sua data de nascimento para anunciar e ver conteúdo sensível (+18)."}
+              </p>
+            )}
             <button className={btnSecondary}>Salvar</button>
           </form>
         </section>

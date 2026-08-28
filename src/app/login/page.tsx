@@ -35,6 +35,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
+  const [nasc, setNasc] = useState("");
   const [agree, setAgree] = useState(false);
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState<"error" | "info">("info");
@@ -76,13 +77,18 @@ export default function LoginPage() {
     if (!email.includes("@")) return erro("Digite um e-mail válido.");
     if (senha.length < 6) return erro("A senha precisa ter pelo menos 6 caracteres.");
     if (senha !== confirmar) return erro("As senhas não conferem. Digite a mesma nos dois campos.");
+    if (!nasc) return erro("Informe sua data de nascimento.");
+    {
+      const d = new Date(`${nasc}T00:00:00`);
+      if (Number.isNaN(d.getTime()) || d > new Date()) return erro("Informe uma data de nascimento válida.");
+    }
     if (!agree) return erro("Confirme que você tem 18 anos ou mais e aceita os Termos e a Política de Privacidade.");
 
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
-      options: { data: { role: "comum" }, emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { data: { role: "comum", birthdate: nasc }, emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) {
       erro(amigavel(error.message));
@@ -152,6 +158,15 @@ export default function LoginPage() {
                 <span className="mb-1 block text-xs font-medium text-muted">Conferir senha</span>
                 <PasswordInput value={confirmar} onChange={(e) => setConfirmar(e.target.value)}
                   autoComplete="new-password" placeholder="Digite a senha de novo" className={inputCls} />
+              </label>
+            )}
+
+            {criando && (
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-muted">Data de nascimento</span>
+                <input type="date" value={nasc} onChange={(e) => setNasc(e.target.value)}
+                  max="2099-12-31" autoComplete="bday" className={inputCls} />
+                <span className="mt-1 block text-[11px] text-muted">Usada para confirmar que você é maior de 18. Não aparece no seu perfil público.</span>
               </label>
             )}
 

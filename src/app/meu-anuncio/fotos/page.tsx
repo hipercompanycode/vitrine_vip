@@ -5,6 +5,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import MediaManager from "@/components/MediaManager";
 import { VIDEO_ENABLED } from "@/lib/media";
 import { PLANS, planBySlug, type PlanSlug } from "@/lib/plans";
+import { isAdult } from "@/lib/age";
 import { cardCls } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +17,13 @@ export default async function EditarFotosPage() {
   if (!user) redirect("/login?next=/meu-anuncio/fotos");
 
   const admin = createAdminClient();
-  const [{ data: ad }, { data: sub }] = await Promise.all([
+  const [{ data: ad }, { data: sub }, { data: prof }] = await Promise.all([
     admin.from("ads").select("id").eq("profile_id", user.id).maybeSingle(),
     admin.from("subscriptions").select("plans ( slug )").eq("profile_id", user.id).maybeSingle(),
+    admin.from("profiles").select("birthdate").eq("id", user.id).maybeSingle(),
   ]);
   if (!ad) redirect("/meu-anuncio");
+  if (!isAdult((prof?.birthdate as string | null) ?? null)) redirect("/meu-anuncio");
 
   const plan = sub?.plans as unknown as { slug?: string } | null;
   const planLimits = plan?.slug && PLANS.some((x) => x.slug === plan.slug) ? planBySlug(plan.slug as PlanSlug) : PLANS[0];

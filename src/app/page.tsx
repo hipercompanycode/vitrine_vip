@@ -6,6 +6,7 @@ import VitrineTopBar from "@/components/VitrineTopBar";
 import { sanitizeAttrs, labelOf } from "@/lib/attributes";
 import { cityPath } from "@/lib/seo";
 import { userHasAd, availableActive, coverUrlMap, type Cover } from "@/lib/ads";
+import { isAdult } from "@/lib/age";
 import { bumpBucket } from "@/lib/bump";
 import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
 
@@ -72,8 +73,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   // estágio 1: tudo que não depende de outra query, em paralelo
   const userInfoFn = async () => {
     const { data: { user } } = await ssr.auth.getUser();
-    const hasAd = user ? await userHasAd(admin, user.id) : false;
-    return { user, hasAd };
+    if (!user) return { user, hasAd: false, adult: false };
+    const [hasAd, { data: prof }] = await Promise.all([
+      userHasAd(admin, user.id),
+      admin.from("profiles").select("birthdate").eq("id", user.id).maybeSingle(),
+    ]);
+    return { user, hasAd, adult: isAdult((prof?.birthdate as string | null) ?? null) };
   };
   const cityInfoFn = async (): Promise<{ cityFilter: number[] | null; cityLabel?: string }> => {
     if (!cityId) return { cityFilter: null };
@@ -116,6 +121,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
 
   const user = userInfo.user;
   const loggedIn = !!user;
+  const adult = userInfo.adult;
   const hasAd = userInfo.hasAd;
   const cityFilter = cityInfo.cityFilter;
   const cityLabel = cityInfo.cityLabel;
@@ -182,7 +188,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
     const [vids, stories, covers] = await Promise.all([
       admin.from("ad_media").select("ad_id").eq("type", "video").in("ad_id", ids),
       admin.from("stories").select("ad_id, created_at").in("ad_id", ids).gt("expires_at", nowIso),
-      coverUrlMap(admin, ids, loggedIn),
+      coverUrlMap(admin, ids, adult),
     ]);
     (vids.data ?? []).forEach((r: any) => videoCount.set(r.ad_id, (videoCount.get(r.ad_id) ?? 0) + 1));
     (stories.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });

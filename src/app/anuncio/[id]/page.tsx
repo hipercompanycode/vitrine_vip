@@ -9,6 +9,7 @@ import ReviewForm from "@/components/ReviewForm";
 import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 import ReportButton from "@/components/ReportButton";
 import { userHasAd, availableActive, coverUrlMap } from "@/lib/ads";
+import { isAdult } from "@/lib/age";
 import ViewTracker from "@/components/ViewTracker";
 import { publicUrl } from "@/lib/storage";
 import type { GalleryItem } from "@/components/Gallery";
@@ -68,14 +69,14 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
 
   // estado do usuário logado (curtiu / favoritou / papel / tem anúncio)
   const userStateFn = async () => {
-    if (!user) return { liked: false, favorited: false, role: null as string | null, hasAd: false };
+    if (!user) return { liked: false, favorited: false, role: null as string | null, hasAd: false, adult: false };
     const [{ data: l }, { data: f }, { data: p }, hasAd] = await Promise.all([
       admin.from("likes").select("id").eq("ad_id", id).eq("user_id", user.id).maybeSingle(),
       admin.from("favorites").select("id").eq("ad_id", id).eq("user_id", user.id).maybeSingle(),
-      admin.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      admin.from("profiles").select("role, birthdate").eq("id", user.id).maybeSingle(),
       userHasAd(admin, user.id),
     ]);
-    return { liked: !!l, favorited: !!f, role: (p?.role as string | undefined) ?? null, hasAd };
+    return { liked: !!l, favorited: !!f, role: (p?.role as string | undefined) ?? null, hasAd, adult: isAdult((p?.birthdate as string | null) ?? null) };
   };
 
   // destaques: perfis PREMIUM na mesma cidade, ordenados pelos que subiram mais recentemente
@@ -146,13 +147,14 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     }));
 
   // Moderação por foto (ECA): 'pendente' não aparece ao público; 'nudez' aparece
-  // borrada pro anônimo e nítida pro logado.
+  // borrada pra quem não é 18+ (anônimo, menor ou sem data) e nítida pro logado 18+.
   const loggedIn = !!user;
+  const adult = userState.adult;
   const asItem = (m: any): GalleryItem | null => {
     const review = (m.review as string | null) ?? "liberada";
     // só 'liberada' e 'nudez' (aprovada) aparecem; 'pendente' e 'nudez_rev' ficam escondidas até o admin aprovar
     if (m.type === "photo" && review !== "liberada" && review !== "nudez") return null;
-    if (m.type === "photo" && review === "nudez" && !loggedIn) {
+    if (m.type === "photo" && review === "nudez" && !adult) {
       if (!m.blur_path) return { url: "", type: "photo", blurred: true };
       return { url: publicUrl(base, "ad-media", m.blur_path), type: "photo", blurred: true };
     }
@@ -186,7 +188,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     stats: { dias, ultimaVerif, nFotos, nVideos, nAvaliacoes: reviews.length },
   };
 
-  const relCover = await coverUrlMap(admin, (relRows ?? []).map((r: any) => r.id), !!user);
+  const relCover = await coverUrlMap(admin, (relRows ?? []).map((r: any) => r.id), adult);
   const related: ProfileCardData[] = (relRows ?? []).map((r: any) => {
     return { id: r.id, name: r.title?.trim() || "Acompanhante", age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null, cover: relCover.get(r.id)?.url ?? null, coverBlurred: relCover.get(r.id)?.blurred ?? false } as ProfileCardData;
   });

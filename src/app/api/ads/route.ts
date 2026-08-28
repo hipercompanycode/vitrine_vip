@@ -6,6 +6,7 @@ import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { accountAccess } from "@/lib/access";
 import { flash, GENERIC_ERROR } from "@/lib/http";
 import { geoFromRequest, recordGeoAndFlag } from "@/lib/geo-ip";
+import { isAdult } from "@/lib/age";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -26,6 +27,12 @@ export async function POST(request: Request) {
   const { active, verifApproved } = await accountAccess(admin, user.id);
   if (verifApproved && !active) {
     return flash(request, "/meu-anuncio", "erro", "Sua assinatura está inativa. Renove para editar o anúncio.");
+  }
+
+  // idade (autodeclarada): menor de 18 ou sem data não pode criar/editar anúncio
+  const { data: meProf } = await admin.from("profiles").select("birthdate").eq("id", user.id).maybeSingle();
+  if (!isAdult((meProf?.birthdate as string | null) ?? null)) {
+    return flash(request, "/perfil", "erro", "Informe sua data de nascimento (18 anos ou mais) no seu perfil para anunciar.");
   }
 
   // Modo "características": só atributos.

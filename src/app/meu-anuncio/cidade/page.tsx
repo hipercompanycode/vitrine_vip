@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import StateCityPicker from "@/components/StateCityPicker";
+import { isAdult } from "@/lib/age";
 import { labelCls, cardCls } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +15,12 @@ export default async function AlterarCidadePage() {
   if (!user) redirect("/login?next=/meu-anuncio/cidade");
 
   const admin = createAdminClient();
-  const { data: ad } = await admin.from("ads").select("id, city_id").eq("profile_id", user.id).maybeSingle();
+  const [{ data: ad }, { data: prof }] = await Promise.all([
+    admin.from("ads").select("id, city_id").eq("profile_id", user.id).maybeSingle(),
+    admin.from("profiles").select("birthdate").eq("id", user.id).maybeSingle(),
+  ]);
   if (!ad) redirect("/meu-anuncio");
+  if (!isAdult((prof?.birthdate as string | null) ?? null)) redirect("/meu-anuncio");
 
   const defaultCity = ad.city_id
     ? (await admin.from("cities").select("id,name,uf").eq("id", ad.city_id).maybeSingle()).data

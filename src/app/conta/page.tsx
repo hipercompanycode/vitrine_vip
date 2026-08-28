@@ -3,6 +3,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/SiteHeader";
 import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import { userHasAd, availableActive, coverUrlMap, type Cover } from "@/lib/ads";
+import { isAdult } from "@/lib/age";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,8 @@ export default async function ContaPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
+  const { data: viewerProf } = await admin.from("profiles").select("birthdate").eq("id", user.id).maybeSingle();
+  const adult = isAdult((viewerProf?.birthdate as string | null) ?? null);
   const { data: favRows } = await admin
     .from("favorites").select("ad_id").eq("user_id", user.id).order("created_at", { ascending: false });
   const favIds = (favRows ?? []).map((r: { ad_id: string }) => r.ad_id);
@@ -55,7 +58,7 @@ export default async function ContaPage() {
       const [v, st, covers] = await Promise.all([
         admin.from("ad_media").select("ad_id").eq("type", "video").in("ad_id", ids),
         admin.from("stories").select("ad_id, created_at").in("ad_id", ids).gt("expires_at", nowIso),
-        coverUrlMap(admin, ids, true), // /conta é logado
+        coverUrlMap(admin, ids, adult), // /conta é logado — nudez só nítida se 18+
       ]);
       (v.data ?? []).forEach((r: any) => videoCount.set(r.ad_id, (videoCount.get(r.ad_id) ?? 0) + 1));
       (st.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
