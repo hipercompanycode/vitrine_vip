@@ -36,6 +36,7 @@ export default async function AdminAvaliacoesPage() {
           <Link href="/admin/clientes" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Clientes</Link>
           <Link href="/admin/fotos" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Fotos</Link>
           <span className="rounded-pill bg-accent px-3 py-1.5 font-semibold text-white">Avaliações</span>
+          <Link href="/admin/suporte" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Suporte</Link>
         </nav>
 
         <h1 className="mb-1 font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Avaliações em moderação</h1>

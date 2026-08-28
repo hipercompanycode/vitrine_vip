@@ -87,6 +87,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
           <span className="rounded-pill bg-accent px-3 py-1.5 font-semibold text-white">Clientes</span>
           <Link href="/admin/fotos" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Fotos</Link>
           <Link href="/admin/avaliacoes" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Avaliações</Link>
+          <Link href="/admin/suporte" className="rounded-pill px-3 py-1.5 font-semibold text-muted hover:bg-accent-soft hover:text-accent">Suporte</Link>
         </nav>
 
         <h1 className="mb-1 font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Relatos de clientes</h1>
