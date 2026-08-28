@@ -7,7 +7,7 @@ import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
 import { bumpBucket } from "@/lib/bump";
 import { availableActive, coverUrlMap, type Cover } from "@/lib/ads";
 import VitrineTopBar from "@/components/VitrineTopBar";
-import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript } from "@/lib/seo";
+import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript, isTargetCity } from "@/lib/seo";
 
 // Página de SEO: cacheada (ISR) e regenerada a cada 5 min — resposta rápida p/ buscadores.
 export const revalidate = 300;
@@ -109,7 +109,8 @@ export async function generateMetadata({ params }: { params: Promise<{ cidade: s
     description,
     alternates: { canonical: url },
     openGraph: { title: `${title} | ${SITE_NAME}`, description, url: absUrl(url), type: "website" },
-    robots: n > 0 ? { index: true, follow: true } : { index: false, follow: true },
+    // indexa se tem perfil OU é cidade-alvo (capital/metrópole) — seed de ranqueamento
+    robots: n > 0 || isTargetCity(city.name, city.uf) ? { index: true, follow: true } : { index: false, follow: true },
   };
 }
 
@@ -141,7 +142,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
 
   const itemUrls = profiles.map((p) => absUrl(`/anuncio/${p.id}`));
   const ld = [
-    ldBreadcrumb([{ name: "Início", url: SITE_URL }, { name: `Acompanhantes em ${city.name}-${city.uf}`, url: absUrl(cityPath(city.name, city.uf)) }]),
+    ldBreadcrumb([{ name: "Início", url: SITE_URL }, { name: "Cidades", url: absUrl("/acompanhantes") }, { name: `Acompanhantes em ${city.name}-${city.uf}`, url: absUrl(cityPath(city.name, city.uf)) }]),
     ...(itemUrls.length ? [ldItemList(itemUrls)] : []),
   ];
 
@@ -150,7 +151,7 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
       <VitrineTopBar cityLabel={`${city.name} - ${city.uf}`} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 pb-16 sm:px-4">
         <nav className="pt-3 text-xs text-muted">
-          <Link href="/" className="hover:text-accent">Início</Link> › <span className="text-ink">{city.name}-{city.uf}</span>
+          <Link href="/" className="hover:text-accent">Início</Link> › <Link href="/acompanhantes" className="hover:text-accent">Cidades</Link> › <span className="text-ink">{city.name}-{city.uf}</span>
         </nav>
         <section className="py-4">
           <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">

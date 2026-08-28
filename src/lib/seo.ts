@@ -32,6 +32,37 @@ export function cityPath(name: string, uf: string): string {
   return `/acompanhantes/${citySlug(name, uf)}`;
 }
 
+// Cidades-alvo de SEO: capitais + principais regiões metropolitanas. Suas páginas
+// são indexáveis mesmo sem anúncio ainda (seed de ranqueamento), com estado vazio
+// decente. As demais ~5,5 mil cidades só indexam quando têm perfil (anti-conteúdo raso).
+export const TARGET_CITIES: { name: string; uf: string }[] = [
+  // capitais
+  { name: "São Paulo", uf: "SP" }, { name: "Rio de Janeiro", uf: "RJ" }, { name: "Brasília", uf: "DF" },
+  { name: "Belo Horizonte", uf: "MG" }, { name: "Salvador", uf: "BA" }, { name: "Fortaleza", uf: "CE" },
+  { name: "Curitiba", uf: "PR" }, { name: "Recife", uf: "PE" }, { name: "Porto Alegre", uf: "RS" },
+  { name: "Goiânia", uf: "GO" }, { name: "Manaus", uf: "AM" }, { name: "Belém", uf: "PA" },
+  { name: "Florianópolis", uf: "SC" }, { name: "Vitória", uf: "ES" }, { name: "Natal", uf: "RN" },
+  { name: "Campo Grande", uf: "MS" }, { name: "Cuiabá", uf: "MT" }, { name: "João Pessoa", uf: "PB" },
+  { name: "Maceió", uf: "AL" }, { name: "Teresina", uf: "PI" }, { name: "Aracaju", uf: "SE" },
+  { name: "São Luís", uf: "MA" }, { name: "Palmas", uf: "TO" }, { name: "Porto Velho", uf: "RO" },
+  { name: "Boa Vista", uf: "RR" }, { name: "Macapá", uf: "AP" }, { name: "Rio Branco", uf: "AC" },
+  // grandes metrópoles / interior forte
+  { name: "Campinas", uf: "SP" }, { name: "Guarulhos", uf: "SP" }, { name: "Santos", uf: "SP" },
+  { name: "São Bernardo do Campo", uf: "SP" }, { name: "Osasco", uf: "SP" }, { name: "Ribeirão Preto", uf: "SP" },
+  { name: "Sorocaba", uf: "SP" }, { name: "São José dos Campos", uf: "SP" }, { name: "Niterói", uf: "RJ" },
+  { name: "Duque de Caxias", uf: "RJ" }, { name: "Nova Iguaçu", uf: "RJ" }, { name: "Campos dos Goytacazes", uf: "RJ" },
+  { name: "Uberlândia", uf: "MG" }, { name: "Contagem", uf: "MG" }, { name: "Juiz de Fora", uf: "MG" },
+  { name: "Londrina", uf: "PR" }, { name: "Maringá", uf: "PR" }, { name: "Joinville", uf: "SC" },
+  { name: "Caxias do Sul", uf: "RS" }, { name: "Feira de Santana", uf: "BA" },
+];
+
+const TARGET_KEYS = new Set(TARGET_CITIES.map((c) => `${slugify(c.name)}|${c.uf.toUpperCase()}`));
+
+/** É cidade-alvo de SEO? (indexa mesmo sem anúncio) */
+export function isTargetCity(name: string, uf: string): boolean {
+  return TARGET_KEYS.has(`${slugify(name)}|${uf.toUpperCase()}`);
+}
+
 // ---- JSON-LD ----
 type Json = Record<string, unknown>;
 
