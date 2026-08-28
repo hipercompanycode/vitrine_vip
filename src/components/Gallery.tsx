@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 
-export type GalleryItem = { url: string; type: "photo" | "video" };
+export type GalleryItem = { url: string; type: "photo" | "video"; blurred?: boolean };
 
 export default function Gallery({ items }: { items: GalleryItem[] }) {
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -43,7 +43,21 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
     <>
       <div className="columns-1 gap-2.5 sm:columns-2">
         {items.map((it, i) =>
-          it.type === "photo" ? (
+          it.type === "photo" && it.blurred ? (
+            <a
+              key={i}
+              href="/login"
+              className="relative mb-2.5 block w-full break-inside-avoid overflow-hidden rounded-card border border-line bg-surface"
+            >
+              {it.url
+                ? <img src={it.url} alt="" loading="lazy" decoding="async" className="block w-full scale-110 object-cover" style={{ aspectRatio: "3 / 4" }} />
+                : <div className="w-full" style={{ aspectRatio: "3 / 4", background: "linear-gradient(150deg,#2a1330,#0d0812)" }} />}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/35 backdrop-blur-[3px]">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" className="text-white/90" aria-hidden="true"><path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /><path d="M9.4 5.2A9.3 9.3 0 0 1 12 5c5 0 9 5 9 7 0 .8-.9 2.3-2.4 3.6M6.2 6.7C3.9 8.1 3 9.9 3 12c0 2 4 7 9 7 1.2 0 2.3-.2 3.3-.6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span className="rounded-pill bg-white/15 px-3 py-1 text-xs font-semibold text-white">Entre para ver (+18)</span>
+              </div>
+            </a>
+          ) : it.type === "photo" ? (
             <button
               key={i}
               type="button"

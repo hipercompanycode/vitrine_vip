@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { remaining, type MediaKind } from "@/lib/media";
 import { apiError, GENERIC_ERROR } from "@/lib/http";
+import { makeBlur } from "@/lib/blur";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -45,11 +48,19 @@ export async function POST(request: Request) {
 
   const position = (rows ?? []).length;
   const isFirstPhoto = type === "photo" && photos === 0;
+
+  // moderação da foto (ECA): anunciante marca "contém nudez" -> já entra borrada
+  // pro anônimo; sem marcar -> 'pendente' (não aparece ao público até o admin
+  // liberar). Vídeo entra liberado (galeria de vídeo é outra história).
+  const nudez = type === "photo" && String(form.get("nudez") ?? "") === "1";
+  const review = type === "video" ? "liberada" : nudez ? "nudez" : "pendente";
+  const blurPath = nudez ? await makeBlur(admin, storagePath) : null;
+
   const { data: inserted, error } = await admin
     .from("ad_media")
-    .insert({ ad_id: adId, type, storage_path: storagePath, position, is_cover: isFirstPhoto })
+    .insert({ ad_id: adId, type, storage_path: storagePath, position, is_cover: isFirstPhoto, review, blur_path: blurPath })
     .select("id").single();
   if (error) return apiError(GENERIC_ERROR, 500, error);
 
-  return NextResponse.json({ id: inserted.id });
+  return NextResponse.json({ id: inserted.id, review });
 }

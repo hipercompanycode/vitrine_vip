@@ -3,29 +3,43 @@ import { publicUrl } from "@/lib/storage";
 
 export const AVAILABLE_TTL_MS = 60 * 60 * 1000; // "disponível agora" vale por 1h
 
+export type Cover = { url: string; blurred: boolean };
+
 /**
- * URL pública da foto de capa de cada anúncio (em lote).
- * Capa = is_cover; se nenhuma marcada, a de menor position. Só fotos.
+ * Foto de capa de cada anúncio (em lote), respeitando a moderação por foto:
+ *  - 'pendente' não entra (escondida do público até o admin liberar);
+ *  - 'liberada' → nítida pra todos;
+ *  - 'nudez' → nítida pro logado; pro anônimo, a cópia BORRADA (blurred=true).
+ * Capa = is_cover entre as visíveis; senão a de menor position.
  */
-export async function coverUrlMap(admin: SupabaseClient, ids: string[]): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
+export async function coverUrlMap(admin: SupabaseClient, ids: string[], loggedIn: boolean): Promise<Map<string, Cover>> {
+  const map = new Map<string, Cover>();
   if (!ids.length) return map;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const { data } = await admin
     .from("ad_media")
-    .select("ad_id, storage_path, is_cover, position")
+    .select("ad_id, storage_path, is_cover, position, review, blur_path")
     .eq("type", "photo")
     .in("ad_id", ids)
     .order("position", { ascending: true });
-  const covered = new Set<string>(); // já tem capa oficial (is_cover)
-  for (const r of (data ?? []) as { ad_id: string; storage_path: string; is_cover: boolean | null; position: number }[]) {
-    if (covered.has(r.ad_id)) continue;
-    if (r.is_cover) {
-      map.set(r.ad_id, publicUrl(base, "ad-media", r.storage_path));
-      covered.add(r.ad_id);
-    } else if (!map.has(r.ad_id)) {
-      map.set(r.ad_id, publicUrl(base, "ad-media", r.storage_path)); // fallback: menor position
+
+  const toCover = (r: { storage_path: string; review: string | null; blur_path: string | null }): Cover | null => {
+    const review = r.review ?? "liberada";
+    if (review === "pendente") return null; // não aparece pro público
+    if (review === "nudez" && !loggedIn) {
+      if (!r.blur_path) return { url: "", blurred: true }; // sem cópia borrada → placeholder
+      return { url: publicUrl(base, "ad-media", r.blur_path), blurred: true };
     }
+    return { url: publicUrl(base, "ad-media", r.storage_path), blurred: false };
+  };
+
+  const covered = new Set<string>(); // já achou a capa oficial (is_cover) visível
+  for (const r of (data ?? []) as { ad_id: string; storage_path: string; is_cover: boolean | null; position: number; review: string | null; blur_path: string | null }[]) {
+    if (covered.has(r.ad_id)) continue;
+    const c = toCover(r);
+    if (!c) continue; // pendente: pula
+    if (r.is_cover) { map.set(r.ad_id, c); covered.add(r.ad_id); }
+    else if (!map.has(r.ad_id)) map.set(r.ad_id, c); // fallback: menor position visível
   }
   return map;
 }

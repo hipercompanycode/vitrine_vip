@@ -101,7 +101,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     admin.from("likes").select("*", { count: "exact", head: true }).eq("ad_id", id),
     userStateFn(),
     admin.from("reviews").select("id, user_id, comment, tags, created_at, profiles ( name )").eq("ad_id", id).order("created_at", { ascending: false }),
-    admin.from("ad_media").select("type, storage_path, is_cover").eq("ad_id", id).order("position"),
+    admin.from("ad_media").select("type, storage_path, is_cover, review, blur_path").eq("ad_id", id).order("position"),
     admin.from("stories").select("storage_path").eq("ad_id", id).gt("expires_at", nowIso).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     admin.from("verifications").select("reviewed_at").eq("profile_id", pid).maybeSingle(),
     relatedFn(),
@@ -139,12 +139,24 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
   }));
 
-  const media: GalleryItem[] = (mediaRows ?? []).map((m: any) => ({
-    url: publicUrl(base, "ad-media", m.storage_path), type: m.type,
-  }));
-  const coverRow = (mediaRows ?? []).find((m: any) => m.is_cover && m.type === "photo")
-    ?? (mediaRows ?? []).find((m: any) => m.type === "photo");
-  const coverUrl = coverRow ? publicUrl(base, "ad-media", coverRow.storage_path) : null;
+  // Moderação por foto (ECA): 'pendente' não aparece ao público; 'nudez' aparece
+  // borrada pro anônimo e nítida pro logado.
+  const loggedIn = !!user;
+  const asItem = (m: any): GalleryItem | null => {
+    const review = (m.review as string | null) ?? "liberada";
+    if (m.type === "photo" && review === "pendente") return null;
+    if (m.type === "photo" && review === "nudez" && !loggedIn) {
+      if (!m.blur_path) return { url: "", type: "photo", blurred: true };
+      return { url: publicUrl(base, "ad-media", m.blur_path), type: "photo", blurred: true };
+    }
+    return { url: publicUrl(base, "ad-media", m.storage_path), type: m.type };
+  };
+  const media: GalleryItem[] = (mediaRows ?? []).map(asItem).filter(Boolean) as GalleryItem[];
+  const coverRow = (mediaRows ?? []).find((m: any) => m.is_cover && m.type === "photo" && (m.review ?? "liberada") !== "pendente")
+    ?? (mediaRows ?? []).find((m: any) => m.type === "photo" && (m.review ?? "liberada") !== "pendente");
+  const coverItem = coverRow ? asItem(coverRow) : null;
+  const coverUrl = coverItem?.url || null;
+  const coverBlurred = !!coverItem?.blurred;
   const storyUrl = story ? publicUrl(base, "ad-media", story.storage_path) : null;
 
   const nFotos = (mediaRows ?? []).filter((m: any) => m.type === "photo").length;
@@ -166,9 +178,9 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     stats: { dias, ultimaVerif, nFotos, nVideos, nAvaliacoes: reviews.length },
   };
 
-  const relCover = await coverUrlMap(admin, (relRows ?? []).map((r: any) => r.id));
+  const relCover = await coverUrlMap(admin, (relRows ?? []).map((r: any) => r.id), !!user);
   const related: ProfileCardData[] = (relRows ?? []).map((r: any) => {
-    return { id: r.id, name: r.title?.trim() || "Acompanhante", age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null, cover: relCover.get(r.id) ?? null } as ProfileCardData;
+    return { id: r.id, name: r.title?.trim() || "Acompanhante", age: r.age ?? 0, city: city?.name ?? "", description: r.headline || "", verified: true, featured: true, available: !!r.is_available, hue: hueFromId(r.id), priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100)}` : null, cover: relCover.get(r.id)?.url ?? null, coverBlurred: relCover.get(r.id)?.blurred ?? false } as ProfileCardData;
   });
 
   return (
@@ -188,7 +200,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
           ]),
         }}
       />
-      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} storyUrl={storyUrl} media={media} extra={extra} />
+      <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} coverBlurred={coverBlurred} storyUrl={storyUrl} media={media} extra={extra} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-8">
         <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações</h2>
         {interactions.canInteract ? (

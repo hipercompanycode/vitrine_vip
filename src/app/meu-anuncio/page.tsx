@@ -137,7 +137,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const verifSubmitted = verif != null && !verifReverify; // envio válido (pending|approved|rejected)
   const visible = active && verifApproved;
 
-  const media = ad ? (await admin.from("ad_media").select("id, type, storage_path, is_cover").eq("ad_id", ad.id).order("position")).data ?? [] : [];
+  const media = ad ? (await admin.from("ad_media").select("id, type, storage_path, is_cover, review").eq("ad_id", ad.id).order("position")).data ?? [] : [];
 
   const sp = await searchParams;
   const step = Math.min(N, Math.max(1, Number(sp.step ?? "1") || 1));

@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { type ProfileCardData } from "@/components/ProfileCard";
 import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
 import { bumpBucket } from "@/lib/bump";
-import { availableActive, coverUrlMap } from "@/lib/ads";
+import { availableActive, coverUrlMap, type Cover } from "@/lib/ads";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript } from "@/lib/seo";
 
@@ -52,12 +52,12 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
 
   const videoCount = new Map<string, number>();
   const story = new Map<string, string>();
-  let cover = new Map<string, string>();
+  let cover = new Map<string, Cover>();
   if (ids.length) {
     const [v, st, covers] = await Promise.all([
       admin.from("ad_media").select("ad_id").eq("type", "video").in("ad_id", ids),
       admin.from("stories").select("ad_id, created_at").in("ad_id", ids).gt("expires_at", nowIso),
-      coverUrlMap(admin, ids),
+      coverUrlMap(admin, ids, false), // página cacheada (ISR) → trata como anônimo
     ]);
     (v.data ?? []).forEach((r: any) => videoCount.set(r.ad_id, (videoCount.get(r.ad_id) ?? 0) + 1));
     (st.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
@@ -79,7 +79,7 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
       verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
       recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium",
       available: availableActive(r.is_available, r.available_since, nowMs), hue: hueFromId(r.id),
-      cover: cover.get(r.id) ?? null,
+      cover: cover.get(r.id)?.url ?? null, coverBlurred: cover.get(r.id)?.blurred ?? false,
     };
     profiles.push(card);
     const t = new Date(r.bumped_at || r.created_at).getTime();

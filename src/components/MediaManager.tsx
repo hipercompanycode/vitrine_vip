@@ -5,7 +5,7 @@ import { validateFile, MEDIA_LIMITS, VIDEO_ENABLED } from "@/lib/media";
 import { publicUrl } from "@/lib/storage";
 import CameraCapture from "@/components/CameraCapture";
 
-type Media = { id: string; type: "photo" | "video"; storage_path: string; is_cover: boolean };
+type Media = { id: string; type: "photo" | "video"; storage_path: string; is_cover: boolean; review?: string };
 
 function uuid(): string {
   return crypto.randomUUID();
@@ -79,6 +79,7 @@ export default function MediaManager({
   const supabase = createBrowserClient();
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const [items, setItems] = useState<Media[]>(initial);
+  const [nudezMode, setNudezMode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [camOpen, setCamOpen] = useState(false);
@@ -118,6 +119,7 @@ export default function MediaManager({
 
       const body = new FormData();
       body.set("ad_id", adId); body.set("storage_path", path); body.set("type", v.kind);
+      if (v.kind === "photo" && nudezMode) body.set("nudez", "1");
       const res = await fetch("/api/media", { method: "POST", body });
       if (!res.ok) {
         await supabase.storage.from("ad-media").remove([path]); // remove órfão
@@ -125,11 +127,11 @@ export default function MediaManager({
         firstError ||= j.error ?? "Falha ao registrar mídia.";
         continue;
       }
-      const { id } = await res.json();
+      const { id, review } = await res.json();
       const isCover = v.kind === "photo" && !hasCover;
       if (isCover) hasCover = true;
       if (v.kind === "photo") photos++; else videos++;
-      setItems((cur) => [...cur, { id, type: v.kind, storage_path: path, is_cover: isCover }]);
+      setItems((cur) => [...cur, { id, type: v.kind, storage_path: path, is_cover: isCover, review }]);
     }
 
     if (firstError) setMsg(firstError);
@@ -175,6 +177,10 @@ export default function MediaManager({
           </label>
         )}
       </div>
+      <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-input border border-line bg-surface-2/40 px-3 py-2.5 text-xs">
+        <input type="checkbox" checked={nudezMode} onChange={(e) => setNudezMode(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]" />
+        <span className="text-muted">Marcar as próximas fotos como <strong className="text-ink">nudez total</strong> — aparecem <strong className="text-ink">borradas</strong> pra quem não está logado (exigência legal, ECA). Sem marcar, a foto passa por <strong className="text-ink">aprovação</strong> antes de aparecer no anúncio.</span>
+      </label>
       {msg && <p className="mt-2 text-sm text-red-400">{msg}</p>}
 
       {camOpen && (
@@ -203,6 +209,13 @@ export default function MediaManager({
               <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-pill bg-accent px-2 py-0.5 text-[11px] font-bold text-white shadow-pop">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>
                 Capa
+              </span>
+            )}
+
+            {/* estado de moderação da foto */}
+            {m.type === "photo" && m.review && m.review !== "liberada" && (
+              <span className={`absolute left-2 ${m.is_cover ? "top-9" : "top-2"} inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[10px] font-bold shadow-sm ${m.review === "nudez" ? "bg-amber-500/90 text-[#231a06]" : "bg-black/70 text-white ring-1 ring-white/20"}`}>
+                {m.review === "nudez" ? "🔞 Nudez · borrada" : "⏳ Em análise"}
               </span>
             )}
 

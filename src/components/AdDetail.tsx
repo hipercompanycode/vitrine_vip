@@ -43,13 +43,14 @@ function CategoryIcon({ title }: { title: string }) {
 }
 
 export default function AdDetail({
-  ad, now, backHref = "/", interactions, coverUrl, storyUrl, media, extra,
+  ad, now, backHref = "/", interactions, coverUrl, coverBlurred, storyUrl, media, extra,
 }: {
   ad: AdCardData;
   now: Date;
   backHref?: string;
   interactions?: { likeCount: number; liked: boolean; favorited: boolean; canInteract: boolean; loggedIn: boolean };
   coverUrl?: string | null;
+  coverBlurred?: boolean;
   storyUrl?: string | null;
   media?: GalleryItem[];
   extra?: Extra;
@@ -101,7 +102,7 @@ export default function AdDetail({
 
       {/* Capa */}
       <div className="relative overflow-hidden rounded-card border border-line shadow-card">
-        <StoryCover title={ad.title} coverUrl={coverUrl} storyUrl={storyUrl} className="aspect-[4/5] w-full sm:aspect-[16/11]" />
+        <StoryCover title={ad.title} coverUrl={coverUrl} coverBlurred={coverBlurred} storyUrl={storyUrl} className="aspect-[4/5] w-full sm:aspect-[16/11]" />
         {ad.is_available && <div className="absolute left-4 top-4"><AvailableBadge /></div>}
         <span className="absolute right-4 top-4 rounded-pill bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">{timeAgo(new Date(ad.created_at), now)}</span>
       </div>

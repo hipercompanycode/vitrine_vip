@@ -17,6 +17,7 @@ export type ProfileCardData = {
   priceLabel?: string | null;
   hue?: number;
   cover?: string | null; // URL da foto de capa (se houver)
+  coverBlurred?: boolean; // capa é nudez e o viewer é anônimo → borrada + "entre para ver"
   favorited?: boolean; // já está nos favoritos do usuário logado
   ratio?: "tall" | "portrait" | "square"; // ignorado (cards uniformes) — compat
 };
@@ -55,11 +56,17 @@ export default function ProfileCard({
             src={p.cover}
             alt={p.name}
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${p.coverBlurred ? "scale-110" : ""}`}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="select-none font-display text-6xl font-black text-white/10">{p.name.charAt(0)}</span>
+          </div>
+        )}
+        {p.coverBlurred && (
+          <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-1 bg-black/30 backdrop-blur-[3px]">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" className="text-white/90" aria-hidden="true"><path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /><path d="M9.4 5.2A9.3 9.3 0 0 1 12 5c5 0 9 5 9 7 0 .8-.9 2.3-2.4 3.6M6.2 6.7C3.9 8.1 3 9.9 3 12c0 2 4 7 9 7 1.2 0 2.3-.2 3.3-.6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span className="text-[10px] font-semibold text-white/90">Entre para ver</span>
           </div>
         )}
 
