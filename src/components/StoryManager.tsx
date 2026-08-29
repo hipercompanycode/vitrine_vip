@@ -38,6 +38,7 @@ export default function StoryManager({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [rec, setRec] = useState(false);
+  const [facing, setFacing] = useState<"user" | "environment">("user");
   const [elapsed, setElapsed] = useState(0);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [ext, setExt] = useState("webm");
@@ -54,18 +55,25 @@ export default function StoryManager({
     if (timer.current) clearInterval(timer.current);
   }, [previewUrl]);
 
+  // anexa o stream ao <video> assim que ele monta (rec vira true) — senão fica preto
+  useEffect(() => {
+    if (rec && streamRef.current && liveRef.current) {
+      liveRef.current.srcObject = streamRef.current;
+      liveRef.current.play().catch(() => {});
+    }
+  }, [rec]);
+
   function stopTimer() { if (timer.current) { clearInterval(timer.current); timer.current = null; } }
 
   async function startRec() {
     setMsg("");
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
     } catch {
       setMsg("Não foi possível acessar a câmera. Permita o acesso ou envie um vídeo."); return;
     }
     streamRef.current = stream;
-    if (liveRef.current) { liveRef.current.srcObject = stream; liveRef.current.play().catch(() => {}); }
     const { mime, ext: e } = pickMime();
     setExt(e);
     const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
@@ -148,7 +156,7 @@ export default function StoryManager({
       <p className="text-xs text-muted">Vídeo de até {MAX_SECONDS}s que aparece na capa do anúncio por <strong className="text-ink">24h</strong>. {exists && !blob ? "Story ativo agora." : ""}</p>
 
       <div className={`relative overflow-hidden rounded-xl bg-black ${rec || (blob && previewUrl) ? "block" : "hidden"}`}>
-        {rec && <video ref={liveRef} muted playsInline className="aspect-[3/4] w-full object-cover" />}
+        {rec && <video ref={liveRef} muted playsInline autoPlay className={`aspect-[3/4] w-full object-cover ${facing === "user" ? "scale-x-[-1]" : ""}`} />}
         {!rec && blob && previewUrl && <video src={previewUrl} controls playsInline className="aspect-[3/4] w-full object-cover" />}
         {rec && <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-pill bg-red-500 px-2.5 py-1 text-[11px] font-bold text-white"><span className="h-2 w-2 animate-pulse rounded-full bg-white" />REC {mm(elapsed)}</span>}
       </div>
@@ -173,7 +181,15 @@ export default function StoryManager({
           )}
         </div>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFacing((f) => (f === "user" ? "environment" : "user"))}
+            className="inline-flex items-center gap-1.5 rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold text-muted transition-colors hover:border-accent hover:text-accent"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><path d="M15 13a3 3 0 1 1-6 0M9 13l-1.5 1.5M9 13l1.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            {facing === "user" ? "Câmera: frontal" : "Câmera: traseira"}
+          </button>
           <button type="button" onClick={startRec} disabled={busy} className={`${btn} bg-accent text-white hover:bg-accent-strong disabled:opacity-50`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
             {exists ? "Regravar story" : "Gravar story"}
