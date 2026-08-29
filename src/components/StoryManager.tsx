@@ -153,7 +153,12 @@ export default function StoryManager({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted">Vídeo de até {MAX_SECONDS}s que aparece na capa do anúncio por <strong className="text-ink">24h</strong>. {exists && !blob ? "Story ativo agora." : ""}</p>
+      {exists && !blob && (
+        <p className="inline-flex items-center gap-1.5 text-xs font-bold text-[#43d17f]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#43d17f]" />Story ativo no anúncio
+        </p>
+      )}
+      <p className="text-xs text-muted">Vídeo de até {MAX_SECONDS}s que aparece na capa do anúncio por <strong className="text-ink">24h</strong>.</p>
 
       <div className={`relative overflow-hidden rounded-xl bg-black ${rec || (blob && previewUrl) ? "block" : "hidden"}`}>
         {rec && <video ref={liveRef} muted playsInline autoPlay className={`aspect-[3/4] w-full object-cover ${facing === "user" ? "scale-x-[-1]" : ""}`} />}
@@ -177,7 +182,10 @@ export default function StoryManager({
             <span>Você já gravou um story. Só dá pra gravar outro em <strong className="text-ink">~{cooldownHoursLeft}h</strong> (1 por dia). {exists ? "Pode remover o atual, mas o prazo continua." : "Você removeu o story, mas o prazo continua."}</span>
           </div>
           {exists && (
-            <button type="button" onClick={remove} disabled={busy} className={`${btn} border border-line bg-surface text-muted hover:text-red-300 disabled:opacity-50`}>Remover story</button>
+            <button type="button" onClick={remove} disabled={busy} className={`${btn} border border-line bg-surface text-muted hover:border-red-500/50 hover:text-red-300 disabled:opacity-50`}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              {busy ? "Removendo…" : "Remover story"}
+            </button>
           )}
         </div>
       ) : (
@@ -199,7 +207,10 @@ export default function StoryManager({
             <input type="file" accept="video/mp4,video/webm" className="hidden" onChange={onFile} disabled={busy} />
           </label>
           {exists && (
-            <button type="button" onClick={remove} disabled={busy} className={`${btn} border border-line bg-surface text-muted hover:text-red-300 disabled:opacity-50`}>Remover story</button>
+            <button type="button" onClick={remove} disabled={busy} className={`${btn} border border-line bg-surface text-muted hover:border-red-500/50 hover:text-red-300 disabled:opacity-50`}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              {busy ? "Removendo…" : "Remover story"}
+            </button>
           )}
         </div>
       )}

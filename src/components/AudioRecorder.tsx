@@ -135,10 +135,20 @@ export default function AudioRecorder({
   return (
     <div className="space-y-3">
       {savedUrl && !blob && (
-        <div className="rounded-input border border-line bg-surface-2 p-3">
-          <p className="mb-2 text-xs font-semibold text-[#43d17f]">Áudio ativo no anúncio</p>
-          <audio controls src={savedUrl} className="w-full" />
-          <button type="button" onClick={removeSaved} disabled={busy} className="mt-2 text-xs text-muted underline transition-colors hover:text-red-300 disabled:opacity-50">Remover áudio</button>
+        <div className="rounded-2xl border border-[#2a7d4f]/40 bg-[#12331f]/25 p-3.5">
+          <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#43d17f]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#43d17f]" />Áudio ativo no anúncio
+          </p>
+          <audio controls preload="none" controlsList="nodownload noplaybackrate" src={savedUrl} className="w-full" />
+          <button
+            type="button"
+            onClick={removeSaved}
+            disabled={busy}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-input border border-line bg-surface px-3.5 py-2 text-xs font-semibold text-muted transition-colors hover:border-red-500/50 hover:text-red-300 disabled:opacity-50"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            {busy ? "Removendo…" : "Remover áudio"}
+          </button>
         </div>
       )}
 
