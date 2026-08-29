@@ -1,14 +1,15 @@
 "use client";
 import { useEffect } from "react";
 
-// Atrito anti-cópia nas imagens: bloqueia botão-direito ("salvar imagem") e
-// arrastar-pra-salvar em qualquer <img>. É só fricção — print continua possível
-// (a web não impede isso); a defesa real é a marca d'água nas fotos.
+// Atrito anti-cópia nas mídias: bloqueia botão-direito ("salvar imagem/vídeo/
+// áudio") e arrastar-pra-salvar em <img>, <video> e <audio>. É só fricção — print
+// continua possível (a web não impede isso); a defesa real é a marca d'água + o
+// controlsList="nodownload" nos players.
 export default function ImageGuard() {
   useEffect(() => {
     const block = (e: Event) => {
       const t = e.target as HTMLElement | null;
-      if (t && t.tagName === "IMG") e.preventDefault();
+      if (t && ["IMG", "VIDEO", "AUDIO"].includes(t.tagName)) e.preventDefault();
     };
     document.addEventListener("contextmenu", block);
     document.addEventListener("dragstart", block);

@@ -21,6 +21,9 @@ export default function StoryCover({
           autoPlay
           playsInline
           controls
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
+          onContextMenu={(e) => e.preventDefault()}
           onEnded={() => setPlaying(false)}
           className="absolute inset-0 z-20 h-full w-full bg-black object-contain"
         />
