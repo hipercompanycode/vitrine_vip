@@ -99,7 +99,8 @@ export default function AudioRecorder({
     if (blob.size > MAX_BYTES) { setMsg("Áudio muito grande (máx. 12 MB)."); return; }
     setBusy(true); setMsg("");
     const path = `${userId}/${adId}/audio-${uuid()}.${ext}`;
-    const up = await supabase.storage.from("ad-media").upload(path, blob, { contentType: blob.type || "audio/webm" });
+    const ctype = (blob.type || "audio/webm").split(";")[0]; // sem ;codecs (o bucket compara o mime base)
+    const up = await supabase.storage.from("ad-media").upload(path, blob, { contentType: ctype });
     if (up.error) { setMsg(up.error.message); setBusy(false); return; }
     const body = new FormData();
     body.set("ad_id", adId); body.set("storage_path", path);
