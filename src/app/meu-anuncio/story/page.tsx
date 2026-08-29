@@ -47,15 +47,13 @@ export default async function StoryPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
+        <div className="mb-6 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-accent-soft/60 via-surface to-surface p-7 text-center shadow-card">
+          <span className="mx-auto mb-3.5 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-white shadow-pop">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.4" stroke="currentColor" strokeWidth="1.8" /></svg>
           </span>
-          <div>
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">Story 24h</h1>
-            <p className="text-sm text-muted">Um vídeo curto que fica na capa do seu anúncio por 24 horas.</p>
-          </div>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">Story 24h</h1>
+          <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-muted">Um vídeo curto que aparece com um selo na capa do seu anúncio por 24 horas — chama muito mais atenção.</p>
         </div>
 
         <section className={cardCls}>
@@ -70,8 +68,9 @@ export default async function StoryPage() {
           )}
         </section>
 
-        <Link href="/meu-anuncio" className="mt-5 flex w-full items-center justify-center gap-2 rounded-input bg-accent py-3 text-sm font-bold text-white transition-colors hover:bg-accent-strong">
-          Concluir
+        <Link href="/meu-anuncio" className="mt-4 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-muted transition-colors hover:text-accent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Voltar ao meu anúncio
         </Link>
       </main>
     </>

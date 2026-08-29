@@ -109,8 +109,9 @@ export default async function EditarFotosPage() {
           <MediaManager adId={ad.id as string} userId={user.id} initial={media} maxPhotos={planLimits.maxPhotos} maxVideos={planLimits.maxVideos} />
         </section>
 
-        <Link href="/meu-anuncio" className="mt-5 flex w-full items-center justify-center gap-2 rounded-input bg-accent py-3 text-sm font-bold text-white transition-colors hover:bg-accent-strong">
-          Concluir
+        <Link href="/meu-anuncio" className="mt-4 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-muted transition-colors hover:text-accent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Voltar ao meu anúncio
         </Link>
       </main>
     </>

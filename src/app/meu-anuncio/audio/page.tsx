@@ -37,23 +37,22 @@ export default async function AudioPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
+        <div className="mb-6 overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-accent-soft/60 via-surface to-surface p-7 text-center shadow-card">
+          <span className="mx-auto mb-3.5 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-white shadow-pop">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
           </span>
-          <div>
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">Áudio de voz</h1>
-            <p className="text-sm text-muted">Grave um oi rapidinho — o cliente ouve sua voz no anúncio.</p>
-          </div>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">Áudio de voz</h1>
+          <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-muted">Grave um “oi” rapidinho. O cliente ouve sua voz direto no anúncio — dá mais confiança e destaca seu perfil.</p>
         </div>
 
         <section className={cardCls}>
           <AudioRecorder adId={ad.id as string} userId={user.id} initialPath={(ad.audio_path as string | null) ?? null} />
         </section>
 
-        <Link href="/meu-anuncio" className="mt-5 flex w-full items-center justify-center gap-2 rounded-input bg-accent py-3 text-sm font-bold text-white transition-colors hover:bg-accent-strong">
-          Concluir
+        <Link href="/meu-anuncio" className="mt-4 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-muted transition-colors hover:text-accent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Voltar ao meu anúncio
         </Link>
       </main>
     </>
