@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -44,13 +44,29 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image", title: SITE_NAME, description: DESC },
   robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "black-translucent" },
 };
+
+export const viewport: Viewport = {
+  themeColor: "#0f0a14",
+  colorScheme: "dark",
+};
+
+// origem do storage (Supabase) para preconnect — acelera o 1º byte das fotos
+const SUPA_ORIGIN = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const ageOk = (await cookies()).get("age_ok")?.value === "1";
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        {SUPA_ORIGIN && (
+          <>
+            <link rel="preconnect" href={SUPA_ORIGIN} crossOrigin="" />
+            <link rel="dns-prefetch" href={SUPA_ORIGIN} />
+          </>
+        )}
         {children}
         <ImageGuard />
         <ReferralBoot />
