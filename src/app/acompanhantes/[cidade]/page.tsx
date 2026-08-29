@@ -52,6 +52,7 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
   const rows = (data ?? []) as any[];
   const ids = rows.map((r) => r.id);
 
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const videoCount = new Map<string, number>();
   const story = new Map<string, { at: string; url: string }>();
   let cover = new Map<string, Cover>();
@@ -68,7 +69,6 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
 
   const nowDate = new Date();
   const nowMs = nowDate.getTime();
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const groupMap = new Map<string, BumpGroup & { order: number }>();
   const profiles: ProfileCardData[] = [];
   for (const r of rows) {

@@ -183,6 +183,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
     data = (res.data ?? []) as unknown as AdRow[];
   }
 
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const ids = data.map((r) => r.id);
   const videoCount = new Map<string, number>();
   const story = new Map<string, { at: string; url: string }>();
@@ -206,7 +207,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
 
   const nowDate = new Date();
   const nowMs = nowDate.getTime();
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   type Group = BumpGroup & { order: number };
   const groupMap = new Map<string, Group>();
   const profiles: ProfileCardData[] = [];
