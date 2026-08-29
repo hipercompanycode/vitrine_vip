@@ -194,7 +194,7 @@ export default function AdDetail({
             </span>
             <div className="min-w-0 flex-1">
               <p className="mb-1 text-xs font-semibold text-ink">Ouça a voz</p>
-              <audio controls preload="none" controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} src={extra.audioUrl} className="w-full" />
+              <audio controls preload="none" controlsList="nodownload noplaybackrate" src={extra.audioUrl} className="w-full" />
             </div>
           </div>
         )}
