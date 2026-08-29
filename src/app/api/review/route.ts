@@ -16,12 +16,10 @@ export async function POST(request: Request) {
   const commentRaw = String(form.get("comment") ?? "").trim();
   const comment = commentRaw === "" ? null : commentRaw;
   const tags = sanitizeTags(form.getAll("tags").map((t) => String(t)));
-  const ratingNum = Number(form.get("rating") ?? 5);
-  const rating = Number.isInteger(ratingNum) && ratingNum >= 1 && ratingNum <= 5 ? ratingNum : 5;
 
   const dueAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 dias
   const { error } = await supabase.from("reviews").insert({
-    ad_id: adId, user_id: user.id, comment, tags, rating, status: "aguardando", due_at: dueAt,
+    ad_id: adId, user_id: user.id, comment, tags, status: "aguardando", due_at: dueAt,
   });
   if (error) return flash(request, back, "erro", GENERIC_ERROR, error);
 

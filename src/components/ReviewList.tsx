@@ -10,21 +10,8 @@ export type ReviewItem = {
   tags: string[];
   created_at: string;
   authorName: string;
-  rating?: number; // 1-5 estrelas
   reply?: string | null; // resposta da anunciante
 };
-
-function Stars({ n }: { n: number }) {
-  return (
-    <span className="inline-flex items-center gap-0.5" aria-label={`${n} de 5`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill={i <= n ? "currentColor" : "none"} className={i <= n ? "text-accent" : "text-line"} aria-hidden="true">
-          <path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-        </svg>
-      ))}
-    </span>
-  );
-}
 
 const INITIAL = 5; // quantas aparecem de cara
 const STEP = 5; // quantas "Carregar mais" revela por clique
@@ -51,8 +38,6 @@ export default function ReviewList({
               <span className="text-[15px] font-semibold text-ink">{r.authorName || "Usuário"}</span>
               <span className="shrink-0 whitespace-nowrap text-[11px] text-muted">{timeAgo(new Date(r.created_at), now)}</span>
             </div>
-
-            {typeof r.rating === "number" && <div className="mt-1"><Stars n={r.rating} /></div>}
 
             {r.tags.length > 0 && (
               <div className="mt-1.5 flex flex-wrap gap-x-3.5 gap-y-1">

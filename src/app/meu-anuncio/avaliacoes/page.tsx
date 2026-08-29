@@ -22,7 +22,7 @@ export default async function MinhasAvaliacoesPage() {
 
   const { data: rowsRaw } = await admin
     .from("reviews")
-    .select("id, comment, tags, rating, created_at, status, reply, reply_at, due_at, profiles ( name )")
+    .select("id, comment, tags, created_at, status, reply, reply_at, due_at, profiles ( name )")
     .eq("ad_id", ad.id)
     .order("created_at", { ascending: false });
   const rows = (rowsRaw ?? []) as any[];
@@ -33,7 +33,7 @@ export default async function MinhasAvaliacoesPage() {
     .map((r) => ({ id: r.id, comment: r.comment, tags: r.tags ?? [], dueAt: r.due_at ?? null, authorName: nameOf(r) }));
   const published = rows.filter((r) => r.status === "publicada");
   const publishedItems: ReviewItem[] = published.map((r) => ({
-    id: r.id, user_id: "", comment: r.comment, tags: r.tags ?? [], rating: r.rating ?? 5, created_at: r.created_at, authorName: nameOf(r), reply: r.reply ?? null,
+    id: r.id, user_id: "", comment: r.comment, tags: r.tags ?? [], created_at: r.created_at, authorName: nameOf(r), reply: r.reply ?? null,
   }));
   const moderation = rows.filter((r) => r.status === "moderacao");
   const now = new Date();
