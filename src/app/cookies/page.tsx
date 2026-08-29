@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SITE_NAME } from "@/lib/seo";
 
-export const metadata = { title: "Política de Cookies" };
+export const metadata = { title: "Política de Cookies", alternates: { canonical: "/cookies" } };
 
 function H({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-8 font-display text-lg font-bold text-ink">{children}</h2>;

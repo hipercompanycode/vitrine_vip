@@ -3,7 +3,7 @@ import PlanCards from "@/components/PlanCards";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { userHasAd } from "@/lib/ads";
 
-export const metadata = { title: "Planos" };
+export const metadata = { title: "Planos", alternates: { canonical: "/planos" } };
 export const dynamic = "force-dynamic";
 
 export default async function PlanosPage() {
