@@ -214,7 +214,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
       />
       <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} coverBlurred={coverBlurred} storyUrl={storyUrl} media={media} extra={extra} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-8">
-        <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações</h2>
+        <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações {reviews.length > 0 && <span className="text-muted">({reviews.length})</span>}</h2>
         {interactions.canInteract ? (
           <div className="mb-4"><ReviewForm adId={data.id} /></div>
         ) : (
@@ -224,7 +224,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
             </p>
           )
         )}
-        <ReviewList reviews={reviews} now={new Date()} currentUserId={user?.id ?? null} adId={data.id} />
+        <ReviewList reviews={reviews} now={new Date()} currentUserId={user?.id ?? null} adId={data.id} adName={data.title} />
       </section>
 
       {related.length > 0 && data.city && (
