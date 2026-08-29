@@ -4,6 +4,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { inputCls, labelCls, cardCls, btnSecondary } from "@/components/ui";
 import { userHasAd } from "@/lib/ads";
 import { isAdult } from "@/lib/age";
+import BirthdateInput from "@/components/BirthdateInput";
 import DeleteAccount from "@/components/DeleteAccount";
 
 export const dynamic = "force-dynamic";
@@ -75,7 +76,7 @@ export default async function PerfilPage() {
             </label>
             <label className="block">
               <span className={labelCls}>Data de nascimento</span>
-              <input type="date" name="birthdate" defaultValue={(profile?.birthdate as string | null) ?? ""} max="2099-12-31" className={inputCls} />
+              <BirthdateInput name="birthdate" defaultValue={(profile?.birthdate as string | null) ?? ""} className={inputCls} />
               <span className="mt-1 block text-[11px] text-muted">Confirma que você é 18+ (para anunciar e ver conteúdo sensível). Privada, não aparece na vitrine.</span>
             </label>
             {!adult && (

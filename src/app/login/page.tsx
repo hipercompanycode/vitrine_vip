@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import PasswordInput from "@/components/PasswordInput";
+import BirthdateInput from "@/components/BirthdateInput";
 import ReferralInput from "@/components/ReferralInput";
 
 // destino após login (?next=/perfil), lido na hora do redirecionamento
@@ -164,8 +165,7 @@ export default function LoginPage() {
             {criando && (
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-muted">Data de nascimento</span>
-                <input type="date" value={nasc} onChange={(e) => setNasc(e.target.value)}
-                  max="2099-12-31" autoComplete="bday" className={inputCls} />
+                <BirthdateInput onIso={setNasc} className={inputCls} />
                 <span className="mt-1 block text-[11px] text-muted">Usada para confirmar que você é maior de 18. Não aparece no seu perfil público.</span>
               </label>
             )}
