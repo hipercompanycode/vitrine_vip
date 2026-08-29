@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { citySlug } from "@/lib/seo";
 
 type City = { id: number; name: string; uf: string };
 
@@ -41,7 +42,9 @@ export default function SearchBox({ defaultQuery = "", wrapClassName }: { defaul
   function pickCity(c: City) {
     setOpen(false);
     setValue(`${c.name} - ${c.uf}`);
-    router.push(`/?city_id=${c.id}`);
+    // vai pra página de SEO da cidade (URL limpa/compartilhável); ela mostra
+    // "por perto" quando a cidade tem poucos perfis.
+    router.push(`/acompanhantes/${citySlug(c.name, c.uf)}`);
   }
   function submitText() {
     const q = value.trim();

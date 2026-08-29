@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/server";
-import { type ProfileCardData } from "@/components/ProfileCard";
+import ProfileCard, { type ProfileCardData } from "@/components/ProfileCard";
 import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
 import { bumpBucket } from "@/lib/bump";
 import { availableActive, coverUrlMap, type Cover } from "@/lib/ads";
@@ -33,25 +33,20 @@ async function findCity(slug: string): Promise<City | null> {
   return ((data ?? []) as City[]).find((c) => citySlug(c.name, c.uf) === slug) ?? null;
 }
 
-async function visibleProfilesInCity(cityId: number): Promise<{ profiles: ProfileCardData[]; groups: BumpGroup[] }> {
-  const admin = createAdminClient();
+// mapa profile_id -> plano ativo (premium/pro) — só perfis com assinatura vigente aparecem
+async function activePlanMap(admin: ReturnType<typeof createAdminClient>): Promise<Map<string, string>> {
   const nowIso = new Date().toISOString();
   const { data: subs } = await admin
     .from("subscriptions").select("profile_id, plans ( slug )").eq("status", "active").gt("current_period_end", nowIso);
-  const planByProfile = new Map<string, string>();
-  (subs ?? []).forEach((s: any) => { const p = Array.isArray(s.plans) ? s.plans[0] : s.plans; if (p?.slug) planByProfile.set(s.profile_id, p.slug); });
-  const pids = Array.from(planByProfile.keys());
-  if (!pids.length) return { profiles: [], groups: [] };
+  const m = new Map<string, string>();
+  (subs ?? []).forEach((s: any) => { const p = Array.isArray(s.plans) ? s.plans[0] : s.plans; if (p?.slug) m.set(s.profile_id, p.slug); });
+  return m;
+}
 
-  const { data } = await admin
-    .from("ads")
-    .select("*, cities ( name, uf ), profiles ( name )")
-    .eq("status", "active").eq("verified", true).eq("city_id", cityId).in("profile_id", pids)
-    .order("bumped_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false });
-  const rows = (data ?? []) as any[];
+// hidrata linhas de anúncio em cards (capa, vídeo, story, áudio). Preserva a ordem de entrada.
+async function buildCards(admin: ReturnType<typeof createAdminClient>, rows: any[], planByProfile: Map<string, string>): Promise<ProfileCardData[]> {
+  const nowIso = new Date().toISOString();
   const ids = rows.map((r) => r.id);
-
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const videoCount = new Map<string, number>();
   const story = new Map<string, { at: string; url: string }>();
@@ -66,16 +61,12 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
     (st.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, { at: r.created_at, url: publicUrl(base, "ad-media", r.storage_path) }); });
     cover = covers;
   }
-
-  const nowDate = new Date();
-  const nowMs = nowDate.getTime();
-  const groupMap = new Map<string, BumpGroup & { order: number }>();
-  const profiles: ProfileCardData[] = [];
-  for (const r of rows) {
+  const nowMs = Date.now();
+  return rows.map((r) => {
     const city = Array.isArray(r.cities) ? r.cities[0] : r.cities;
     const vc = videoCount.get(r.id) ?? 0;
     const sa = story.get(r.id);
-    const card: ProfileCardData = {
+    return {
       id: r.id, name: r.title?.trim() || "Acompanhante", age: r.age ?? 0, city: city ? city.name : "",
       description: r.headline?.trim() || r.description,
       priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100).toLocaleString("pt-BR")}` : null,
@@ -84,8 +75,30 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
       available: availableActive(r.is_available, r.available_since, nowMs), hue: hueFromId(r.id),
       cover: cover.get(r.id)?.url ?? null, coverBlurred: cover.get(r.id)?.blurred ?? false,
       audioUrl: r.audio_path ? publicUrl(base, "ad-media", r.audio_path) : null,
-    };
-    profiles.push(card);
+    } as ProfileCardData;
+  });
+}
+
+async function visibleProfilesInCity(cityId: number): Promise<{ profiles: ProfileCardData[]; groups: BumpGroup[] }> {
+  const admin = createAdminClient();
+  const planByProfile = await activePlanMap(admin);
+  const pids = Array.from(planByProfile.keys());
+  if (!pids.length) return { profiles: [], groups: [] };
+
+  const { data } = await admin
+    .from("ads")
+    .select("*, cities ( name, uf ), profiles ( name )")
+    .eq("status", "active").eq("verified", true).eq("city_id", cityId).in("profile_id", pids)
+    .order("bumped_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+  const rows = (data ?? []) as any[];
+  const profiles = await buildCards(admin, rows, planByProfile);
+
+  const nowDate = new Date();
+  const nowMs = nowDate.getTime();
+  const groupMap = new Map<string, BumpGroup & { order: number }>();
+  profiles.forEach((card, i) => {
+    const r = rows[i];
     const t = new Date(r.bumped_at || r.created_at).getTime();
     const b = card.available
       ? { key: "disp", label: "Disponível agora", order: -1000 }
@@ -93,9 +106,26 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
     let g = groupMap.get(b.key);
     if (!g) { g = { key: b.key, label: b.label, order: b.order, items: [] }; groupMap.set(b.key, g); }
     g.items.push(card);
-  }
+  });
   const groups = Array.from(groupMap.values()).sort((a, b) => a.order - b.order);
   return { profiles, groups };
+}
+
+// fallback "por perto": perfis das cidades vizinhas (quando a cidade tem poucos/zero)
+async function nearbyProfiles(nearbyIds: number[], limit: number): Promise<ProfileCardData[]> {
+  if (!nearbyIds.length) return [];
+  const admin = createAdminClient();
+  const planByProfile = await activePlanMap(admin);
+  const pids = Array.from(planByProfile.keys());
+  if (!pids.length) return [];
+  const { data } = await admin
+    .from("ads")
+    .select("*, cities ( name, uf ), profiles ( name )")
+    .eq("status", "active").eq("verified", true).in("city_id", nearbyIds).in("profile_id", pids)
+    .order("bumped_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return buildCards(admin, (data ?? []) as any[], planByProfile);
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ cidade: string }> }): Promise<Metadata> {
@@ -130,6 +160,8 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
   const nowIso = new Date().toISOString();
   const { data: nearIds } = await admin.rpc("nearby_city_ids", { p_city_id: city.id, p_km: 100 });
   const nearbyIds = ((nearIds ?? []) as any[]).map((r) => (typeof r === "number" ? r : r.nearby_city_ids ?? r.id)).filter((id: number) => id !== city.id);
+  // fallback: cidade com poucos perfis mostra perfis reais das vizinhas (não só links)
+  const nearby = profiles.length < 8 ? await nearbyProfiles(nearbyIds, 18) : [];
   let nearbyLinks: City[] = [];
   if (nearbyIds.length) {
     const { data: subs } = await admin.from("subscriptions").select("profile_id").eq("status", "active").gt("current_period_end", nowIso);
@@ -166,11 +198,24 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
           <p className="mt-1 max-w-2xl text-sm text-muted">
             {profiles.length > 0
               ? `${profiles.length} perfil${profiles.length > 1 ? "is" : ""} verificado${profiles.length > 1 ? "s" : ""} em ${city.name}. Fotos e vídeos reais, contato direto por WhatsApp — atualizados diariamente.`
-              : `Ainda não há perfis em ${city.name}. Veja as cidades próximas abaixo.`}
+              : nearby.length > 0
+                ? `Ainda não há perfis em ${city.name}. Veja acompanhantes verificadas por perto.`
+                : `Ainda não há perfis em ${city.name}. Veja as cidades próximas abaixo.`}
           </p>
         </section>
 
         {profiles.length > 0 && <BumpedGrid groups={groups} />}
+
+        {nearby.length > 0 && (
+          <section className={profiles.length > 0 ? "mt-8" : ""}>
+            <h2 className="mb-3 font-display text-base font-bold text-ink">
+              {profiles.length > 0 ? `Acompanhantes por perto de ${city.name}` : `Acompanhantes por perto`}
+            </h2>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {nearby.map((p) => <ProfileCard key={p.id} p={p} hrefBase="/anuncio" />)}
+            </div>
+          </section>
+        )}
 
         {nearbyLinks.length > 0 && (
           <section className="mt-8">
