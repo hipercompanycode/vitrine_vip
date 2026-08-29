@@ -4,6 +4,7 @@ import { isAdminUser } from "@/lib/admin";
 import { flash, GENERIC_ERROR } from "@/lib/http";
 import { hashCpf } from "@/lib/cpf-block";
 import { reverifyDueISO } from "@/lib/reverify";
+import { notify } from "@/lib/notify";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -51,6 +52,11 @@ export async function POST(request: Request) {
 
   // liga/desliga o selo "Verificada" do anúncio desse anunciante
   await admin.from("ads").update({ verified: approved }).eq("profile_id", profileId);
+
+  // notifica o anunciante (in-app)
+  await notify(admin, profileId, approved
+    ? { kind: "moderation", title: "Anúncio aprovado ✅", body: "Seu perfil foi verificado e está no ar.", href: "/meu-anuncio" }
+    : { kind: "moderation", title: "Verificação recusada", body: feedback ? `Motivo: ${feedback}` : "Revise seus documentos e envie novamente.", href: "/meu-anuncio" });
 
   // Recusa marcando "bloquear CPF": guarda o hash na blocklist (anti-fake).
   if (!approved && form.get("block_cpf") === "1") {

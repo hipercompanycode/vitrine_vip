@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import { flash, GENERIC_ERROR } from "@/lib/http";
+import { notify } from "@/lib/notify";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -27,6 +28,16 @@ export async function POST(request: Request) {
     if (error) return flash(request, back, "erro", GENERIC_ERROR, error);
     // responder = está sendo atendido
     await admin.from("support_tickets").update({ status: "em_atendimento", updated_at: nowIso }).eq("id", ticketId);
+    // notifica o dono do ticket (in-app)
+    const { data: tk } = await admin.from("support_tickets").select("profile_id").eq("id", ticketId).maybeSingle();
+    if (tk?.profile_id) {
+      await notify(admin, tk.profile_id as string, {
+        kind: "support",
+        title: "Suporte respondeu",
+        body: "Você tem uma nova resposta no seu chamado.",
+        href: `/suporte?t=${ticketId}`,
+      });
+    }
   } else {
     const status = action === "close" ? "fechado" : action === "attend" ? "em_atendimento" : "aberto";
     await admin.from("support_tickets").update({ status, updated_at: nowIso }).eq("id", ticketId);

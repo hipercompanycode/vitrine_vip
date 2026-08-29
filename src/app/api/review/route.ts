@@ -1,6 +1,7 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { sanitizeTags } from "@/lib/interactions";
 import { flash, GENERIC_ERROR } from "@/lib/http";
+import { notify } from "@/lib/notify";
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();
@@ -22,6 +23,18 @@ export async function POST(request: Request) {
     ad_id: adId, user_id: user.id, comment, tags, status: "aguardando", due_at: dueAt,
   });
   if (error) return flash(request, back, "erro", GENERIC_ERROR, error);
+
+  // avisa a anunciante (in-app) para ela responder
+  const admin = createAdminClient();
+  const { data: adRow } = await admin.from("ads").select("profile_id").eq("id", adId).maybeSingle();
+  if (adRow?.profile_id) {
+    await notify(admin, adRow.profile_id as string, {
+      kind: "review",
+      title: "Nova avaliação recebida",
+      body: "Alguém avaliou seu anúncio. Responda para publicá-la.",
+      href: "/meu-anuncio/avaliacoes",
+    });
+  }
 
   return flash(request, back, "ok", "Avaliação enviada! Ela aparece após a anunciante responder ou em até 7 dias.");
 }

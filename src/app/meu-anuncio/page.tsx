@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 const STEPS = ["Dados", "Preços", VIDEO_ENABLED ? "Fotos e vídeos" : "Fotos", "Características", "Plano", "Comprovações"];
 const N = STEPS.length;
 
-function AccountHeader() {
+function AccountHeader({ unread = 0 }: { unread?: number }) {
   return (
     <header className="sticky top-0 z-30 border-b border-line/80 bg-canvas/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3 sm:px-6">
@@ -34,6 +34,12 @@ function AccountHeader() {
           <span className="h-2 w-2 rounded-full bg-accent" />
         </Link>
         <nav className="flex items-center gap-1">
+          <Link href="/meu-anuncio/notificacoes" aria-label={unread > 0 ? `Notificações (${unread} não lidas)` : "Notificações"} className="relative flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-muted transition-colors hover:border-accent hover:text-accent">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-4 text-white ring-2 ring-canvas">{unread > 9 ? "9+" : unread}</span>
+            )}
+          </Link>
           <Link href="/perfil" className="rounded-pill px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-accent-soft hover:text-accent">Meu perfil</Link>
           <form action="/logout" method="post" className="shrink-0">
             <button aria-label="Sair" className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-muted transition-colors hover:border-accent hover:text-accent">
@@ -169,13 +175,25 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   const showPanel = !!ad && complete && !editing;
   const paused = (ad?.status ?? "active") !== "active";
 
+  // Notificações in-app: contagem de não-lidas (sino no header). Tolerante a
+  // tabela ainda não migrada (retorna 0 sem quebrar o painel).
+  const { count: unreadCount } = await admin
+    .from("notifications").select("id", { count: "exact", head: true })
+    .eq("profile_id", user.id).is("read_at", null);
+  const unread = unreadCount ?? 0;
+
+  // Aviso de vencimento da assinatura (sem cron): calcula dias restantes.
+  const periodEnd = sub?.current_period_end ? new Date(sub.current_period_end as string) : null;
+  const daysToExpiry = periodEnd ? Math.ceil((periodEnd.getTime() - Date.now()) / 86_400_000) : null;
+  const expiringSoon = active && daysToExpiry != null && daysToExpiry >= 0 && daysToExpiry <= 7;
+
   // Idade (autodeclarada): menor de 18 ou sem data não pode anunciar. Bloqueia o
   // painel/wizard e manda preencher no perfil (documento é verificado no anúncio).
   const adult = isAdult((prof?.birthdate as string | null) ?? null);
   if (!adult) {
     return (
       <>
-        <AccountHeader />
+        <AccountHeader unread={unread} />
         <main className="mx-auto w-full max-w-lg flex-1 px-4 py-10">
           <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-6 text-center shadow-card">
             <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20 text-amber-300">
@@ -203,7 +221,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
     const hadPeriod = !!sub?.current_period_end;
     return (
       <>
-        <AccountHeader />
+        <AccountHeader unread={unread} />
         <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
           <div className="mb-6">
             <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Ative seu anúncio</h1>
@@ -235,10 +253,21 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   if (showPanel && ad) {
     return (
       <>
-        <AccountHeader />
+        <AccountHeader unread={unread} />
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">
           {verifApproved ? (
             <div className="space-y-5">
+              {expiringSoon && (
+                <Link href="/meu-anuncio/notificacoes" className="flex items-center gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 transition-colors hover:border-amber-500/70">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-300">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5m0 3h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-ink">{daysToExpiry === 0 ? "Sua assinatura vence hoje" : `Sua assinatura vence em ${daysToExpiry} dia${daysToExpiry === 1 ? "" : "s"}`}</p>
+                    <p className="text-xs text-muted">Renove via Pix para não sair da vitrine.</p>
+                  </div>
+                </Link>
+              )}
               {/* status atual */}
               <div className={`flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card ring-1 ${paused ? "ring-transparent" : "ring-[#43d17f]/15"}`}>
                 {paused ? (
@@ -325,6 +354,13 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                       <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold text-white">{pendingReviews.length}</span>
                     )}
                   </PendingLink>
+                  <PendingLink href="/meu-anuncio/notificacoes" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    Notificações
+                    {unread > 0 && (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold text-white">{unread > 9 ? "9+" : unread}</span>
+                    )}
+                  </PendingLink>
                 </div>
                 <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
               </section>
@@ -402,7 +438,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <AccountHeader />
+      <AccountHeader unread={unread} />
       <main className={`mx-auto w-full flex-1 px-4 py-8 ${step === 5 ? "max-w-5xl" : "max-w-2xl"}`}>
         <div className="mb-5">
           {complete && (
