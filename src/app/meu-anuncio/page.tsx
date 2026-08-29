@@ -279,6 +279,11 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </div>
               </div>
 
+              <PendingLink href="/meu-anuncio/metricas" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                Ver métricas completas
+              </PendingLink>
+
               {!paused && (
                 <a
                   href={`/anuncio/${ad.id}`}

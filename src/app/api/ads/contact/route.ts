@@ -20,5 +20,6 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   await admin.rpc("inc_ad_contacts", { p_ad: ad_id });
+  await admin.from("ad_events").insert({ ad_id, kind: "contact" });
   return NextResponse.json({ ok: true });
 }
