@@ -16,6 +16,7 @@ type Extra = {
   age?: number | null;
   verified?: boolean;
   faceHidden?: boolean;
+  audioUrl?: string | null;
   attributes?: string[];
   priceTable?: PriceRow[];
   contact?: { whatsapp: boolean; call: boolean; telegram: boolean };
@@ -182,6 +183,19 @@ export default function AdDetail({
                 Ligar agora
               </TrackedContactLink>
             )}
+          </div>
+        )}
+
+        {/* áudio de voz */}
+        {extra?.audioUrl && (
+          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1d5fa5]/15 text-[#4a9be8]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="mb-1 text-xs font-semibold text-ink">Ouça a voz</p>
+              <audio controls preload="none" src={extra.audioUrl} className="w-full" />
+            </div>
           </div>
         )}
 

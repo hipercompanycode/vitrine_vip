@@ -7,6 +7,7 @@ import { sanitizeAttrs, labelOf } from "@/lib/attributes";
 import { cityPath } from "@/lib/seo";
 import { userHasAd, availableActive, coverUrlMap, type Cover } from "@/lib/ads";
 import { isAdult } from "@/lib/age";
+import { publicUrl } from "@/lib/storage";
 import SiteFooter from "@/components/SiteFooter";
 import { bumpBucket } from "@/lib/bump";
 import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
@@ -47,6 +48,7 @@ type AdRow = {
   created_at: string;
   bumped_at: string | null;
   available_since: string | null;
+  audio_path: string | null;
   profile_id: string;
   cities: CityEmbed | CityEmbed[] | null;
   profiles: ProfileEmbed | ProfileEmbed[] | null;
@@ -204,6 +206,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
 
   const nowDate = new Date();
   const nowMs = nowDate.getTime();
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   type Group = BumpGroup & { order: number };
   const groupMap = new Map<string, Group>();
   const profiles: ProfileCardData[] = [];
@@ -227,6 +230,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       hue: hueFromId(r.id),
       cover: cover.get(r.id)?.url ?? null,
       coverBlurred: cover.get(r.id)?.blurred ?? false,
+      audioUrl: r.audio_path ? publicUrl(base, "ad-media", r.audio_path) : null,
       favorited: favSet.has(r.id),
     };
     profiles.push(card);

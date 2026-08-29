@@ -6,6 +6,7 @@ import { type ProfileCardData } from "@/components/ProfileCard";
 import BumpedGrid, { type BumpGroup } from "@/components/BumpedGrid";
 import { bumpBucket } from "@/lib/bump";
 import { availableActive, coverUrlMap, type Cover } from "@/lib/ads";
+import { publicUrl } from "@/lib/storage";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import SiteFooter from "@/components/SiteFooter";
 import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript, isTargetCity } from "@/lib/seo";
@@ -67,6 +68,7 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
 
   const nowDate = new Date();
   const nowMs = nowDate.getTime();
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const groupMap = new Map<string, BumpGroup & { order: number }>();
   const profiles: ProfileCardData[] = [];
   for (const r of rows) {
@@ -81,6 +83,7 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
       recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium",
       available: availableActive(r.is_available, r.available_since, nowMs), hue: hueFromId(r.id),
       cover: cover.get(r.id)?.url ?? null, coverBlurred: cover.get(r.id)?.blurred ?? false,
+      audioUrl: r.audio_path ? publicUrl(base, "ad-media", r.audio_path) : null,
     };
     profiles.push(card);
     const t = new Date(r.bumped_at || r.created_at).getTime();

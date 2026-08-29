@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CardFavoriteHeart from "@/components/CardFavoriteHeart";
+import CardAudioButton from "@/components/CardAudioButton";
 
 export type ProfileCardData = {
   id: string;
@@ -10,6 +11,7 @@ export type ProfileCardData = {
   verified?: boolean;
   videoCount?: number;
   hasAudio?: boolean;
+  audioUrl?: string | null; // voz da anunciante (botão "Áudio" tocável no card)
   hasVideo?: boolean;
   recordedAt?: string | null; // "13:07" -> chip "Gravada às 13:07"
   featured?: boolean; // dono no plano Premium -> destaque forte + selo TOP
@@ -90,11 +92,6 @@ export default function ProfileCard({
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>{p.videoCount}
               </span>
             )}
-            {p.hasAudio && (
-              <span className="inline-flex items-center gap-0.5 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 5V4L8 9H4z" /></svg>
-              </span>
-            )}
           </div>
         </div>
 
@@ -133,6 +130,7 @@ export default function ProfileCard({
           {p.age > 0 && <span className="shrink-0 text-xs font-medium text-muted">· {p.age} anos</span>}
         </div>
         <p className="line-clamp-3 min-h-[3.6rem] text-[13px] leading-snug text-muted">{p.description}</p>
+        {p.audioUrl && <CardAudioButton url={p.audioUrl} className="self-start" />}
         <div className="mt-auto flex items-center gap-1.5 pt-0.5">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="11" r="2.2" fill="currentColor" /></svg>
           <span className="truncate text-[12px] text-muted">{p.city}</span>

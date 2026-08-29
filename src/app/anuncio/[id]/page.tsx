@@ -180,6 +180,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     age: (ad.age as number | null) ?? null,
     verified: !!ad.verified,
     faceHidden: !!ad.face_hidden,
+    audioUrl: ad.audio_path ? publicUrl(base, "ad-media", ad.audio_path as string) : null,
     attributes: (ad.attributes as string[] | null) ?? [],
     priceTable: (ad.price_table as { label: string; price_cents: number }[] | null) ?? [],
     contact: {
