@@ -7,6 +7,7 @@ import CookieConsent from "@/components/CookieConsent";
 import FlashToast from "@/components/FlashToast";
 import ImageGuard from "@/components/ImageGuard";
 import ReferralBoot from "@/components/ReferralBoot";
+import Analytics from "@/components/Analytics";
 import { SITE_NAME, SITE_URL, ldWebSite, jsonLdScript } from "@/lib/seo";
 
 const display = Bricolage_Grotesque({
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <FlashToast />
         {!ageOk && <AgeGate />}
         <CookieConsent />
+        <Analytics />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(ldWebSite()) }} />
       </body>
     </html>

@@ -13,6 +13,7 @@ export default function CookieConsent() {
 
   function choose(v: "all" | "essential") {
     document.cookie = `cookie_consent=${v}; path=/; max-age=${60 * 60 * 24 * 180}; samesite=lax`;
+    window.dispatchEvent(new Event("cookieconsent")); // liga/atualiza o Analytics na hora
     setShow(false);
   }
 
