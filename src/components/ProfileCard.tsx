@@ -1,6 +1,7 @@
 import Link from "next/link";
 import CardFavoriteHeart from "@/components/CardFavoriteHeart";
 import CardAudioButton from "@/components/CardAudioButton";
+import CardStoryButton from "@/components/CardStoryButton";
 
 export type ProfileCardData = {
   id: string;
@@ -13,6 +14,7 @@ export type ProfileCardData = {
   hasAudio?: boolean;
   audioUrl?: string | null; // voz da anunciante (botão "Áudio" tocável no card)
   hasVideo?: boolean;
+  storyUrl?: string | null; // vídeo do story 24h (toca no card, sem entrar no anúncio)
   recordedAt?: string | null; // "13:07" -> chip "Gravada às 13:07"
   featured?: boolean; // dono no plano Premium -> destaque forte + selo TOP
   available?: boolean; // "disponível agora" -> destaque verde
@@ -105,14 +107,16 @@ export default function ProfileCard({
           <CardFavoriteHeart adId={p.id} initialFavorited={p.favorited} />
         </div>
 
-        {/* play central */}
-        {p.hasVideo && (
+        {/* play central — abre o story tocável (sem entrar no anúncio); senão, decorativo */}
+        {p.storyUrl && !p.coverBlurred ? (
+          <CardStoryButton storyUrl={p.storyUrl} adId={p.id} name={p.name} />
+        ) : p.hasVideo ? (
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 ring-2 ring-white/70 backdrop-blur-sm transition-transform group-hover:scale-110">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
             </span>
           </span>
-        )}
+        ) : null}
 
         {/* rodapé-direita da foto: Verificada */}
         {p.verified && (

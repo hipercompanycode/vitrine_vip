@@ -16,17 +16,22 @@ export default function StoryCover({
         </a>
       )}
       {playing && storyUrl ? (
-        <video
-          src={storyUrl}
-          autoPlay
-          playsInline
-          controls
-          controlsList="nodownload noplaybackrate"
-          disablePictureInPicture
-          onContextMenu={(e) => e.preventDefault()}
-          onEnded={() => setPlaying(false)}
-          className="absolute inset-0 z-20 h-full w-full bg-black object-contain"
-        />
+        <>
+          <video
+            src={storyUrl}
+            autoPlay
+            playsInline
+            controls
+            controlsList="nodownload noplaybackrate"
+            disablePictureInPicture
+            onContextMenu={(e) => e.preventDefault()}
+            onEnded={() => setPlaying(false)}
+            className="absolute inset-0 z-20 h-full w-full bg-black object-contain"
+          />
+          <span className="pointer-events-none absolute inset-0 z-[21] flex items-center justify-center">
+            <span className="-rotate-[18deg] select-none font-display text-xl font-extrabold tracking-wide text-white/30 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)] sm:text-2xl">vitrinevip.com.br</span>
+          </span>
+        </>
       ) : (
         <>
           {coverUrl ? (

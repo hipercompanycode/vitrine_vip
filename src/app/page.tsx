@@ -185,16 +185,16 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
 
   const ids = data.map((r) => r.id);
   const videoCount = new Map<string, number>();
-  const story = new Map<string, string>();
+  const story = new Map<string, { at: string; url: string }>();
   let cover = new Map<string, Cover>();
   if (ids.length > 0) {
     const [vids, stories, covers] = await Promise.all([
       admin.from("ad_media").select("ad_id").eq("type", "video").in("ad_id", ids),
-      admin.from("stories").select("ad_id, created_at").in("ad_id", ids).gt("expires_at", nowIso),
+      admin.from("stories").select("ad_id, created_at, storage_path").in("ad_id", ids).gt("expires_at", nowIso),
       coverUrlMap(admin, ids, adult),
     ]);
     (vids.data ?? []).forEach((r: any) => videoCount.set(r.ad_id, (videoCount.get(r.ad_id) ?? 0) + 1));
-    (stories.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
+    (stories.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, { at: r.created_at, url: publicUrl(base, "ad-media", r.storage_path) }); });
     cover = covers;
   }
 
@@ -224,7 +224,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       verified: !!r.verified,
       videoCount: vc,
       hasVideo: vc > 0 || !!storyAt,
-      recordedAt: storyAt ? hhmm(storyAt) : null,
+      recordedAt: storyAt ? hhmm(storyAt.at) : null,
+      storyUrl: storyAt?.url ?? null,
       featured: planByProfile.get(r.profile_id) === "premium",
       available: availableActive(r.is_available, r.available_since, nowMs),
       hue: hueFromId(r.id),

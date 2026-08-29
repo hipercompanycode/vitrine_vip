@@ -17,7 +17,7 @@ export default async function StoryPage() {
   const admin = createAdminClient();
   const nowIso = new Date().toISOString();
   const [{ data: ad }, { data: prof }, { data: sub }] = await Promise.all([
-    admin.from("ads").select("id").eq("profile_id", user.id).maybeSingle(),
+    admin.from("ads").select("id, story_last_at").eq("profile_id", user.id).maybeSingle(),
     admin.from("profiles").select("birthdate").eq("id", user.id).maybeSingle(),
     admin.from("subscriptions").select("plans ( allows_story )").eq("profile_id", user.id).eq("status", "active").gt("current_period_end", nowIso).maybeSingle(),
   ]);
@@ -26,6 +26,11 @@ export default async function StoryPage() {
 
   const allowsStory = (sub?.plans as unknown as { allows_story: boolean } | null)?.allows_story ?? false;
   const { data: story } = await admin.from("stories").select("id").eq("ad_id", ad.id).gt("expires_at", nowIso).maybeSingle();
+
+  // cooldown de 24h desde a última gravação (mesmo que tenha removido)
+  const last = ad.story_last_at ? new Date(ad.story_last_at as string).getTime() : 0;
+  const readyAt = last + 24 * 60 * 60 * 1000;
+  const cooldownHoursLeft = Date.now() < readyAt ? Math.ceil((readyAt - Date.now()) / 3_600_000) : 0;
 
   return (
     <>
@@ -55,7 +60,7 @@ export default async function StoryPage() {
 
         <section className={cardCls}>
           {allowsStory ? (
-            <StoryManager adId={ad.id as string} userId={user.id} hasStory={!!story} />
+            <StoryManager adId={ad.id as string} userId={user.id} hasStory={!!story} cooldownHoursLeft={cooldownHoursLeft} />
           ) : (
             <div className="text-center">
               <p className="text-sm text-ink">O <strong>Story</strong> é um recurso dos planos <strong className="text-accent">Pro</strong> e <strong className="text-accent">Premium</strong>.</p>

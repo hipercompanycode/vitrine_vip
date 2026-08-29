@@ -16,8 +16,16 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: ad } = await admin.from("ads").select("id, profile_id").eq("id", adId).maybeSingle();
+  const { data: ad } = await admin.from("ads").select("id, profile_id, story_last_at").eq("id", adId).maybeSingle();
   if (!ad || ad.profile_id !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
+
+  // cooldown: só pode gravar um novo story 24h depois da última gravação (mesmo se removeu)
+  const last = ad.story_last_at ? new Date(ad.story_last_at as string).getTime() : 0;
+  const readyAt = last + 24 * 60 * 60 * 1000;
+  if (Date.now() < readyAt) {
+    const hoursLeft = Math.ceil((readyAt - Date.now()) / 3_600_000);
+    return NextResponse.json({ error: `Você só pode gravar um novo story em ~${hoursLeft}h (1 por dia).` }, { status: 429 });
+  }
 
   // plano permite story?
   const { data: sub } = await admin
@@ -32,6 +40,9 @@ export async function POST(request: Request) {
   const { data: inserted, error } = await admin
     .from("stories").insert({ ad_id: adId, storage_path: storagePath }).select("id").single();
   if (error) return apiError(GENERIC_ERROR, 500, error);
+
+  // marca a última gravação (base do cooldown de 24h) — sobrevive à remoção do story
+  await admin.from("ads").update({ story_last_at: new Date().toISOString() }).eq("id", adId);
 
   for (const o of olds ?? []) {
     const p = o.storage_path as string;

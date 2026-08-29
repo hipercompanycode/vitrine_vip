@@ -53,16 +53,16 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
   const ids = rows.map((r) => r.id);
 
   const videoCount = new Map<string, number>();
-  const story = new Map<string, string>();
+  const story = new Map<string, { at: string; url: string }>();
   let cover = new Map<string, Cover>();
   if (ids.length) {
     const [v, st, covers] = await Promise.all([
       admin.from("ad_media").select("ad_id").eq("type", "video").in("ad_id", ids),
-      admin.from("stories").select("ad_id, created_at").in("ad_id", ids).gt("expires_at", nowIso),
+      admin.from("stories").select("ad_id, created_at, storage_path").in("ad_id", ids).gt("expires_at", nowIso),
       coverUrlMap(admin, ids, false), // página cacheada (ISR) → trata como anônimo
     ]);
     (v.data ?? []).forEach((r: any) => videoCount.set(r.ad_id, (videoCount.get(r.ad_id) ?? 0) + 1));
-    (st.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, r.created_at); });
+    (st.data ?? []).forEach((r: any) => { if (!story.has(r.ad_id)) story.set(r.ad_id, { at: r.created_at, url: publicUrl(base, "ad-media", r.storage_path) }); });
     cover = covers;
   }
 
@@ -80,7 +80,7 @@ async function visibleProfilesInCity(cityId: number): Promise<{ profiles: Profil
       description: r.headline?.trim() || r.description,
       priceLabel: r.price_cents > 0 ? `R$ ${Math.round(r.price_cents / 100).toLocaleString("pt-BR")}` : null,
       verified: !!r.verified, videoCount: vc, hasVideo: vc > 0 || !!sa,
-      recordedAt: sa ? hhmm(sa) : null, featured: planByProfile.get(r.profile_id) === "premium",
+      recordedAt: sa ? hhmm(sa.at) : null, storyUrl: sa?.url ?? null, featured: planByProfile.get(r.profile_id) === "premium",
       available: availableActive(r.is_available, r.available_since, nowMs), hue: hueFromId(r.id),
       cover: cover.get(r.id)?.url ?? null, coverBlurred: cover.get(r.id)?.blurred ?? false,
       audioUrl: r.audio_path ? publicUrl(base, "ad-media", r.audio_path) : null,

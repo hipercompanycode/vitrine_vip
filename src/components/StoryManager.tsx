@@ -30,8 +30,9 @@ async function videoTooLong(file: File): Promise<boolean> {
 }
 
 export default function StoryManager({
-  adId, userId, hasStory,
-}: { adId: string; userId: string; hasStory: boolean }) {
+  adId, userId, hasStory, cooldownHoursLeft = 0,
+}: { adId: string; userId: string; hasStory: boolean; cooldownHoursLeft?: number }) {
+  const locked = cooldownHoursLeft > 0;
   const supabase = createBrowserClient();
   const [exists, setExists] = useState(hasStory);
   const [busy, setBusy] = useState(false);
@@ -161,6 +162,16 @@ export default function StoryManager({
         <button type="button" onClick={stopRec} className={`${btn} bg-red-500 text-white hover:bg-red-600`}>
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" /> Parar ({mm(elapsed)})
         </button>
+      ) : locked ? (
+        <div className="space-y-2">
+          <div className="flex items-start gap-2.5 rounded-input border border-line bg-surface-2/40 px-3 py-2.5 text-xs text-muted">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="mt-px shrink-0 text-muted" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+            <span>Você já gravou um story. Só dá pra gravar outro em <strong className="text-ink">~{cooldownHoursLeft}h</strong> (1 por dia). {exists ? "Pode remover o atual, mas o prazo continua." : "Você removeu o story, mas o prazo continua."}</span>
+          </div>
+          {exists && (
+            <button type="button" onClick={remove} disabled={busy} className={`${btn} border border-line bg-surface text-muted hover:text-red-300 disabled:opacity-50`}>Remover story</button>
+          )}
+        </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={startRec} disabled={busy} className={`${btn} bg-accent text-white hover:bg-accent-strong disabled:opacity-50`}>
