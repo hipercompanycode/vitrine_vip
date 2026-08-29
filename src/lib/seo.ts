@@ -56,7 +56,39 @@ export const TARGET_CITIES: { name: string; uf: string }[] = [
   { name: "Caxias do Sul", uf: "RS" }, { name: "Feira de Santana", uf: "BA" },
 ];
 
-const TARGET_KEYS = new Set(TARGET_CITIES.map((c) => `${slugify(c.name)}|${c.uf.toUpperCase()}`));
+// Regiões (clusters de cidades) — páginas de SEO regional ("Acompanhantes na
+// Região de Campinas"). As cidades da região também ficam indexáveis.
+export type Region = { slug: string; name: string; short: string; cities: { name: string; uf: string }[] };
+export const REGIONS: Region[] = [
+  {
+    slug: "campinas",
+    name: "Região de Campinas",
+    short: "Campinas e região",
+    cities: [
+      { name: "Campinas", uf: "SP" }, { name: "Indaiatuba", uf: "SP" }, { name: "Salto", uf: "SP" },
+      { name: "Itu", uf: "SP" }, { name: "Sorocaba", uf: "SP" }, { name: "Hortolândia", uf: "SP" },
+      { name: "Sumaré", uf: "SP" }, { name: "Americana", uf: "SP" }, { name: "Valinhos", uf: "SP" },
+      { name: "Vinhedo", uf: "SP" }, { name: "Paulínia", uf: "SP" }, { name: "Jundiaí", uf: "SP" },
+    ],
+  },
+];
+
+export function regionPath(slug: string): string {
+  return `/acompanhantes/regiao/${slug}`;
+}
+export function regionBySlug(slug: string): Region | null {
+  return REGIONS.find((r) => r.slug === slug) ?? null;
+}
+/** Região à qual a cidade pertence (pra ligação interna), se houver. */
+export function regionForCity(name: string, uf: string): Region | null {
+  const key = `${slugify(name)}|${uf.toUpperCase()}`;
+  return REGIONS.find((r) => r.cities.some((c) => `${slugify(c.name)}|${c.uf.toUpperCase()}` === key)) ?? null;
+}
+
+const TARGET_KEYS = new Set([
+  ...TARGET_CITIES,
+  ...REGIONS.flatMap((r) => r.cities),
+].map((c) => `${slugify(c.name)}|${c.uf.toUpperCase()}`));
 
 /** É cidade-alvo de SEO? (indexa mesmo sem anúncio) */
 export function isTargetCity(name: string, uf: string): boolean {

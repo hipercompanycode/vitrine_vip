@@ -5,7 +5,7 @@ import VitrineTopBar from "@/components/VitrineTopBar";
 import SiteFooter from "@/components/SiteFooter";
 import {
   TARGET_CITIES, isTargetCity, cityPath, citySlug, absUrl, SITE_URL, SITE_NAME,
-  ldBreadcrumb, ldItemList, jsonLdScript,
+  ldBreadcrumb, ldItemList, jsonLdScript, REGIONS, regionPath,
 } from "@/lib/seo";
 
 export const revalidate = 300;
@@ -78,6 +78,20 @@ export default async function AcompanhantesHubPage() {
             Escolha sua cidade e veja acompanhantes com <strong className="text-ink">perfil e fotos verificados</strong> na {SITE_NAME}. Contato direto por WhatsApp, sem intermediários.
           </p>
         </section>
+
+        {REGIONS.length > 0 && (
+          <section className="mb-8">
+            <h2 className="mb-2 font-display text-base font-bold text-ink">Por região</h2>
+            <div className="flex flex-wrap gap-2">
+              {REGIONS.map((r) => (
+                <Link key={r.slug} href={regionPath(r.slug)} className="inline-flex items-center gap-1.5 rounded-pill border border-accent/40 bg-accent-soft/40 px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-accent" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  {r.name}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {liveCities.length > 0 && (
           <section className="mb-8">

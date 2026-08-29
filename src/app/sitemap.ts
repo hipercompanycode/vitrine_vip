@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { createAdminClient } from "@/lib/supabase/server";
-import { SITE_URL, cityPath, citySlug, isTargetCity, TARGET_CITIES } from "@/lib/seo";
+import { SITE_URL, cityPath, citySlug, isTargetCity, TARGET_CITIES, REGIONS, regionPath } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +17,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/cookies`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
+  // páginas de região (SEO regional)
+  for (const r of REGIONS) {
+    out.push({ url: `${SITE_URL}${regionPath(r.slug)}`, changeFrequency: "daily", priority: 0.85 });
+  }
+
   const cityUrls = new Set<string>(); // dedup cidades
 
-  // cidades-alvo (capitais/metrópoles) que existem no banco — indexáveis mesmo sem anúncio
-  const { data: targetRows } = await admin.from("cities").select("name, uf").in("name", TARGET_CITIES.map((c) => c.name));
+  // cidades-alvo (capitais/metrópoles + cidades das regiões) — indexáveis mesmo sem anúncio
+  const targetNames = Array.from(new Set([...TARGET_CITIES, ...REGIONS.flatMap((r) => r.cities)].map((c) => c.name)));
+  const { data: targetRows } = await admin.from("cities").select("name, uf").in("name", targetNames);
   for (const c of ((targetRows ?? []) as { name: string; uf: string }[])) {
     if (!isTargetCity(c.name, c.uf)) continue;
     const key = citySlug(c.name, c.uf);

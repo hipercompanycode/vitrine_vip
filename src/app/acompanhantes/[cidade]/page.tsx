@@ -9,7 +9,7 @@ import { availableActive, coverUrlMap, type Cover } from "@/lib/ads";
 import { publicUrl } from "@/lib/storage";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import SiteFooter from "@/components/SiteFooter";
-import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript, isTargetCity } from "@/lib/seo";
+import { citySlug, parseCitySlug, cityPath, absUrl, SITE_NAME, SITE_URL, ldBreadcrumb, ldItemList, jsonLdScript, isTargetCity, regionForCity, regionPath } from "@/lib/seo";
 
 // Página de SEO: cacheada (ISR) e regenerada a cada 5 min — resposta rápida p/ buscadores.
 export const revalidate = 300;
@@ -155,7 +155,9 @@ export default async function CityPage({ params }: { params: Promise<{ cidade: s
       <VitrineTopBar cityLabel={`${city.name} - ${city.uf}`} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 pb-16 sm:px-4">
         <nav className="pt-3 text-xs text-muted">
-          <Link href="/" className="hover:text-accent">Início</Link> › <Link href="/acompanhantes" className="hover:text-accent">Cidades</Link> › <span className="text-ink">{city.name}-{city.uf}</span>
+          <Link href="/" className="hover:text-accent">Início</Link> › <Link href="/acompanhantes" className="hover:text-accent">Cidades</Link> ›{" "}
+          {(() => { const rg = regionForCity(city.name, city.uf); return rg ? <><Link href={regionPath(rg.slug)} className="hover:text-accent">{rg.name}</Link> › </> : null; })()}
+          <span className="text-ink">{city.name}-{city.uf}</span>
         </nav>
         <section className="py-4">
           <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
