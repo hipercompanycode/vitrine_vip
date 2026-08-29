@@ -44,7 +44,8 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: -2, lineHeight: 1 }}>{name}</div>
             {verified && (
               <div style={{ display: "flex", alignItems: "center", marginLeft: 24, gap: 10, fontSize: 26, fontWeight: 700, color: "#43d17f", border: "2px solid #43d17f55", borderRadius: 999, padding: "8px 18px" }}>
-                ✓ Verificada
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 12l4.5 4.5L19 7" stroke="#43d17f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                Verificada
               </div>
             )}
           </div>
