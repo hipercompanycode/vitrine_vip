@@ -15,7 +15,7 @@ import ViewTracker from "@/components/ViewTracker";
 import { publicUrl } from "@/lib/storage";
 import type { GalleryItem } from "@/components/Gallery";
 import type { Metadata } from "next";
-import { SITE_NAME, absUrl, jsonLdScript, ldBreadcrumb, ldProfile, SITE_URL, cityPath } from "@/lib/seo";
+import { SITE_NAME, absUrl, jsonLdScript, ldBreadcrumb, ldProfile, ldProduct, SITE_URL, cityPath } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -102,7 +102,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     admin.from("subscriptions").select("id").eq("profile_id", pid).eq("status", "active").gt("current_period_end", nowIso).maybeSingle(),
     admin.from("likes").select("*", { count: "exact", head: true }).eq("ad_id", id),
     userStateFn(),
-    admin.from("reviews").select("id, user_id, comment, tags, created_at, status, reply, reply_at, due_at, profiles ( name )").eq("ad_id", id).order("created_at", { ascending: false }),
+    admin.from("reviews").select("id, user_id, comment, tags, rating, created_at, status, reply, reply_at, due_at, profiles ( name )").eq("ad_id", id).order("created_at", { ascending: false }),
     admin.from("ad_media").select("type, storage_path, is_cover, review, blur_path").eq("ad_id", id).order("position"),
     admin.from("stories").select("storage_path").eq("ad_id", id).gt("expires_at", nowIso).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     admin.from("verifications").select("reviewed_at").eq("profile_id", pid).maybeSingle(),
@@ -142,10 +142,14 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     .filter((r: any) => r.status === "publicada" || (r.status === "aguardando" && r.due_at && new Date(r.due_at).getTime() < nowRev))
     .map((r: any) => ({
       id: r.id, user_id: r.user_id, comment: r.comment, tags: r.tags ?? [],
-      created_at: r.created_at,
+      created_at: r.created_at, rating: r.rating ?? 5,
       authorName: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.name ?? "",
       reply: (r.reply as string | null) ?? null,
     }));
+
+  // média das notas (pro selo + estrela no Google)
+  const ratingCount = reviews.length;
+  const ratingValue = ratingCount > 0 ? reviews.reduce((s, r) => s + (r.rating || 5), 0) / ratingCount : 0;
 
   // Moderação por foto (ECA): 'pendente' não aparece ao público; 'nudez' aparece
   // borrada pra quem não é 18+ (anônimo, menor ou sem data) e nítida pro logado 18+.
@@ -210,12 +214,28 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
               { name: data.title, url: absUrl(`/anuncio/${data.id}`) },
             ]),
             ldProfile({ name: data.title, url: absUrl(`/anuncio/${data.id}`), city: data.city ? `${data.city.name}-${data.city.uf}` : undefined, description: data.description }),
+            ldProduct({
+              name: `${data.title}${data.city ? ` — Acompanhante em ${data.city.name}-${data.city.uf}` : ""}`,
+              url: absUrl(`/anuncio/${data.id}`),
+              image: coverUrl || undefined,
+              description: data.description,
+              priceCents: (ad.price_cents as number) || undefined,
+              rating: ratingCount > 0 ? { value: ratingValue, count: ratingCount } : null,
+            }),
           ]),
         }}
       />
       <AdDetail ad={data} now={new Date()} backHref="/" interactions={interactions} coverUrl={coverUrl} coverBlurred={coverBlurred} storyUrl={storyUrl} media={media} extra={extra} />
       <section className="mx-auto w-full max-w-3xl px-4 pb-8">
-        <h2 className="mb-3 font-display text-lg font-bold text-ink">Avaliações {reviews.length > 0 && <span className="text-muted">({reviews.length})</span>}</h2>
+        <div className="mb-3 flex flex-wrap items-center gap-2.5">
+          <h2 className="font-display text-lg font-bold text-ink">Avaliações {reviews.length > 0 && <span className="text-muted">({reviews.length})</span>}</h2>
+          {ratingCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-pill bg-accent-soft px-2.5 py-1 text-sm font-bold text-accent">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20l1.2-6.5L2.5 8.9 9.1 8 12 2z" /></svg>
+              {ratingValue.toFixed(1)}
+            </span>
+          )}
+        </div>
         {interactions.canInteract ? (
           <div className="mb-4"><ReviewForm adId={data.id} /></div>
         ) : (

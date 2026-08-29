@@ -116,6 +116,40 @@ export function ldProfile(opts: { name: string; url: string; city?: string; desc
   };
 }
 
+/** Product + AggregateRating — é o tipo que o Google usa pra estrela na busca. */
+export function ldProduct(opts: {
+  name: string; url: string; image?: string | null; description?: string;
+  priceCents?: number; rating?: { value: number; count: number } | null;
+}): Json {
+  const p: Json = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: opts.name,
+    url: opts.url,
+    ...(opts.image ? { image: opts.image } : {}),
+    ...(opts.description ? { description: opts.description } : {}),
+  };
+  if (opts.priceCents && opts.priceCents > 0) {
+    p.offers = {
+      "@type": "Offer",
+      price: (opts.priceCents / 100).toFixed(2),
+      priceCurrency: "BRL",
+      availability: "https://schema.org/InStock",
+      url: opts.url,
+    };
+  }
+  if (opts.rating && opts.rating.count > 0) {
+    p.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: opts.rating.value.toFixed(1),
+      reviewCount: opts.rating.count,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
+  return p;
+}
+
 /** <script type="application/ld+json"> seguro (escapa </script>). */
 export function jsonLdScript(data: Json | Json[]): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
