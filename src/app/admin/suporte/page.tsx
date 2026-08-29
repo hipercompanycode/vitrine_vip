@@ -9,6 +9,24 @@ export const dynamic = "force-dynamic";
 
 const inputCls = "w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none";
 
+const STATUS: Record<string, { label: string; pill: string; dot: string }> = {
+  aberto: { label: "Aberto", pill: "bg-[#12331f] text-[#43d17f]", dot: "bg-[#43d17f]" },
+  em_atendimento: { label: "Em atendimento", pill: "bg-amber-500/20 text-amber-300", dot: "bg-amber-400" },
+  fechado: { label: "Fechado", pill: "bg-surface-2 text-muted", dot: "bg-muted" },
+};
+const st = (s: string) => STATUS[s] ?? STATUS.aberto;
+const GROUP_ORDER = ["aberto", "em_atendimento", "fechado"] as const;
+
+function StatusBtn({ ticketId, action, label }: { ticketId: string; action: string; label: string }) {
+  return (
+    <form action="/api/admin/support" method="post" className="inline">
+      <input type="hidden" name="ticket_id" value={ticketId} />
+      <input type="hidden" name="action" value={action} />
+      <button className="text-muted underline transition-colors hover:text-ink">{label}</button>
+    </form>
+  );
+}
+
 function Nav() {
   return (
     <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm">
@@ -38,6 +56,7 @@ export default async function AdminSuportePage({ searchParams }: { searchParams:
       const { data: msgs } = await admin.from("support_messages").select("id, from_admin, body, created_at").eq("ticket_id", sp.t).order("created_at", { ascending: true });
       const who = (Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles)?.name || "Anunciante";
       const closed = ticket.status === "fechado";
+      const s = st(ticket.status);
       return (
         <>
           <AdminHeader />
@@ -46,7 +65,7 @@ export default async function AdminSuportePage({ searchParams }: { searchParams:
             <Link href="/admin/suporte" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>Voltar</Link>
             <div className="flex items-center justify-between gap-2">
               <h1 className="font-display text-xl font-extrabold text-ink">{who} · {ticket.kind === "chat" ? "chat" : "mensagem"}</h1>
-              <span className={`rounded-pill px-2.5 py-0.5 text-xs font-bold ${closed ? "bg-surface-2 text-muted" : "bg-[#12331f] text-[#43d17f]"}`}>{closed ? "Fechado" : "Aberto"}</span>
+              <span className={`shrink-0 rounded-pill px-2.5 py-0.5 text-xs font-bold ${s.pill}`}>{s.label}</span>
             </div>
             {ticket.subject && <p className="mt-0.5 text-sm text-muted">{ticket.subject}</p>}
 
@@ -68,51 +87,75 @@ export default async function AdminSuportePage({ searchParams }: { searchParams:
               <textarea name="message" rows={2} required placeholder="Responder…" className={`${inputCls} resize-none`} />
               <button className="shrink-0 rounded-input bg-accent px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-strong">Responder</button>
             </form>
-            <form action="/api/admin/support" method="post" className="mt-2">
-              <input type="hidden" name="ticket_id" value={ticket.id} />
-              <input type="hidden" name="action" value={closed ? "reopen" : "close"} />
-              <button className="text-xs font-semibold text-muted underline hover:text-ink">{closed ? "Reabrir atendimento" : "Marcar como fechado"}</button>
-            </form>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-semibold">
+              {closed ? (
+                <StatusBtn ticketId={ticket.id} action="reopen" label="Reabrir atendimento" />
+              ) : (
+                <>
+                  {ticket.status === "aberto" && <StatusBtn ticketId={ticket.id} action="attend" label="Marcar em atendimento" />}
+                  <StatusBtn ticketId={ticket.id} action="close" label="Marcar como fechado" />
+                </>
+              )}
+            </div>
           </main>
         </>
       );
     }
   }
 
-  // lista (abertos primeiro)
+  // lista agrupada por status
   const { data: rows } = await admin
     .from("support_tickets")
     .select("id, kind, subject, status, updated_at, profiles ( name )")
-    .order("status", { ascending: true })
     .order("updated_at", { ascending: false })
-    .limit(200);
+    .limit(300);
   const list = (rows ?? []) as any[];
+  const byStatus: Record<string, any[]> = { aberto: [], em_atendimento: [], fechado: [] };
+  for (const t of list) (byStatus[t.status] ?? byStatus.aberto).push(t);
 
   return (
     <>
       <AdminHeader />
       <main className="mx-auto w-full max-w-[1760px] flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <Nav />
-        <h1 className="mb-4 font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Suporte</h1>
+        <h1 className="mb-6 font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Suporte</h1>
         {list.length === 0 ? (
           <div className="rounded-card border border-dashed border-line bg-surface/50 px-6 py-14 text-center text-sm text-muted">Nenhum atendimento. 🎉</div>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((t) => {
-              const who = (Array.isArray(t.profiles) ? t.profiles[0] : t.profiles)?.name || "Anunciante";
+          <div className="space-y-8">
+            {GROUP_ORDER.map((key) => {
+              const items = byStatus[key];
+              const g = STATUS[key];
               return (
-                <li key={t.id}>
-                  <Link href={`/admin/suporte?t=${t.id}`} className="flex items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-3 shadow-card transition-colors hover:border-accent/60">
-                    <div className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-ink">{who}</span>
-                      <span className="block truncate text-xs text-muted">{t.subject || (t.kind === "chat" ? "Chat" : "Mensagem")} · {timeAgo(new Date(t.updated_at), now)}</span>
-                    </div>
-                    <span className={`shrink-0 rounded-pill px-2.5 py-0.5 text-[11px] font-bold ${t.status === "fechado" ? "bg-surface-2 text-muted" : "bg-[#12331f] text-[#43d17f]"}`}>{t.status === "fechado" ? "Fechado" : "Aberto"}</span>
-                  </Link>
-                </li>
+                <section key={key}>
+                  <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-ink">
+                    <span className={`h-2 w-2 rounded-full ${g.dot}`} />
+                    {g.label} <span className="font-normal text-muted">({items.length})</span>
+                  </h2>
+                  {items.length === 0 ? (
+                    <p className="text-sm text-muted/70">Nenhum.</p>
+                  ) : (
+                    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {items.map((t) => {
+                        const who = (Array.isArray(t.profiles) ? t.profiles[0] : t.profiles)?.name || "Anunciante";
+                        return (
+                          <li key={t.id}>
+                            <Link href={`/admin/suporte?t=${t.id}`} className="flex items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-3 shadow-card transition-colors hover:border-accent/60">
+                              <div className="min-w-0">
+                                <span className="block truncate text-sm font-bold text-ink">{who}</span>
+                                <span className="block truncate text-xs text-muted">{t.subject || (t.kind === "chat" ? "Chat" : "Mensagem")} · {timeAgo(new Date(t.updated_at), now)}</span>
+                              </div>
+                              <span className={`shrink-0 rounded-pill px-2.5 py-0.5 text-[11px] font-bold ${g.pill}`}>{g.label}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
               );
             })}
-          </ul>
+          </div>
         )}
       </main>
     </>
