@@ -177,7 +177,7 @@ export default function AdDetail({
               </TrackedContactLink>
             )}
             {showCall && (
-              <TrackedContactLink adId={ad.id} href={telHref!} className="flex w-full items-center justify-center gap-2 rounded-pill border border-line bg-surface px-5 py-3.5 text-base font-semibold text-ink transition-colors hover:border-accent hover:text-accent active:scale-[0.99]">
+              <TrackedContactLink adId={ad.id} href={telHref!} className="flex w-full items-center justify-center gap-2 rounded-pill bg-ink px-5 py-3.5 text-base font-semibold text-canvas shadow-pop transition-all hover:opacity-90 active:scale-[0.99]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.27-.27.68-.36 1.02-.24 1.12.37 2.33.57 3.58.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.6 21 3 13.4 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.46.57 3.58.11.34.03.75-.24 1.02l-2.23 2.2z" fill="currentColor" /></svg>
                 Ligar agora
               </TrackedContactLink>
