@@ -15,6 +15,7 @@ import WizardNav from "@/components/WizardNav";
 import ReferralShare from "@/components/ReferralShare";
 import { ensureRefCode } from "@/lib/referral";
 import { isAdult } from "@/lib/age";
+import PendingLink from "@/components/PendingLink";
 import { type PendingReview } from "@/components/ReviewRespond";
 import PixCheckout from "@/components/PixCheckout";
 import { cardCls } from "@/components/ui";
@@ -295,21 +296,21 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
               <section className={cardCls}>
                 <h2 className="mb-4 text-center font-display text-base font-bold text-ink">Ações do anúncio</h2>
                 <div className="mb-3 space-y-2">
-                  <Link href="/meu-anuncio/cidade" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                  <PendingLink href="/meu-anuncio/cidade" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8" /></svg>
                     Alterar cidade
-                  </Link>
-                  <Link href="/meu-anuncio/fotos" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                  </PendingLink>
+                  <PendingLink href="/meu-anuncio/fotos" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
                     Editar fotos
-                  </Link>
-                  <Link href="/meu-anuncio/avaliacoes" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                  </PendingLink>
+                  <PendingLink href="/meu-anuncio/avaliacoes" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
                     Avaliações
                     {pendingReviews.length > 0 && (
                       <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold text-white">{pendingReviews.length}</span>
                     )}
-                  </Link>
+                  </PendingLink>
                 </div>
                 <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
               </section>
@@ -328,10 +329,10 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
               {refCode && <ReferralShare code={refCode} count={referralCount} referredBy={referredByName} />}
 
-              <Link href="/suporte" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+              <PendingLink href="/suporte" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 21 12z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
                 Suporte
-              </Link>
+              </PendingLink>
             </div>
           ) : (
             <div className="space-y-5">

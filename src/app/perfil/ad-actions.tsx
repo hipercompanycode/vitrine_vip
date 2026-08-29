@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PendingLink from "@/components/PendingLink";
 import BumpButton from "@/components/BumpButton";
 import AvailabilityButton from "@/components/AvailabilityButton";
 import StatusButton from "@/components/StatusButton";
@@ -11,7 +11,7 @@ export default function AdActions({ ad, editHref = "/meu-anuncio?step=1", cooldo
   return (
     <div className="space-y-3">
       {/* editar */}
-      <Link
+      <PendingLink
         href={editHref}
         className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
       >
@@ -20,7 +20,7 @@ export default function AdActions({ ad, editHref = "/meu-anuncio?step=1", cooldo
           <path d="M13.5 6.5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
         Editar anúncio
-      </Link>
+      </PendingLink>
 
       {!paused && (
         <>
