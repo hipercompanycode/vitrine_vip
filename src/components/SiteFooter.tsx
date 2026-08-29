@@ -12,7 +12,6 @@ export default function SiteFooter() {
             <span className="font-display font-bold text-ink">vitrine<span className="text-accent">vip</span></span>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
               <span className="rounded bg-surface-2 px-1.5 py-0.5 font-semibold text-ink">+18</span>
-              <Link href="/acompanhantes" className="transition-colors hover:text-accent">Cidades</Link>
               <Link href="/termos" className="transition-colors hover:text-accent">Termos de Uso</Link>
               <Link href="/privacidade" className="transition-colors hover:text-accent">Privacidade</Link>
               <Link href="/cookies" className="transition-colors hover:text-accent">Cookies</Link>
