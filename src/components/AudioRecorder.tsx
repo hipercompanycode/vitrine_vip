@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import { publicUrl } from "@/lib/storage";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const MAX_SECONDS = 40;
 const MAX_BYTES = 12 * 1024 * 1024; // 12 MB
@@ -33,6 +34,7 @@ export default function AudioRecorder({
   const [ext, setExt] = useState("webm");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [msg, setMsg] = useState("");
   const mrRef = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -122,6 +124,7 @@ export default function AudioRecorder({
     const res = await fetch("/api/audio/delete", { method: "POST", body });
     if (res.ok) setSavedUrl(null);
     setBusy(false);
+    setConfirmRemove(false);
   }
 
   function discard() {
@@ -142,12 +145,12 @@ export default function AudioRecorder({
           <audio controls preload="none" controlsList="nodownload noplaybackrate" src={savedUrl} className="w-full" />
           <button
             type="button"
-            onClick={removeSaved}
+            onClick={() => setConfirmRemove(true)}
             disabled={busy}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-input border border-line bg-surface px-3.5 py-2 text-xs font-semibold text-muted transition-colors hover:border-red-500/50 hover:text-red-300 disabled:opacity-50"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-input border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-50"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            {busy ? "Removendo…" : "Remover áudio"}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Remover áudio
           </button>
         </div>
       )}
@@ -184,6 +187,16 @@ export default function AudioRecorder({
 
       <p className="text-[11px] text-muted">Grave até {MAX_SECONDS}s de voz (ou envie um arquivo, máx. 12 MB). O áudio aparece no seu anúncio pro cliente ouvir.</p>
       {msg && <p className="text-sm text-red-400">{msg}</p>}
+
+      <ConfirmDialog
+        open={confirmRemove}
+        title="Remover áudio?"
+        message="O áudio de voz vai sair do seu anúncio. Você pode gravar outro depois."
+        confirmLabel="Remover"
+        busy={busy}
+        onConfirm={removeSaved}
+        onCancel={() => setConfirmRemove(false)}
+      />
     </div>
   );
 }
