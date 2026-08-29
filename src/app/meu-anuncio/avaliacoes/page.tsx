@@ -5,6 +5,7 @@ import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { tagLabel } from "@/lib/interactions";
 import { timeAgo } from "@/lib/format";
 import ReviewRespond, { type PendingReview } from "@/components/ReviewRespond";
+import ReviewList, { type ReviewItem } from "@/components/ReviewList";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Avaliações", robots: { index: false, follow: false } };
@@ -15,8 +16,9 @@ export default async function MinhasAvaliacoesPage() {
   if (!user) redirect("/login?next=/meu-anuncio/avaliacoes");
 
   const admin = createAdminClient();
-  const { data: ad } = await admin.from("ads").select("id").eq("profile_id", user.id).maybeSingle();
+  const { data: ad } = await admin.from("ads").select("id, title").eq("profile_id", user.id).maybeSingle();
   if (!ad) redirect("/meu-anuncio");
+  const adName = ((ad.title as string | null) ?? "").trim() || "Você";
 
   const { data: rowsRaw } = await admin
     .from("reviews")
@@ -30,6 +32,9 @@ export default async function MinhasAvaliacoesPage() {
     .filter((r) => r.status === "aguardando")
     .map((r) => ({ id: r.id, comment: r.comment, tags: r.tags ?? [], dueAt: r.due_at ?? null, authorName: nameOf(r) }));
   const published = rows.filter((r) => r.status === "publicada");
+  const publishedItems: ReviewItem[] = published.map((r) => ({
+    id: r.id, user_id: "", comment: r.comment, tags: r.tags ?? [], created_at: r.created_at, authorName: nameOf(r), reply: r.reply ?? null,
+  }));
   const moderation = rows.filter((r) => r.status === "moderacao");
   const now = new Date();
 
@@ -72,32 +77,23 @@ export default async function MinhasAvaliacoesPage() {
           )}
         </section>
 
-        {/* publicadas */}
+        {/* publicadas — accordion (a lista pode ficar grande) */}
         <section>
-          <h2 className="mb-3 font-display text-base font-bold text-ink">Publicadas {published.length > 0 && <span className="text-muted">({published.length})</span>}</h2>
           {published.length > 0 ? (
-            <ul className="space-y-3">
-              {published.map((r) => (
-                <li key={r.id} className="rounded-card border border-line bg-surface p-4 shadow-card">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="text-sm font-semibold text-ink">{nameOf(r)}</span>
-                    {(r.tags ?? []).map((t: string) => (
-                      <span key={t} className="rounded-pill bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">{tagLabel(t)}</span>
-                    ))}
-                    <span className="ml-auto text-[11px] text-muted">{timeAgo(new Date(r.created_at), now)}</span>
-                  </div>
-                  {r.comment && <p className="mt-2 whitespace-pre-line text-sm text-ink/90">{r.comment}</p>}
-                  {r.reply && (
-                    <div className="mt-3 rounded-input border-l-2 border-accent bg-surface-2/50 px-3 py-2">
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-accent">Sua resposta</p>
-                      <p className="mt-0.5 whitespace-pre-line text-sm text-ink/90">{r.reply}</p>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <details className="group overflow-hidden rounded-card border border-line bg-surface">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 font-display text-base font-bold text-ink transition-colors hover:text-accent">
+                <span>Publicadas <span className="text-muted">({published.length})</span></span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-muted transition-transform group-open:rotate-180" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </summary>
+              <div className="border-t border-line/60 px-4 pb-3 pt-1">
+                <ReviewList reviews={publishedItems} now={now} currentUserId={null} adId={ad.id as string} adName={adName} />
+              </div>
+            </details>
           ) : (
-            <div className="rounded-card border border-dashed border-line bg-surface/50 px-5 py-8 text-center text-sm text-muted">Nenhuma avaliação publicada ainda.</div>
+            <>
+              <h2 className="mb-3 font-display text-base font-bold text-ink">Publicadas</h2>
+              <div className="rounded-card border border-dashed border-line bg-surface/50 px-5 py-8 text-center text-sm text-muted">Nenhuma avaliação publicada ainda.</div>
+            </>
           )}
         </section>
 

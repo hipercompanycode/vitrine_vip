@@ -31,37 +31,31 @@ export default function ReviewList({
 
   return (
     <div>
-      <ul className="divide-y divide-line/60 overflow-hidden rounded-card border border-line bg-surface">
+      <ul className="divide-y divide-line/60">
         {shown.map((r) => (
-          <li key={r.id} className="p-4">
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 font-display text-xs font-bold text-muted">
-                {(r.authorName || "?").charAt(0).toUpperCase()}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="text-sm font-semibold text-ink">{r.authorName || "Usuário"}</span>
-                  {r.tags.map((t) => (
-                    <span key={t} className="rounded-pill bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent">
-                      {tagLabel(t)}
-                    </span>
-                  ))}
-                </div>
-              </div>
+          <li key={r.id} className="py-4 first:pt-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-[15px] font-semibold text-ink">{r.authorName || "Usuário"}</span>
               <span className="shrink-0 whitespace-nowrap text-[11px] text-muted">{timeAgo(new Date(r.created_at), now)}</span>
             </div>
+
+            {r.tags.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-x-3.5 gap-y-1">
+                {r.tags.map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 text-xs font-semibold text-accent-strong">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-accent" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    {tagLabel(t)}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {r.comment && <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink/90">{r.comment}</p>}
 
             {r.reply && (
-              <div className="mt-3 ml-3 rounded-input border-l-2 border-accent bg-accent-soft/20 px-3 py-2.5">
-                <div className="flex items-center gap-1.5">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-accent" aria-hidden="true"><path d="M9 17l-5-5 5-5M4 12h11a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  <span className="text-xs font-bold text-accent">{nome}</span>
-                  <span className="text-[10px] text-muted">respondeu</span>
-                </div>
-                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-ink/90">{r.reply}</p>
-              </div>
+              <p className="mt-2.5 pl-2 text-[13px] leading-relaxed text-muted">
+                <span className="font-bold text-accent">{nome}:</span> <span className="text-ink/80">{r.reply}</span>
+              </p>
             )}
 
             {currentUserId === r.user_id && (
@@ -79,7 +73,7 @@ export default function ReviewList({
         <button
           type="button"
           onClick={() => setVisible((v) => v + STEP)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
         >
           Carregar mais avaliações
           <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-muted">+{Math.min(STEP, remaining)}</span>
