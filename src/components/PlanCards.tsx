@@ -33,7 +33,10 @@ function Feat({ ok, children }: { ok?: boolean; children: React.ReactNode }) {
 
 function bumpLabel(p: Plan) {
   if (!p.allowsBump) return "Subir ao topo";
-  return p.bumpCooldownMinutes === 0 ? "Subir ao topo a qualquer hora" : `Subir ao topo a cada ${p.bumpCooldownMinutes} min`;
+  const m = p.bumpCooldownMinutes;
+  if (m === 0) return "Subir ao topo a qualquer hora";
+  const cada = m % 60 === 0 ? `${m / 60}h` : `${m} min`;
+  return `Subir ao topo a cada ${cada}`;
 }
 
 export default function PlanCards({ currentSlug }: { currentSlug?: string }) {

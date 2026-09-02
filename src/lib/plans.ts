@@ -16,7 +16,7 @@ export type Plan = {
 
 export const PLANS: Plan[] = [
   { slug: "free",    name: "Grátis",  priceCents: 0,     bumpCooldownMinutes: -1, allowsStory: false, allowsAudio: false, allowsBump: false, allowsAvailability: false, topSeal: false, maxPhotos: 6,  maxVideos: 0 },
-  { slug: "pro",     name: "Pro",     priceCents: 9990,  bumpCooldownMinutes: 15, allowsStory: true,  allowsAudio: true,  allowsBump: true,  allowsAvailability: true,  topSeal: false, maxPhotos: 12, maxVideos: 3 },
+  { slug: "pro",     name: "Pro",     priceCents: 9990,  bumpCooldownMinutes: 60, allowsStory: true,  allowsAudio: true,  allowsBump: true,  allowsAvailability: true,  topSeal: false, maxPhotos: 12, maxVideos: 3 },
   { slug: "premium", name: "Premium", priceCents: 14990, bumpCooldownMinutes: 0,  allowsStory: true,  allowsAudio: true,  allowsBump: true,  allowsAvailability: true,  topSeal: true,  maxPhotos: 12, maxVideos: 3 },
 ];
 
