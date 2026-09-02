@@ -4,7 +4,7 @@ import { createAdminClient, createServerClient } from "@/lib/supabase/server";
 import { type ProfileCardData } from "@/components/ProfileCard";
 import VitrineTopBar from "@/components/VitrineTopBar";
 import { sanitizeAttrs, labelOf } from "@/lib/attributes";
-import { cityPath } from "@/lib/seo";
+import { cityPath, SITE_NAME } from "@/lib/seo";
 import { userHasAd, availableActive, coverUrlMap, type Cover } from "@/lib/ads";
 import { isAdult } from "@/lib/age";
 import { publicUrl } from "@/lib/storage";
@@ -294,6 +294,25 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
             </p>
           )}
         </section>
+
+        {!hasAd && !hasFilters && (
+          <section className="mb-4 overflow-hidden rounded-2xl border border-accent/30 bg-gradient-to-r from-accent-soft/50 to-surface px-4 py-3.5 sm:px-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white sm:flex">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-ink">É acompanhante? <span className="text-accent">Anuncie de graça</span> na {SITE_NAME}.</p>
+                  <p className="mt-0.5 text-xs text-muted">Grátis pra sempre — perfil verificado, aparece na sua cidade e contato direto no seu WhatsApp. Sem cartão e sem comissão.</p>
+                </div>
+              </div>
+              <Link href="/meu-anuncio" className="shrink-0 rounded-input bg-accent px-5 py-2.5 text-center text-sm font-bold text-white transition-all hover:bg-accent-strong active:scale-[0.98]">
+                Criar meu anúncio grátis
+              </Link>
+            </div>
+          </section>
+        )}
 
         {chips.length > 0 && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
