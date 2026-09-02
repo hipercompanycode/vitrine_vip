@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isActive } from "@/lib/subscription";
+import { ensureFreeBaseline } from "@/lib/access";
 import { PLANS, PAID_PLANS, planBySlug, type PlanSlug } from "@/lib/plans";
 import { AdBasicsForm, AdAttributesForm, AdPricesForm } from "../perfil/ad-form";
 import MediaManager from "@/components/MediaManager";
@@ -107,6 +108,8 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
   const admin = createAdminClient();
   await admin.from("profiles").update({ role: "anunciante" }).eq("id", user.id).eq("role", "comum");
+  // se o plano pago venceu, rebaixa pro Grátis na hora (não fica no paywall)
+  await ensureFreeBaseline(admin, user.id);
 
   const [{ data: ad }, { data: sub }, { data: verif }, { data: prof }] = await Promise.all([
     admin.from("ads").select("*").eq("profile_id", user.id).maybeSingle(),

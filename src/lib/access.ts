@@ -18,6 +18,30 @@ export async function planForProfile(admin: Admin, profileId: string): Promise<P
   return planFromSlug(rel?.slug ?? null);
 }
 
+const FAR_FUTURE_ISO = () => new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString();
+
+/**
+ * Se o plano PAGO do anunciante venceu, rebaixa pro Grátis vitalício (freemium):
+ * o anúncio continua visível na vitrine, só perde os recursos pagos. Cortesia e
+ * Grátis não são tocados. Retorna true se rebaixou. Idempotente.
+ */
+export async function ensureFreeBaseline(admin: Admin, profileId: string): Promise<boolean> {
+  const { data: sub } = await admin
+    .from("subscriptions").select("method, current_period_end").eq("profile_id", profileId).maybeSingle();
+  if (!sub) return false;
+  const method = String((sub as any).method ?? "");
+  if (method === "free" || method === "cortesia") return false;
+  const end = (sub as any).current_period_end ? new Date((sub as any).current_period_end).getTime() : 0;
+  if (end > Date.now()) return false; // ainda vigente
+  const { data: free } = await admin.from("plans").select("id").eq("slug", "free").maybeSingle();
+  if (!free?.id) return false;
+  await admin.from("subscriptions").update({
+    plan_id: free.id, method: "free", status: "active",
+    current_period_end: FAR_FUTURE_ISO(), asaas_paid_payment_id: null,
+  }).eq("profile_id", profileId);
+  return true;
+}
+
 // Estado de acesso do anunciante para o paywall/gating.
 // - active: assinatura (paga ou trial) vigente.
 // - verifApproved: comprovação aprovada pela moderação.

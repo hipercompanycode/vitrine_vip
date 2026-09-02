@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/cron/reverify", "schedule": "0 6 * * *" }
+    { "path": "/api/cron/reverify", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/expire-plans", "schedule": "0 5 * * *" }
   ]
 }

@@ -45,12 +45,22 @@ export async function POST(request: Request) {
       dueDate,
     });
 
-    // registra a cobrança pendente — NÃO ativa ainda (só o pagamento confirma).
-    // upsert parcial: preserva status/current_period_end de um período ativo em andamento.
-    await admin.from("subscriptions").upsert(
-      { profile_id: user.id, plan_id: plan.id, method: "pix", asaas_customer_id: customer, asaas_payment_id: charge.id },
-      { onConflict: "profile_id" }
-    );
+    // registra a cobrança pendente — NÃO muda o plano ainda. O anunciante segue
+    // no plano atual (Grátis, se for o caso) até o pagamento confirmar; o crédito
+    // deduz o plano pelo valor pago. Assim não vira Pro/Premium antes de pagar.
+    const { data: existingSub } = await admin.from("subscriptions").select("id").eq("profile_id", user.id).maybeSingle();
+    if (existingSub) {
+      await admin.from("subscriptions").update({ asaas_customer_id: customer, asaas_payment_id: charge.id }).eq("profile_id", user.id);
+    } else {
+      const { data: freeP } = await admin.from("plans").select("id").eq("slug", "free").maybeSingle();
+      if (freeP?.id) {
+        await admin.from("subscriptions").insert({
+          profile_id: user.id, plan_id: freeP.id, status: "active", method: "free",
+          current_period_end: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+          asaas_customer_id: customer, asaas_payment_id: charge.id,
+        });
+      }
+    }
 
     return NextResponse.json({
       paymentId: charge.id,
