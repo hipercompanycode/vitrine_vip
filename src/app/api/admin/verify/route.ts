@@ -69,26 +69,24 @@ export async function POST(request: Request) {
     }
   }
 
-  // Ao aprovar: concede 7 dias de teste grátis (uma vez), se ainda não tem plano pago ativo.
+  // Ao aprovar: concede o plano Grátis vitalício (freemium), se ainda não tem
+  // assinatura paga vigente. Sem cobrança e sem vencimento real (100 anos).
   if (approved) {
     const nowMs = Date.now();
-    const [{ data: prof }, { data: sub }] = await Promise.all([
-      admin.from("profiles").select("trial_used").eq("id", profileId).maybeSingle(),
-      admin.from("subscriptions").select("status, method, current_period_end").eq("profile_id", profileId).maybeSingle(),
-    ]);
-    const hasActivePaid = !!sub && sub.status === "active" && sub.method !== "trial"
+    const { data: sub } = await admin
+      .from("subscriptions").select("status, method, current_period_end").eq("profile_id", profileId).maybeSingle();
+    const hasActivePaid = !!sub && sub.status === "active" && sub.method !== "trial" && sub.method !== "free"
       && !!sub.current_period_end && new Date(sub.current_period_end as string).getTime() > nowMs;
-    if (!prof?.trial_used && !hasActivePaid) {
-      const { data: pro } = await admin.from("plans").select("id").eq("slug", "pro").maybeSingle();
-      if (pro?.id) {
+    if (!hasActivePaid) {
+      const { data: free } = await admin.from("plans").select("id").eq("slug", "free").maybeSingle();
+      if (free?.id) {
         await admin.from("subscriptions").upsert({
           profile_id: profileId,
-          plan_id: pro.id,
+          plan_id: free.id,
           status: "active",
-          method: "trial",
-          current_period_end: new Date(nowMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          method: "free",
+          current_period_end: new Date(nowMs + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
         }, { onConflict: "profile_id" });
-        await admin.from("profiles").update({ trial_used: true }).eq("id", profileId);
       }
     }
   }

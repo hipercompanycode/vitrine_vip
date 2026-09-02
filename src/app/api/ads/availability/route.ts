@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
-import { accountAccess } from "@/lib/access";
+import { accountAccess, planForProfile } from "@/lib/access";
 import { apiError, GENERIC_ERROR } from "@/lib/http";
 import { geoFromRequest, recordGeoAndFlag } from "@/lib/geo-ip";
 
@@ -15,6 +15,9 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { active } = await accountAccess(admin, user.id);
   if (!active) return apiError("Sua assinatura está inativa. Renove para usar esta ação.", 402);
+
+  const plan = await planForProfile(admin, user.id);
+  if (!plan.allowsAvailability) return apiError('"Disponível agora" é um recurso do plano Pro ou Premium.', 402);
 
   const { error } = await admin
     .from("ads")

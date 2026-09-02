@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import PixCheckout from "@/components/PixCheckout";
-import { PLANS } from "@/lib/plans";
+import { PAID_PLANS } from "@/lib/plans";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { userHasAd } from "@/lib/ads";
 
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AssinarPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const plan = PLANS.find((p) => p.slug === slug);
+  const plan = PAID_PLANS.find((p) => p.slug === slug); // só planos pagos são assináveis
   if (!plan) notFound();
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -22,7 +22,7 @@ export default async function AssinarPage({ params }: { params: Promise<{ slug: 
         <p className="mt-1 text-sm text-muted">
           {(plan.priceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} via Pix — vale 30 dias.
         </p>
-        <div className="mt-6"><PixCheckout plans={PLANS} fixedSlug={plan.slug} /></div>
+        <div className="mt-6"><PixCheckout plans={PAID_PLANS} fixedSlug={plan.slug} /></div>
       </main>
     </>
   );

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { apiError, GENERIC_ERROR } from "@/lib/http";
+import { planForProfile } from "@/lib/access";
 
-// Define o áudio de voz do anúncio. Livre pra qualquer anunciante dona do anúncio.
+// Define o áudio de voz do anúncio. Recurso dos planos pagos (Pro/Premium).
 export async function POST(request: Request) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -19,6 +20,9 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data: ad } = await admin.from("ads").select("id, profile_id, audio_path").eq("id", adId).maybeSingle();
   if (!ad || ad.profile_id !== user.id) return NextResponse.json({ error: "acesso negado" }, { status: 403 });
+
+  const plan = await planForProfile(admin, user.id);
+  if (!plan.allowsAudio) return apiError("O áudio de apresentação é um recurso do plano Pro ou Premium.", 402);
 
   const { error } = await admin.from("ads").update({ audio_path: storagePath }).eq("id", adId);
   if (error) return apiError(GENERIC_ERROR, 500, error);

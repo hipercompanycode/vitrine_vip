@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   const { data: plan } = await admin.from("plans").select("id, name, price_cents").eq("slug", slug).maybeSingle();
-  if (!plan) return NextResponse.json({ error: "plano inválido" }, { status: 400 });
+  if (!plan || (plan.price_cents as number) <= 0) return NextResponse.json({ error: "plano inválido" }, { status: 400 });
 
   const { data: prof } = await admin.from("profiles").select("name").eq("id", user.id).maybeSingle();
   const name = (prof?.name as string | null)?.trim() || user.email?.split("@")[0] || "Anunciante";

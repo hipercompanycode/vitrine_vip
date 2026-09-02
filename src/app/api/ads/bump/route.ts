@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { canBump, nextBumpAt } from "@/lib/bump";
-import { accountAccess } from "@/lib/access";
+import { accountAccess, planForProfile } from "@/lib/access";
 import { apiError, GENERIC_ERROR } from "@/lib/http";
 import { geoFromRequest, recordGeoAndFlag } from "@/lib/geo-ip";
 
@@ -13,6 +13,9 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { active } = await accountAccess(admin, user.id);
   if (!active) return apiError("Sua assinatura está inativa. Renove para subir o anúncio.", 402);
+
+  const plan = await planForProfile(admin, user.id);
+  if (!plan.allowsBump) return apiError("Subir ao topo é um recurso do plano Pro ou Premium.", 402);
 
   const { data: ad } = await admin.from("ads").select("id, bumped_at, profile_id, cities ( uf )").eq("profile_id", user.id).maybeSingle();
   if (!ad) return NextResponse.json({ error: "sem anúncio" }, { status: 404 });

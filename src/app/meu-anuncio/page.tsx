@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { isActive } from "@/lib/subscription";
-import { PLANS, planBySlug, type PlanSlug } from "@/lib/plans";
+import { PLANS, PAID_PLANS, planBySlug, type PlanSlug } from "@/lib/plans";
 import { AdBasicsForm, AdAttributesForm, AdPricesForm } from "../perfil/ad-form";
 import MediaManager from "@/components/MediaManager";
 import { VIDEO_ENABLED } from "@/lib/media";
@@ -122,8 +122,8 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
 
   const plan = sub?.plans as unknown as { slug?: string; allows_story?: boolean } | null;
   const active = isActive(sub as { status: string; current_period_end: string | null } | null, new Date());
-  const isTrial = active && (sub?.method as string | undefined) === "trial";
   const isCortesia = (sub?.method as string | undefined) === "cortesia";
+  const isFreePlan = active && plan?.slug === "free"; // Grátis vitalício (freemium)
 
   // indicação: garante o código do anunciante + conta quem ele indicou + quem o indicou
   const refCode = ((prof?.ref_code as string | null) ?? (await ensureRefCode(admin, user.id))) ?? "";
@@ -135,7 +135,6 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
   ]);
   const referralCount = refCount ?? 0;
   const referredByName = ((refByRes.data as { title?: string } | null)?.title ?? "").trim() || null;
-  const trialEndLabel = sub?.current_period_end ? new Date(sub.current_period_end as string).toLocaleDateString("pt-BR") : "";
   const planLimits = plan?.slug && PLANS.some((x) => x.slug === plan.slug) ? planBySlug(plan.slug as PlanSlug) : PLANS[0];
   const verifStatus = (verif?.status as string | undefined) ?? null;
   const verifApproved = verifStatus === "approved";
@@ -239,7 +238,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
           </div>
 
           <section className={cardCls}>
-            <PixCheckout plans={PLANS} redirectTo="/meu-anuncio" />
+            <PixCheckout plans={PAID_PLANS} redirectTo="/meu-anuncio" />
           </section>
 
           <p className="mt-4 text-center text-xs text-muted">
@@ -284,10 +283,10 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                     </span>
                     <div>
                       <p className="text-sm font-bold text-ink">Seu anúncio está no ar 🎉</p>
-                      <p className="text-xs text-muted">{isTrial ? `Teste grátis — termina em ${trialEndLabel}. Assine para continuar depois.` : "Perfil verificado e visível na vitrine."}</p>
+                      <p className="text-xs text-muted">{isFreePlan ? "Plano Grátis — visível na vitrine. Assine para liberar story, áudio e destaque." : "Perfil verificado e visível na vitrine."}</p>
                     </div>
-                    <span className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill px-2.5 py-1 text-[11px] font-bold ${isTrial ? "bg-accent-soft text-accent" : "bg-[#12331f] text-[#43d17f]"}`}>
-                      <span className={`dot-live h-1.5 w-1.5 rounded-full ${isTrial ? "bg-accent" : "bg-[#43d17f]"}`} />{isTrial ? "Teste grátis" : "No ar"}
+                    <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-pill bg-[#12331f] px-2.5 py-1 text-[11px] font-bold text-[#43d17f]">
+                      <span className="dot-live h-1.5 w-1.5 rounded-full bg-[#43d17f]" />No ar
                     </span>
                   </>
                 )}
@@ -338,15 +337,31 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
                     Editar fotos
                   </PendingLink>
-                  <PendingLink href="/meu-anuncio/audio" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                    Gravar áudio
-                  </PendingLink>
-                  <PendingLink href="/meu-anuncio/story" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
-                    Gravar story
-                    <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent">24h</span>
-                  </PendingLink>
+                  {planLimits.allowsAudio ? (
+                    <PendingLink href="/meu-anuncio/audio" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                      Gravar áudio
+                    </PendingLink>
+                  ) : (
+                    <Link href="/meu-anuncio?step=5" className="flex w-full items-center justify-center gap-2 rounded-input border border-dashed border-line bg-surface/50 py-2.5 text-sm font-semibold text-muted transition-colors hover:border-accent hover:text-accent">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.8" /><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                      Gravar áudio
+                      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent">Pro</span>
+                    </Link>
+                  )}
+                  {planLimits.allowsStory ? (
+                    <PendingLink href="/meu-anuncio/story" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" /></svg>
+                      Gravar story
+                      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent">24h</span>
+                    </PendingLink>
+                  ) : (
+                    <Link href="/meu-anuncio?step=5" className="flex w-full items-center justify-center gap-2 rounded-input border border-dashed border-line bg-surface/50 py-2.5 text-sm font-semibold text-muted transition-colors hover:border-accent hover:text-accent">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.8" /><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                      Gravar story
+                      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent">Pro</span>
+                    </Link>
+                  )}
                   <PendingLink href="/meu-anuncio/avaliacoes" className="flex w-full items-center justify-center gap-2 rounded-input border border-line bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
                     Avaliações
@@ -362,7 +377,7 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                     )}
                   </PendingLink>
                 </div>
-                <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} />
+                <AdActions ad={{ id: ad.id as string, is_available: availableActive(ad.is_available as boolean, (ad.available_since as string | null) ?? null, Date.now()), bumped_at: (ad.bumped_at as string | null) ?? null, status: (ad.status as string) ?? "active" }} cooldownMinutes={planLimits.bumpCooldownMinutes} canBump={planLimits.allowsBump} canAvailability={planLimits.allowsAvailability} />
               </section>
 
 
@@ -593,18 +608,18 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
         {/* 5 — Plano */}
         {step === 5 && (
           <div className="space-y-6">
-            {active && isTrial && (
-              <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card ring-1 ring-accent/20">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7S9 3 6.5 4.5 8 7 12 7zM12 7s3-4 5.5-2.5S16 7 12 7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+            {active && isFreePlan && (
+              <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card ring-1 ring-[#43d17f]/15">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </span>
                 <div>
-                  <p className="font-semibold text-ink">Teste grátis de 7 dias ativo 🎁</p>
-                  <p className="text-xs text-muted">Seu anúncio fica no ar até {trialEndLabel}. Depois, assine um plano para continuar.</p>
+                  <p className="font-semibold text-ink">Plano Grátis ativo — vitalício 🎉</p>
+                  <p className="text-xs text-muted">Você aparece na vitrine de graça (6 fotos). Assine Pro ou Premium para liberar story, áudio, &quot;disponível agora&quot;, subir ao topo e 12 fotos.</p>
                 </div>
               </section>
             )}
-            {active && !isTrial && (
+            {active && !isFreePlan && (
               <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card ring-1 ring-[#43d17f]/15">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#12331f] text-[#43d17f]">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 16l-2-9 5.5 4L12 5l3.5 6L21 7l-2 9H5zm0 2h14v2H5v-2z" /></svg>
@@ -615,9 +630,8 @@ export default async function MeuAnuncioPage({ searchParams }: { searchParams: P
                 </div>
               </section>
             )}
-            {!active && <p className="text-sm text-muted">Comece com <strong className="text-ink">7 dias grátis</strong> ou já assine um plano — você escolhe.</p>}
-            {isTrial && <p className="text-sm text-muted">Quer garantir depois do teste? Assine agora:</p>}
-            <PlanCards currentSlug={active && !isTrial ? plan?.slug : undefined} trialHref={!active ? "/meu-anuncio?step=6" : undefined} />
+            {!active && <p className="text-sm text-muted">Assim que seu perfil for aprovado, você já entra no <strong className="text-ink">Grátis</strong> e aparece na vitrine. Quer mais destaque? Assine Pro ou Premium.</p>}
+            <PlanCards currentSlug={active ? plan?.slug : undefined} />
             <StepNav step={5} />
           </div>
         )}
